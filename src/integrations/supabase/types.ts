@@ -14,7 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          color_theme: string | null
+          created_at: string
+          default_bpm: number | null
+          default_time_signature: string | null
+          id: string
+          metronome_enabled: boolean | null
+          metronome_sound: string | null
+          metronome_volume: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color_theme?: string | null
+          created_at?: string
+          default_bpm?: number | null
+          default_time_signature?: string | null
+          id?: string
+          metronome_enabled?: boolean | null
+          metronome_sound?: string | null
+          metronome_volume?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color_theme?: string | null
+          created_at?: string
+          default_bpm?: number | null
+          default_time_signature?: string | null
+          id?: string
+          metronome_enabled?: boolean | null
+          metronome_sound?: string | null
+          metronome_volume?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
