@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { secureStorage } from '@/lib/secureStorage';
 
 interface AuthContextType {
   user: User | null;
@@ -47,6 +48,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Setup session timeout for valid sessions
         if (session) {
           setupSessionTimeout(session);
+          // Initialize secure storage with user ID
+          secureStorage.initializeEncryption(session.user.id);
         } else {
           // Clear timeout when signing out
           if (sessionTimeoutRef.current) {
@@ -72,6 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (session) {
         setupSessionTimeout(session);
+        secureStorage.initializeEncryption(session.user.id);
       }
     });
 

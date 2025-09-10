@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, RotateCcw, RotateCw, Upload, Volume2, Music } from 'lucide-react';
+import { Play, Pause, SkipBack, RotateCcw, RotateCw, Upload, Volume2, Music, FileAudio, Trash2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
+import { secureStorage, migrateSensitiveData } from '@/lib/secureStorage';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TransportControlsProps {
   bpm: number;
@@ -27,7 +30,7 @@ export const TransportControls = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isLooping, setIsLooping] = useState(false);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [currentAudioFile, setCurrentAudioFile] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioVolume, setAudioVolume] = useState(80);
@@ -36,20 +39,33 @@ export const TransportControls = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const metronomeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { user } = useAuth();
   const { toast } = useToast();
+  const { 
+    uploads, 
+    userFiles, 
+    loading: uploadLoading, 
+    validateFile,
+    uploadFiles, 
+    getFileUrl, 
+    loadUserFiles, 
+    deleteFile,
+    clearUploads 
+  } = useSecureAudioUpload();
 
-  // Load saved audio files from localStorage
+  // Initialize secure storage and load user files
   useEffect(() => {
-    const savedAudioFiles = localStorage.getItem('ddrummer-audio-files');
-    if (savedAudioFiles) {
-      try {
-        const files = JSON.parse(savedAudioFiles);
-        // You can implement a file selection UI here if needed
-      } catch (error) {
-        console.error('Error loading saved audio files:', error);
+    const initializeStorage = async () => {
+      if (user) {
+        await migrateSensitiveData(user.id);
+        await loadUserFiles();
       }
-    }
-  }, []);
+    };
+    
+    initializeStorage();
+  }, [user]);
 
   // Audio progress tracking
   useEffect(() => {
@@ -129,8 +145,13 @@ export const TransportControls = ({
     }
   };
 
-  const handlePlay = () => {
-    if (audioRef.current && audioFile) {
+  const handlePlay = async () => {
+    if (audioRef.current && currentAudioFile) {
+      // Get fresh signed URL for the file
+      const url = await getFileUrl(currentAudioFile);
+      if (url && audioRef.current.src !== url) {
+        audioRef.current.src = url;
+      }
       audioRef.current.play();
     }
     setIsPlaying(true);
@@ -142,7 +163,7 @@ export const TransportControls = ({
     
     toast({
       title: "Playback Started",
-      description: audioFile ? `Playing ${audioFile.name}` : "Transport controls active",
+      description: currentAudioFile ? `Playing ${currentAudioFile.originalName}` : "Transport controls active",
     });
   };
 
@@ -185,33 +206,62 @@ export const TransportControls = ({
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && audioRef.current) {
-      const url = URL.createObjectURL(file);
-      audioRef.current.src = url;
-      setAudioFile(file);
-      
-      // Save to localStorage
-      try {
-        const savedFiles = JSON.parse(localStorage.getItem('ddrummer-audio-files') || '[]');
-        const fileData = {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          lastModified: file.lastModified,
-          timestamp: Date.now()
-        };
-        savedFiles.push(fileData);
-        localStorage.setItem('ddrummer-audio-files', JSON.stringify(savedFiles.slice(-10))); // Keep last 10
-      } catch (error) {
-        console.error('Error saving file info:', error);
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    // Validate files before upload
+    for (const file of files) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        toast({
+          title: "Invalid File",
+          description: `${file.name}: ${validation.errors.join(', ')}`,
+          variant: "destructive",
+        });
+        return;
       }
-      
+    }
+
+    // Upload files securely
+    await uploadFiles(files);
+    
+    // Clear file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSelectFile = async (audioFile: any) => {
+    try {
+      const url = await getFileUrl(audioFile);
+      if (url && audioRef.current) {
+        audioRef.current.src = url;
+        setCurrentAudioFile(audioFile);
+        
+        toast({
+          title: "Audio File Selected",
+          description: `Loaded ${audioFile.originalName}`,
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Audio File Loaded",
-        description: `Successfully loaded ${file.name}`,
+        title: "Error Loading File",
+        description: "Failed to load the selected audio file.",
+        variant: "destructive",
       });
+    }
+  };
+
+  const handleDeleteFile = async (audioFile: any) => {
+    await deleteFile(audioFile);
+    
+    // If this was the current file, clear it
+    if (currentAudioFile?.id === audioFile.id) {
+      setCurrentAudioFile(null);
+      if (audioRef.current) {
+        audioRef.current.src = '';
+      }
     }
   };
 
@@ -303,7 +353,7 @@ export const TransportControls = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {audioFile && (
+            {currentAudioFile && (
               <>
                 <div className="space-y-2">
                   <Label>Progress: {formatTime(currentTime)} / {formatTime(duration)}</Label>
@@ -385,50 +435,131 @@ export const TransportControls = ({
           </CardContent>
         </Card>
 
-        {/* Audio File Upload */}
+        {/* Secure Audio File Upload */}
         <Card className="bg-gradient-card border-border card-shadow lg:col-span-2 xl:col-span-3">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-accent">
-              <Upload size={20} />
-              Audio Files
+              <Shield size={20} />
+              Secure Audio Files
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <input
+              ref={fileInputRef}
               type="file"
               accept=".mp3,.wav,.m4a"
+              multiple
               onChange={handleFileUpload}
               className="hidden"
-              id="audio-upload"
+              id="secure-audio-upload"
             />
             
             <div className="flex gap-4">
               <Button
-                onClick={() => document.getElementById('audio-upload')?.click()}
+                onClick={() => fileInputRef.current?.click()}
                 variant="audio"
                 className="status-active"
+                disabled={!user || uploadLoading}
               >
                 <Upload size={20} />
-                Upload Audio
+                {uploadLoading ? 'Uploading...' : 'Upload Audio Files'}
               </Button>
               
-              <Button
-                variant="audio-inactive"
-                className="status-inactive"
-                disabled
-              >
-                <Upload size={20} />
-                Cloud Storage (Coming Soon)
-              </Button>
+              {uploads.length > 0 && (
+                <Button
+                  onClick={clearUploads}
+                  variant="outline"
+                  size="sm"
+                >
+                  Clear Progress
+                </Button>
+              )}
             </div>
-            
-            {audioFile && (
+
+            {!user && (
+              <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                  Sign in to upload and manage your audio files securely.
+                </p>
+              </div>
+            )}
+
+            {/* Upload Progress */}
+            {uploads.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Upload Progress</h4>
+                {uploads.map((upload, index) => (
+                  <div key={index} className="p-2 bg-secondary rounded border">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="truncate">{upload.file.name}</span>
+                      <span className="capitalize">{upload.status}</span>
+                    </div>
+                    {upload.status === 'uploading' && (
+                      <div className="w-full bg-muted rounded-full h-1 mt-1">
+                        <div 
+                          className="bg-primary h-1 rounded-full transition-all duration-300"
+                          style={{ width: `${upload.progress}%` }}
+                        />
+                      </div>
+                    )}
+                    {upload.error && (
+                      <p className="text-xs text-destructive mt-1">{upload.error}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Current File */}
+            {currentAudioFile && (
               <div className="p-3 bg-secondary rounded-lg border border-border">
                 <p className="text-sm text-muted-foreground">Currently Loaded:</p>
-                <p className="text-sm font-medium truncate">{audioFile.name}</p>
+                <p className="text-sm font-medium truncate">{currentAudioFile.originalName}</p>
                 <p className="text-xs text-muted-foreground">
-                  Size: {(audioFile.size / 1024 / 1024).toFixed(2)} MB
+                  Size: {(currentAudioFile.fileSize / 1024 / 1024).toFixed(2)} MB
+                  {currentAudioFile.durationSeconds && (
+                    <> • Duration: {Math.floor(currentAudioFile.durationSeconds / 60)}:{(currentAudioFile.durationSeconds % 60).toString().padStart(2, '0')}</>
+                  )}
                 </p>
+              </div>
+            )}
+
+            {/* User Files List */}
+            {user && userFiles.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Your Audio Files</h4>
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {userFiles.slice(0, 10).map((file) => (
+                    <div key={file.id} className="flex items-center justify-between p-2 bg-secondary rounded border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{file.originalName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(file.fileSize / 1024 / 1024).toFixed(2)} MB
+                          {file.durationSeconds && (
+                            <> • {Math.floor(file.durationSeconds / 60)}:{(file.durationSeconds % 60).toString().padStart(2, '0')}</>
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSelectFile(file)}
+                          disabled={currentAudioFile?.id === file.id}
+                        >
+                          <FileAudio size={14} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteFile(file)}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>
