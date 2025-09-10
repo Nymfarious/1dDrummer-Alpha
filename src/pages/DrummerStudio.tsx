@@ -8,6 +8,7 @@ import { MobileMetronomePanel } from '@/components/drummer/MobileMetronomePanel'
 import { RecordingPanel } from '@/components/drummer/RecordingPanel';
 import { BandRoomPanel } from '@/components/drummer/BandRoomPanel';
 import { SettingsPanel } from '@/components/drummer/SettingsPanel';
+import Libraries from '@/pages/Libraries';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,10 +83,14 @@ const DrummerStudio = () => {
             metronomeSound={metronomeSound}
             setMetronomeSound={setMetronomeSound}
             metronomeEnabled={metronomeEnabled}
+            metronomeVolume={metronomeVolume}
+            setMetronomeVolume={setMetronomeVolume}
           />
         );
       case 'recording':
         return <RecordingPanel />;
+      case 'libraries':
+        return <Libraries />;
       case 'bandroom':
         return <BandRoomPanel />;
       case 'settings':

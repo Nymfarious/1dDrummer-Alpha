@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Music, Play, Pause, Activity, Clock } from 'lucide-react';
+import { Music, Play, Pause, Activity, Clock, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface MobileMetronomePanelProps {
@@ -15,6 +16,8 @@ interface MobileMetronomePanelProps {
   metronomeSound: string;
   setMetronomeSound: (sound: string) => void;
   metronomeEnabled: boolean;
+  metronomeVolume?: number;
+  setMetronomeVolume?: (volume: number) => void;
 }
 
 export const MobileMetronomePanel = ({
@@ -24,7 +27,9 @@ export const MobileMetronomePanel = ({
   setTimeSig,
   metronomeSound,
   setMetronomeSound,
-  metronomeEnabled
+  metronomeEnabled,
+  metronomeVolume = 70,
+  setMetronomeVolume
 }: MobileMetronomePanelProps) => {
   const [metronomeOn, setMetronomeOn] = useState(false);
   const metronomeIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -56,7 +61,7 @@ export const MobileMetronomePanel = ({
         break;
     }
 
-    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+    gainNode.gain.setValueAtTime((metronomeVolume / 100) * 0.5, ctx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
 
     oscillator.start(ctx.currentTime);
@@ -238,6 +243,23 @@ export const MobileMetronomePanel = ({
           >
             High Tone
           </Button>
+
+          {/* Volume Control */}
+          {setMetronomeVolume && (
+            <div className="space-y-2 mt-4">
+              <Label className="flex items-center gap-2 text-sm">
+                <Volume2 size={16} />
+                Volume: {metronomeVolume}%
+              </Label>
+              <Slider
+                value={[metronomeVolume]}
+                onValueChange={(value) => setMetronomeVolume(value[0])}
+                max={100}
+                step={1}
+                className="w-full"
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

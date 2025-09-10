@@ -16,10 +16,10 @@ export const RecordingPanel = () => {
       
       toast({
         title: "Recording Started",
-        description: "3-minute session recording in progress...",
+        description: "2-minute session recording in progress...",
       });
 
-      // Simulate 3-minute recording
+      // Simulate 2-minute recording
       setTimeout(() => {
         setIsRecording(false);
         const recordingName = `Session ${new Date().toLocaleTimeString()}`;
@@ -27,12 +27,12 @@ export const RecordingPanel = () => {
         
         toast({
           title: "Recording Complete",
-          description: "3-minute session saved successfully!",
+          description: "2-minute session saved successfully!",
         });
         
         // Stop the stream
         stream.getTracks().forEach(track => track.stop());
-      }, 180000); // 3 minutes
+      }, 120000); // 2 minutes
       
     } catch (error) {
       toast({
@@ -76,7 +76,7 @@ export const RecordingPanel = () => {
                 fill={isRecording ? "currentColor" : "transparent"} 
                 className={isRecording ? "animate-pulse" : ""}
               />
-              {isRecording ? 'Stop Recording' : 'Start 3-Min Recording'}
+              {isRecording ? 'Stop Recording' : 'Start 2-Min Recording'}
             </Button>
             
             <Button
@@ -96,7 +96,7 @@ export const RecordingPanel = () => {
                   <span className="text-sm font-medium">Recording in progress...</span>
                 </div>
                 <p className="text-xs text-center text-muted-foreground mt-2">
-                  Session will auto-stop after 3 minutes
+                  Session will auto-stop after 2 minutes
                 </p>
               </div>
             )}

@@ -37,6 +37,30 @@ export const MobileTransportControls = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const metronomeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Update audio progress
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const updateProgress = () => {
+      setCurrentTime(audio.currentTime);
+      setDuration(audio.duration || 0);
+    };
+
+    const updateVolume = () => {
+      audio.volume = audioVolume / 100;
+    };
+
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('loadedmetadata', updateProgress);
+    updateVolume();
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateProgress);
+      audio.removeEventListener('loadedmetadata', updateProgress);
+    };
+  }, [audioVolume]);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -56,7 +80,7 @@ export const MobileTransportControls = ({
     gainNode.connect(ctx.destination);
 
     oscillator.frequency.setValueAtTime(800, ctx.currentTime);
-    gainNode.gain.setValueAtTime(metronomeVolume / 100, ctx.currentTime);
+    gainNode.gain.setValueAtTime((metronomeVolume / 100) * 0.5, ctx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
 
     oscillator.start(ctx.currentTime);
@@ -142,6 +166,19 @@ export const MobileTransportControls = ({
         <CardContent>
           <div className="flex justify-center gap-2 mb-4">
             <Button
+              onClick={() => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 30);
+                }
+              }}
+              variant="transport"
+              size="audio"
+              title="Skip back 30 seconds"
+            >
+              <RotateCcw size={20} />
+            </Button>
+            
+            <Button
               onClick={handleRewind}
               variant="transport"
               size="audio"
@@ -164,12 +201,42 @@ export const MobileTransportControls = ({
             >
               <Pause size={20} />
             </Button>
+
+            <Button
+              onClick={() => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 30);
+                }
+              }}
+              variant="transport"
+              size="audio"
+              title="Skip forward 30 seconds"
+            >
+              <RotateCw size={20} />
+            </Button>
           </div>
           
+          {/* Scrubber Bar */}
           {currentAudioFile && (
-            <div className="text-center text-sm text-muted-foreground">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </div>
+            <>
+              <div className="space-y-2 mb-3">
+                <Slider
+                  value={[currentTime]}
+                  onValueChange={(value) => {
+                    if (audioRef.current) {
+                      audioRef.current.currentTime = value[0];
+                      setCurrentTime(value[0]);
+                    }
+                  }}
+                  max={duration || 100}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
+              <div className="text-center text-sm text-muted-foreground">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
