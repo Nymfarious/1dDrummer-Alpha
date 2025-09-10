@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Music, Play, Square, Activity, Zap, Clock } from 'lucide-react';
+import { Music, Play, Pause, Activity, Zap, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface MetronomePanelProps {
@@ -258,7 +258,7 @@ export const MetronomePanel = ({
               className="w-full"
               disabled={!metronomeEnabled}
             >
-              {metronomeOn ? <Square size={20} /> : <Play size={20} />}
+              {metronomeOn ? <Pause size={20} /> : <Play size={20} />}
               {metronomeOn ? 'STOP' : 'START'}
             </Button>
             
