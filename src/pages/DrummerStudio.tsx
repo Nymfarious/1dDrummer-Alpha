@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/drummer/Sidebar';
+import { MobileNavigation } from '@/components/drummer/MobileNavigation';
 import { TransportControls } from '@/components/drummer/TransportControls';
+import { MobileTransportControls } from '@/components/drummer/MobileTransportControls';
 import { MetronomePanel } from '@/components/drummer/MetronomePanel';
+import { MobileMetronomePanel } from '@/components/drummer/MobileMetronomePanel';
 import { RecordingPanel } from '@/components/drummer/RecordingPanel';
 import { BandRoomPanel } from '@/components/drummer/BandRoomPanel';
 import { SettingsPanel } from '@/components/drummer/SettingsPanel';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 
 const DrummerStudio = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('transport');
   
   // Audio state
@@ -52,10 +57,13 @@ const DrummerStudio = () => {
   };
 
   const renderContent = () => {
+    const TransportComponent = isMobile ? MobileTransportControls : TransportControls;
+    const MetronomeComponent = isMobile ? MobileMetronomePanel : MetronomePanel;
+    
     switch (activeTab) {
       case 'transport':
         return (
-          <TransportControls
+          <TransportComponent
             bpm={bpm}
             setBpm={setBpm}
             metronomeVolume={metronomeVolume}
@@ -66,7 +74,7 @@ const DrummerStudio = () => {
         );
       case 'metronome':
         return (
-          <MetronomePanel
+          <MetronomeComponent
             bpm={bpm}
             setBpm={setBpm}
             timeSig={timeSig}
@@ -104,6 +112,20 @@ const DrummerStudio = () => {
         />;
     }
   };
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-gradient-background flex flex-col">
+        <MobileNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        
+        <main className="flex-1 px-4 py-6 pb-20">
+          <div className="max-w-4xl mx-auto">
+            {renderContent()}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-background flex">

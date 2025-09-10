@@ -152,6 +152,11 @@
       opacity: 0.5;
     }
   }
+
+  /* Mobile safe area */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 @layer base {
