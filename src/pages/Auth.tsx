@@ -6,13 +6,14 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Music, Mail, Lock, User } from 'lucide-react';
+import { Music, Mail, Lock, User, AlertCircle } from 'lucide-react';
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const { user, signIn, signUp } = useAuth();
   const { toast } = useToast();
 
@@ -21,8 +22,53 @@ const Auth = () => {
     return <Navigate to="/" replace />;
   }
 
+  // Password validation function
+  const validatePassword = (password: string): string[] => {
+    const errors: string[] = [];
+    
+    if (password.length < 8) {
+      errors.push('At least 8 characters');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('One uppercase letter');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('One lowercase letter');
+    }
+    if (!/\d/.test(password)) {
+      errors.push('One number');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('One special character');
+    }
+    
+    return errors;
+  };
+
+  // Handle password input with real-time validation
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (isSignUp) {
+      setPasswordErrors(validatePassword(value));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password for sign up
+    if (isSignUp) {
+      const errors = validatePassword(password);
+      if (errors.length > 0) {
+        toast({
+          title: "Password Requirements",
+          description: "Please meet all password requirements.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
     setLoading(true);
 
     try {
@@ -31,11 +77,20 @@ const Auth = () => {
         : await signIn(email, password);
 
       if (error) {
-        toast({
-          title: "Authentication Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        // Handle rate limiting error specifically
+        if (error.message.includes('rate limit') || error.message.includes('too many')) {
+          toast({
+            title: "Too Many Attempts",
+            description: "Please wait a moment before trying again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Authentication Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else if (isSignUp) {
         toast({
           title: "Account Created!",
@@ -117,13 +172,32 @@ const Auth = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={isSignUp ? "Create a strong password" : "••••••••"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   className="bg-input border-border focus:border-primary smooth-transition"
                 />
+                
+                {/* Password requirements for sign up */}
+                {isSignUp && (
+                  <div className="text-xs space-y-1">
+                    <p className="text-muted-foreground">Password must contain:</p>
+                    {['At least 8 characters', 'One uppercase letter', 'One lowercase letter', 'One number', 'One special character'].map((requirement) => (
+                      <div key={requirement} className="flex items-center gap-2">
+                        {passwordErrors.includes(requirement) ? (
+                          <AlertCircle className="h-3 w-3 text-destructive" />
+                        ) : (
+                          <div className="h-3 w-3 rounded-full bg-green-500" />
+                        )}
+                        <span className={passwordErrors.includes(requirement) ? 'text-destructive' : 'text-green-600'}>
+                          {requirement}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <Button
