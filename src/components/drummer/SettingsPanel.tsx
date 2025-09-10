@@ -64,9 +64,9 @@ export const SettingsPanel = ({
         .from('user_settings')
         .select('*')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error loading settings:', error);
         return;
       }

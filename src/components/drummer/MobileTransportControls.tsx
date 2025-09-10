@@ -1,13 +1,14 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, RotateCcw, RotateCw, Volume2, Music } from 'lucide-react';
+import { Play, Pause, SkipBack, RotateCcw, RotateCw, Volume2, Music, Upload, FolderOpen, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { useAuth } from '@/hooks/useAuth';
+import { useDropzone } from 'react-dropzone';
 
 interface MobileTransportControlsProps {
   bpm: number;
@@ -64,7 +65,14 @@ export const MobileTransportControls = ({
   
   const { user } = useAuth();
   const { toast } = useToast();
-  const { getFileUrl, userFiles } = useSecureAudioUpload();
+  const { getFileUrl, userFiles, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
+
+  // Load user files when user changes
+  useEffect(() => {
+    if (user) {
+      loadUserFiles();
+    }
+  }, [user, loadUserFiles]);
 
   // Metronome functionality
   const playMetronomeSound = () => {
@@ -120,13 +128,30 @@ export const MobileTransportControls = ({
         audioRef.current.src = url;
       }
       audioRef.current.play();
+      setIsPlaying(true);
+      setIsPaused(false);
+      
+      if (metronomeEnabled && metronomeOn) {
+        startMetronome();
+      }
+    } else {
+      toast({
+        title: "No Audio File",
+        description: "Please select an audio file to play",
+        variant: "destructive",
+      });
     }
-    setIsPlaying(true);
+  };
+
+  const handleStop = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setCurrentTime(0);
+    }
+    setIsPlaying(false);
     setIsPaused(false);
-    
-    if (metronomeEnabled && metronomeOn) {
-      startMetronome();
-    }
+    stopMetronome();
   };
 
   const handlePause = () => {
@@ -151,6 +176,63 @@ export const MobileTransportControls = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Handle file upload
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to upload files",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate files
+    for (const file of acceptedFiles) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        toast({
+          title: "Invalid File",
+          description: `${file.name}: ${validation.errors.join(', ')}`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    try {
+      await uploadFiles(acceptedFiles);
+      toast({
+        title: "Upload Successful",
+        description: `${acceptedFiles.length} file(s) uploaded to library`,
+      });
+      // Auto-select the first uploaded file
+      if (acceptedFiles.length > 0) {
+        await loadUserFiles();
+        // Wait a moment for the files to load, then select the newest one
+        setTimeout(() => {
+          if (userFiles.length > 0) {
+            setCurrentAudioFile(userFiles[0]);
+          }
+        }, 500);
+      }
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [user, uploadFiles, validateFile, toast, loadUserFiles]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'audio/*': ['.mp3', '.wav', '.m4a', '.aac', '.flac']
+    },
+    multiple: true
+  });
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold text-foreground mb-4">Transport</h2>
@@ -174,11 +256,11 @@ export const MobileTransportControls = ({
             </Button>
             
             <Button
-              onClick={isPlaying ? handlePause : handlePlay}
+              onClick={isPlaying ? handleStop : handlePlay}
               variant={isPlaying ? "transport-active" : "transport"}
               size="audio"
             >
-              {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+              {isPlaying ? <Square size={20} /> : <Play size={20} />}
             </Button>
             
             <Button
@@ -216,28 +298,38 @@ export const MobileTransportControls = ({
             </Button>
           </div>
           
-          {/* Scrubber Bar */}
-          {currentAudioFile && (
-            <>
-              <div className="space-y-2 mb-3">
-                <Slider
-                  value={[currentTime]}
-                  onValueChange={(value) => {
-                    if (audioRef.current) {
-                      audioRef.current.currentTime = value[0];
-                      setCurrentTime(value[0]);
-                    }
-                  }}
-                  max={duration || 100}
-                  step={1}
-                  className="w-full"
-                />
+          {/* Audio Scrubber Bar */}
+          <div className="space-y-3">
+            {currentAudioFile ? (
+              <>
+                <div className="text-center text-sm font-medium text-foreground">
+                  Now Playing: {currentAudioFile.originalName}
+                </div>
+                <div className="space-y-2">
+                  <Slider
+                    value={[currentTime]}
+                    onValueChange={(value) => {
+                      if (audioRef.current) {
+                        audioRef.current.currentTime = value[0];
+                        setCurrentTime(value[0]);
+                      }
+                    }}
+                    max={duration || 100}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
+                <div className="text-center text-sm text-muted-foreground">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground mb-2">No audio file selected</p>
+                <p className="text-xs text-muted-foreground">Upload or select from library below</p>
               </div>
-              <div className="text-center text-sm text-muted-foreground">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </div>
-            </>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -295,15 +387,49 @@ export const MobileTransportControls = ({
         </CardContent>
       </Card>
 
-      {/* Current File */}
-      {userFiles.length > 0 && (
-        <Card className="bg-gradient-card border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Audio Files</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {userFiles.slice(0, 3).map((file: any) => (
+      {/* File Upload Area */}
+      <Card className="bg-gradient-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-accent text-lg">
+            <Upload size={18} />
+            Import Audio
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
+              isDragActive 
+                ? 'border-primary bg-primary/5' 
+                : 'border-border hover:border-primary/50'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium">
+                {isDragActive ? "Drop files here..." : "Upload Audio Files"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                MP3, WAV, M4A, AAC, FLAC (Max 50MB)
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Audio Library */}
+      <Card className="bg-gradient-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-accent text-lg">
+            <FolderOpen size={18} />
+            Audio Library ({userFiles.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {userFiles.length > 0 ? (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {userFiles.map((file: any) => (
                 <Button
                   key={file.id}
                   onClick={() => setCurrentAudioFile(file)}
@@ -311,18 +437,20 @@ export const MobileTransportControls = ({
                   className="w-full justify-start text-sm"
                   size="sm"
                 >
+                  <Music size={14} className="mr-2" />
                   {file.originalName}
                 </Button>
               ))}
-              {userFiles.length > 3 && (
-                <div className="text-xs text-muted-foreground text-center">
-                  +{userFiles.length - 3} more files
-                </div>
-              )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="text-center py-4">
+              <Music size={32} className="mx-auto mb-2 text-muted-foreground opacity-50" />
+              <p className="text-sm text-muted-foreground">No files in library</p>
+              <p className="text-xs text-muted-foreground">Upload audio files to get started</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <audio ref={audioRef} />
     </div>
