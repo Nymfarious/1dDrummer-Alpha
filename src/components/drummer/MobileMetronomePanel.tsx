@@ -131,16 +131,43 @@ export const MobileMetronomePanel = ({
             <div className="text-sm text-muted-foreground">BPM in {timeSig}</div>
           </div>
           
-          <Button
-            onClick={toggleMetronome}
-            variant={metronomeOn ? "audio-active" : "audio"}
-            size="lg"
-            className="w-full mb-4"
-            disabled={!metronomeEnabled}
-          >
-            {metronomeOn ? <Pause size={24} /> : <Play size={24} />}
-            {metronomeOn ? 'STOP' : 'START'}
-          </Button>
+          <div className="flex gap-2 mb-4">
+            <Button
+              onClick={() => {
+                if (!metronomeEnabled) {
+                  toast({
+                    title: "Metronome Disabled",
+                    description: "Enable metronome in settings first",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                startMetronome();
+                setMetronomeOn(true);
+              }}
+              variant={metronomeOn ? "audio-active" : "audio"}
+              size="lg"
+              className="flex-1"
+              disabled={!metronomeEnabled || metronomeOn}
+            >
+              <Play size={20} />
+              START
+            </Button>
+            
+            <Button
+              onClick={() => {
+                stopMetronome();
+                setMetronomeOn(false);
+              }}
+              variant={!metronomeOn ? "audio-inactive" : "audio-danger"}
+              size="lg"
+              className="flex-1"
+              disabled={!metronomeOn}
+            >
+              <Pause size={20} />
+              STOP
+            </Button>
+          </div>
           
           {metronomeOn && (
             <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 text-center">

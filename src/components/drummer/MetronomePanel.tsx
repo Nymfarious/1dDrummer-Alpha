@@ -251,16 +251,43 @@ export const MetronomePanel = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button
-              onClick={toggleMetronome}
-              variant={metronomeOn ? "audio-active" : "audio"}
-              size="wide"
-              className="w-full"
-              disabled={!metronomeEnabled}
-            >
-              {metronomeOn ? <Pause size={20} /> : <Play size={20} />}
-              {metronomeOn ? 'STOP' : 'START'}
-            </Button>
+            <div className="flex gap-2 mb-4">
+              <Button
+                onClick={() => {
+                  if (!metronomeEnabled) {
+                    toast({
+                      title: "Metronome Disabled",
+                      description: "Enable metronome in settings first",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  startMetronome();
+                  setMetronomeOn(true);
+                }}
+                variant={metronomeOn ? "audio-active" : "audio"}
+                size="wide"
+                className="flex-1"
+                disabled={!metronomeEnabled || metronomeOn}
+              >
+                <Play size={16} />
+                START
+              </Button>
+              
+              <Button
+                onClick={() => {
+                  stopMetronome();
+                  setMetronomeOn(false);
+                }}
+                variant={!metronomeOn ? "audio-inactive" : "audio-danger"}
+                size="wide"
+                className="flex-1"
+                disabled={!metronomeOn}
+              >
+                <Pause size={16} />
+                STOP
+              </Button>
+            </div>
             
             {metronomeOn && (
               <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">

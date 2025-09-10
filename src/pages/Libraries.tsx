@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,11 +13,15 @@ import {
   Filter,
   Clock,
   Calendar,
-  Volume2
+  Volume2,
+  Upload,
+  File,
+  Square
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { useAuth } from '@/hooks/useAuth';
+import { useDropzone } from 'react-dropzone';
 
 interface Recording {
   id: string;
@@ -31,11 +35,12 @@ interface Recording {
 export const Libraries = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { userFiles, getFileUrl } = useSecureAudioUpload();
+  const { userFiles, getFileUrl, uploadFiles, validateFile } = useSecureAudioUpload();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'recording' | 'upload'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   
   // Sample recordings data - in real app, this would come from your database
   const [recordings, setRecordings] = useState<Recording[]>([
@@ -72,9 +77,18 @@ export const Libraries = () => {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handlePlay = async (file: Recording) => {
-    if (playingId === file.id) {
+    if (playingId === file.id && currentAudio) {
+      // Stop current playback
+      currentAudio.pause();
+      setCurrentAudio(null);
       setPlayingId(null);
       return;
+    }
+    
+    // Stop any existing audio
+    if (currentAudio) {
+      currentAudio.pause();
+      setCurrentAudio(null);
     }
     
     setPlayingId(file.id);
@@ -84,10 +98,13 @@ export const Libraries = () => {
       try {
         const url = await getFileUrl(userFiles.find(f => f.id === file.id));
         if (url) {
-          // Create and play audio element
           const audio = new Audio(url);
+          setCurrentAudio(audio);
           audio.play();
-          audio.onended = () => setPlayingId(null);
+          audio.onended = () => {
+            setPlayingId(null);
+            setCurrentAudio(null);
+          };
         }
       } catch (error) {
         toast({
@@ -128,6 +145,53 @@ export const Libraries = () => {
     });
   };
 
+  // Handle file upload
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to upload files",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate files
+    for (const file of acceptedFiles) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        toast({
+          title: "Invalid File",
+          description: `${file.name}: ${validation.errors.join(', ')}`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    try {
+      await uploadFiles(acceptedFiles);
+      toast({
+        title: "Upload Successful",
+        description: `${acceptedFiles.length} file(s) uploaded successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [user, uploadFiles, validateFile, toast]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'audio/*': ['.mp3', '.wav', '.m4a', '.aac', '.flac']
+    },
+    multiple: true
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -136,6 +200,35 @@ export const Libraries = () => {
           {filteredFiles.length} files
         </Badge>
       </div>
+
+      {/* Upload Area */}
+      <Card className="bg-gradient-card border-border">
+        <CardContent className="p-6">
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+              isDragActive 
+                ? 'border-primary bg-primary/5' 
+                : 'border-border hover:border-primary/50'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <Upload className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Upload Audio Files</h3>
+              <p className="text-muted-foreground">
+                {isDragActive
+                  ? "Drop your audio files here..."
+                  : "Drag & drop audio files here, or click to browse"
+                }
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Supports MP3, WAV, M4A, AAC, FLAC (Max 50MB each)
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Search and Filter */}
       <Card className="bg-gradient-card border-border">
@@ -231,8 +324,8 @@ export const Libraries = () => {
                   >
                     {playingId === file.id ? (
                       <>
-                        <Pause size={16} />
-                        Playing...
+                        <Square size={16} />
+                        Stop
                       </>
                     ) : (
                       <>

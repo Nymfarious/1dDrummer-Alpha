@@ -166,19 +166,6 @@ export const MobileTransportControls = ({
         <CardContent>
           <div className="flex justify-center gap-2 mb-4">
             <Button
-              onClick={() => {
-                if (audioRef.current) {
-                  audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 30);
-                }
-              }}
-              variant="transport"
-              size="audio"
-              title="Skip back 30 seconds"
-            >
-              <RotateCcw size={20} />
-            </Button>
-            
-            <Button
               onClick={handleRewind}
               variant="transport"
               size="audio"
@@ -187,21 +174,13 @@ export const MobileTransportControls = ({
             </Button>
             
             <Button
-              onClick={handlePlay}
+              onClick={isPlaying ? handlePause : handlePlay}
               variant={isPlaying ? "transport-active" : "transport"}
               size="audio"
             >
-              <Play size={20} />
+              {isPlaying ? <Pause size={20} /> : <Play size={20} />}
             </Button>
             
-            <Button
-              onClick={handlePause}
-              variant={isPaused ? "transport-active" : "transport"}
-              size="audio"
-            >
-              <Pause size={20} />
-            </Button>
-
             <Button
               onClick={() => {
                 if (audioRef.current) {
@@ -213,6 +192,27 @@ export const MobileTransportControls = ({
               title="Skip forward 30 seconds"
             >
               <RotateCw size={20} />
+            </Button>
+            
+            <Button
+              onClick={() => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 30);
+                }
+              }}
+              variant="transport"
+              size="audio"
+              title="Skip back 30 seconds"
+            >
+              <RotateCcw size={20} />
+            </Button>
+
+            <Button
+              onClick={handlePause}
+              variant={isPaused ? "transport-active" : "transport"}
+              size="audio"
+            >
+              <Pause size={20} />
             </Button>
           </div>
           
