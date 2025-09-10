@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Music, Play, Pause, Activity, Zap, Clock } from 'lucide-react';
+import { Music, Play, Pause, Activity, Zap, Clock, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface MetronomePanelProps {
@@ -15,6 +16,8 @@ interface MetronomePanelProps {
   metronomeSound: string;
   setMetronomeSound: (sound: string) => void;
   metronomeEnabled: boolean;
+  metronomeVolume: number;
+  setMetronomeVolume: (volume: number) => void;
 }
 
 export const MetronomePanel = ({
@@ -24,7 +27,9 @@ export const MetronomePanel = ({
   setTimeSig,
   metronomeSound,
   setMetronomeSound,
-  metronomeEnabled
+  metronomeEnabled,
+  metronomeVolume,
+  setMetronomeVolume
 }: MetronomePanelProps) => {
   const [metronomeOn, setMetronomeOn] = useState(false);
   const metronomeIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -57,7 +62,7 @@ export const MetronomePanel = ({
         break;
     }
 
-    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+    gainNode.gain.setValueAtTime((metronomeVolume / 100) * 0.5, ctx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
 
     oscillator.start(ctx.currentTime);
@@ -151,7 +156,7 @@ export const MetronomePanel = ({
           break;
       }
 
-      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+      gainNode.gain.setValueAtTime((metronomeVolume / 100) * 0.5, ctx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
 
       oscillator.start(ctx.currentTime);
@@ -300,10 +305,25 @@ export const MetronomePanel = ({
             {!metronomeEnabled && (
               <div className="p-3 bg-muted rounded-lg border border-border">
                 <p className="text-xs text-muted-foreground text-center">
-                  Enable metronome in Transport Controls
+                  Enable metronome in Settings
                 </p>
               </div>
             )}
+            
+            {/* Volume Control */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm">
+                <Volume2 size={16} />
+                Volume: {metronomeVolume}%
+              </Label>
+              <Slider
+                value={[metronomeVolume]}
+                onValueChange={(value) => setMetronomeVolume(value[0])}
+                max={100}
+                step={1}
+                className="w-full"
+              />
+            </div>
           </CardContent>
         </Card>
       </div>

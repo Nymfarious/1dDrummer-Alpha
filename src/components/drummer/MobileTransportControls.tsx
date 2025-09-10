@@ -283,17 +283,6 @@ export const MobileTransportControls = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="metronome-enabled"
-              checked={metronomeEnabled}
-              onCheckedChange={setMetronomeEnabled}
-            />
-            <Label htmlFor="metronome-enabled" className="text-sm">
-              Enable Metronome
-            </Label>
-          </div>
-          
           <Button
             onClick={toggleMetronome}
             variant={metronomeOn ? "audio-active" : "metronome"}
