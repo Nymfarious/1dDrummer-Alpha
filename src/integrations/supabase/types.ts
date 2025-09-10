@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_lockouts: {
+        Row: {
+          created_at: string
+          email: string | null
+          failed_attempts: number
+          id: string
+          ip_address: unknown | null
+          locked_until: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          failed_attempts?: number
+          id?: string
+          ip_address?: unknown | null
+          locked_until?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          failed_attempts?: number
+          id?: string
+          ip_address?: unknown | null
+          locked_until?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      device_sessions: {
+        Row: {
+          browser_info: string | null
+          created_at: string
+          device_fingerprint: string
+          device_name: string | null
+          device_type: string | null
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          is_trusted: boolean
+          last_seen: string
+          location_info: Json | null
+          user_id: string
+        }
+        Insert: {
+          browser_info?: string | null
+          created_at?: string
+          device_fingerprint: string
+          device_name?: string | null
+          device_type?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          is_trusted?: boolean
+          last_seen?: string
+          location_info?: Json | null
+          user_id: string
+        }
+        Update: {
+          browser_info?: string | null
+          created_at?: string
+          device_fingerprint?: string
+          device_name?: string | null
+          device_type?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          is_trusted?: boolean
+          last_seen?: string
+          location_info?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -86,6 +164,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_security_settings: {
+        Row: {
+          backup_codes: string[] | null
+          created_at: string
+          id: string
+          two_factor_enabled: boolean
+          two_factor_secret: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          backup_codes?: string[] | null
+          created_at?: string
+          id?: string
+          two_factor_enabled?: boolean
+          two_factor_secret?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          backup_codes?: string[] | null
+          created_at?: string
+          id?: string
+          two_factor_enabled?: boolean
+          two_factor_secret?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           color_theme: string | null
@@ -130,7 +238,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -5,13 +5,19 @@ import { secureStorage } from '@/lib/secureStorage';
 import { securityLogger } from '@/lib/securityLogger';
 import { sanitizeError, logError } from '@/lib/errorHandling';
 import { csrfProtection } from '@/lib/csrfProtection';
+import { twoFactorAuth } from '@/lib/twoFactorAuth';
+import { deviceTracker } from '@/lib/deviceTracker';
+import { accountLockout } from '@/lib/accountLockout';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  pending2FA: boolean;
+  pendingUserId: string | null;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any; requires2FA?: boolean; userId?: string }>;
+  verify2FA: (code: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -21,6 +27,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pending2FA, setPending2FA] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   
   // Rate limiting state
   const authAttempts = useRef<{ [key: string]: { count: number; lastAttempt: number } }>({});
@@ -52,12 +60,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        setPending2FA(false);
+        setPendingUserId(null);
         
         // Setup session timeout for valid sessions
         if (session) {
           setupSessionTimeout(session);
           // Initialize secure storage with user ID
           secureStorage.initializeEncryption(session.user.id);
+          
+          // Register device
+          deviceTracker.registerDevice(session.user.id);
         } else {
           // Clear timeout when signing out
           if (sessionTimeoutRef.current) {
@@ -201,6 +214,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
+    // Check account lockout first
+    const lockoutCheck = await accountLockout.isAccountLocked(email);
+    if (lockoutCheck.locked) {
+      await securityLogger.logAuthFailure(email, 'account_locked');
+      return { 
+        error: { 
+          message: `Account is locked. Please try again in ${lockoutCheck.remainingTime} minutes.` 
+        }
+      };
+    }
+
     // Check rate limit
     const rateLimitCheck = checkRateLimit(email);
     if (!rateLimitCheck.allowed) {
@@ -209,16 +233,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       recordAuthAttempt(email, !error);
-      
+
       if (error) {
+        // Record failed attempt for account lockout
+        await accountLockout.recordFailedAttempt(email);
         await securityLogger.logAuthFailure(email, error.message);
         return { error: sanitizeError(error) };
+      }
+
+      // Check if user has 2FA enabled
+      const userId = data.user?.id;
+      if (userId) {
+        const has2FA = await twoFactorAuth.is2FAEnabled(userId);
+        
+        if (has2FA) {
+          // Set pending 2FA state
+          setPending2FA(true);
+          setPendingUserId(userId);
+          
+          // Sign out the user temporarily until 2FA is verified
+          await supabase.auth.signOut();
+          
+          return { error: null, requires2FA: true, userId };
+        }
+
+        // Clear any existing lockouts on successful login
+        await accountLockout.resetFailedAttempts(email);
       }
       
       return { error: null };
@@ -226,6 +272,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await securityLogger.logAuthFailure(email, 'unexpected_error');
       logError(error, 'signIn');
       recordAuthAttempt(email, false);
+      await accountLockout.recordFailedAttempt(email);
+      return { error: sanitizeError(error) };
+    }
+  };
+
+  const verify2FA = async (code: string) => {
+    if (!pendingUserId) {
+      return { error: { message: 'No pending 2FA verification' } };
+    }
+
+    try {
+      const result = await twoFactorAuth.verify2FALogin(pendingUserId, code);
+      
+      if (result.success) {
+        // Complete the sign-in process
+        const { data, error } = await supabase.auth.getUser();
+        
+        if (!error && data.user) {
+          setPending2FA(false);
+          setPendingUserId(null);
+          
+          // Clear lockouts on successful 2FA
+          const userEmail = data.user.email;
+          if (userEmail) {
+            await accountLockout.resetFailedAttempts(userEmail);
+          }
+          
+          return { error: null };
+        }
+      }
+      
+      return { error: { message: result.error || 'Invalid 2FA code' } };
+    } catch (error) {
+      logError(error, 'verify2FA');
       return { error: sanitizeError(error) };
     }
   };
@@ -239,8 +319,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       user,
       session,
       loading,
+      pending2FA,
+      pendingUserId,
       signUp,
       signIn,
+      verify2FA,
       signOut,
     }}>
       {children}
