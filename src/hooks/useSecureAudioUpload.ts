@@ -12,6 +12,9 @@ import {
   getAudioDuration,
   FileValidationResult 
 } from '@/lib/fileValidation';
+import { securityLogger } from '@/lib/securityLogger';
+import { createErrorMessage, logError } from '@/lib/errorHandling';
+import { csrfProtection } from '@/lib/csrfProtection';
 
 export interface AudioFile {
   id: string;
@@ -56,17 +59,30 @@ export const useSecureAudioUpload = () => {
         description: "Please sign in to upload files.",
         variant: "destructive",
       });
+      await securityLogger.logSuspiciousActivity({ 
+        action: 'upload_without_auth', 
+        fileName: file.name 
+      }, 'warning');
       return null;
     }
 
     // Validate file
     const validation = validateFile(file);
     if (!validation.valid) {
+      const errorMessage = createErrorMessage(
+        { message: validation.errors.join(', ') }, 
+        'fileValidation'
+      );
       toast({
         title: "Invalid File",
-        description: validation.errors.join(', '),
+        description: errorMessage,
         variant: "destructive",
       });
+      await securityLogger.logSuspiciousActivity({ 
+        action: 'invalid_file_upload', 
+        fileName: file.name,
+        errors: validation.errors
+      }, 'warning');
       return null;
     }
 
@@ -152,6 +168,9 @@ export const useSecureAudioUpload = () => {
       // Add to user files
       setUserFiles(prev => [audioFile, ...prev]);
 
+      // Log successful upload
+      await securityLogger.logFileUpload(user.id, file.name, file.size, file.type);
+
       toast({
         title: "Upload Successful",
         description: `${file.name} uploaded securely.`,
@@ -160,7 +179,8 @@ export const useSecureAudioUpload = () => {
       return audioFile;
 
     } catch (error: any) {
-      console.error('Upload error:', error);
+      const errorMessage = createErrorMessage(error, 'fileUpload');
+      logError(error, 'fileUpload');
       
       // Update upload status to error
       setUploads(prev => prev.map(upload => 
@@ -171,9 +191,15 @@ export const useSecureAudioUpload = () => {
 
       toast({
         title: "Upload Failed",
-        description: error.message || "Failed to upload file.",
+        description: errorMessage,
         variant: "destructive",
       });
+
+      await securityLogger.logSuspiciousActivity({ 
+        action: 'upload_failed', 
+        fileName: file.name,
+        error: error.message
+      }, 'error');
 
       return null;
     }
@@ -206,7 +232,7 @@ export const useSecureAudioUpload = () => {
       if (error) throw error;
       return data.signedUrl;
     } catch (error) {
-      console.error('Error getting file URL:', error);
+      logError(error, 'getFileUrl');
       return null;
     }
   };
@@ -239,7 +265,7 @@ export const useSecureAudioUpload = () => {
 
       setUserFiles(audioFiles);
     } catch (error) {
-      console.error('Error loading user files:', error);
+      logError(error, 'loadUserFiles');
     }
   };
 
@@ -266,16 +292,21 @@ export const useSecureAudioUpload = () => {
       // Remove from local state
       setUserFiles(prev => prev.filter(file => file.id !== audioFile.id));
 
+      // Log deletion
+      await securityLogger.logFileDelete(audioFile.id, audioFile.originalName);
+
       toast({
         title: "File Deleted",
         description: `${audioFile.originalName} has been deleted.`,
       });
 
     } catch (error: any) {
-      console.error('Delete error:', error);
+      const errorMessage = createErrorMessage(error, 'deleteFile');
+      logError(error, 'deleteFile');
+      
       toast({
         title: "Delete Failed",
-        description: error.message || "Failed to delete file.",
+        description: errorMessage,
         variant: "destructive",
       });
     }

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Music, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { createErrorMessage } from '@/lib/errorHandling';
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -78,19 +79,12 @@ const Auth = () => {
 
       if (error) {
         // Handle rate limiting error specifically
-        if (error.message.includes('rate limit') || error.message.includes('too many')) {
-          toast({
-            title: "Too Many Attempts",
-            description: "Please wait a moment before trying again.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Authentication Error",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+        const userMessage = createErrorMessage(error, 'authentication');
+        toast({
+          title: "Authentication Error", 
+          description: userMessage,
+          variant: "destructive",
+        });
       } else if (isSignUp) {
         toast({
           title: "Account Created!",
@@ -103,9 +97,10 @@ const Auth = () => {
         });
       }
     } catch (error) {
+      const userMessage = createErrorMessage(error, 'authentication');
       toast({
         title: "Error",
-        description: "An unexpected error occurred.",
+        description: userMessage,
         variant: "destructive",
       });
     } finally {

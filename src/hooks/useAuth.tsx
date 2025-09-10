@@ -2,6 +2,9 @@ import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { secureStorage } from '@/lib/secureStorage';
+import { securityLogger } from '@/lib/securityLogger';
+import { sanitizeError, logError } from '@/lib/errorHandling';
+import { csrfProtection } from '@/lib/csrfProtection';
 
 interface AuthContextType {
   user: User | null;
@@ -22,6 +25,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Rate limiting state
   const authAttempts = useRef<{ [key: string]: { count: number; lastAttempt: number } }>({});
   const sessionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize CSRF protection
+  useEffect(() => {
+    csrfProtection.initialize();
+  }, []);
 
   // Session timeout management
   const setupSessionTimeout = (session: Session) => {
@@ -60,9 +68,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Create profile if user just signed up
         if (event === 'SIGNED_IN' && session?.user) {
+          securityLogger.logAuthSuccess(session.user.id, session.user.email || '');
           setTimeout(() => {
             createUserProfile(session.user);
           }, 0);
+        }
+        
+        if (event === 'SIGNED_OUT') {
+          securityLogger.logLogout(user?.id || '', user?.email || '');
         }
       }
     );
@@ -100,10 +113,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         ]);
       
       if (error && error.code !== '23505') { // Ignore unique constraint violation
-        console.error('Error creating profile:', error);
+        const sanitizedError = logError(error, 'createUserProfile');
+        console.warn('Profile creation failed:', sanitizedError.userMessage);
       }
     } catch (error) {
-      console.error('Error creating profile:', error);
+      logError(error, 'createUserProfile');
     }
   };
 
@@ -155,37 +169,65 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Check rate limit
     const rateLimitCheck = checkRateLimit(email);
     if (!rateLimitCheck.allowed) {
+      await securityLogger.logAuthFailure(email, 'rate_limited');
       return { error: rateLimitCheck.error };
     }
 
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
+      
+      recordAuthAttempt(email, !error);
+      
+      if (error) {
+        await securityLogger.logAuthFailure(email, error.message);
+        return { error: sanitizeError(error) };
       }
-    });
-    
-    recordAuthAttempt(email, !error);
-    return { error };
+      
+      return { error: null };
+    } catch (error) {
+      await securityLogger.logAuthFailure(email, 'unexpected_error');
+      logError(error, 'signUp');
+      recordAuthAttempt(email, false);
+      return { error: sanitizeError(error) };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
     // Check rate limit
     const rateLimitCheck = checkRateLimit(email);
     if (!rateLimitCheck.allowed) {
+      await securityLogger.logAuthFailure(email, 'rate_limited');
       return { error: rateLimitCheck.error };
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    recordAuthAttempt(email, !error);
-    return { error };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      recordAuthAttempt(email, !error);
+      
+      if (error) {
+        await securityLogger.logAuthFailure(email, error.message);
+        return { error: sanitizeError(error) };
+      }
+      
+      return { error: null };
+    } catch (error) {
+      await securityLogger.logAuthFailure(email, 'unexpected_error');
+      logError(error, 'signIn');
+      recordAuthAttempt(email, false);
+      return { error: sanitizeError(error) };
+    }
   };
 
   const signOut = async () => {
