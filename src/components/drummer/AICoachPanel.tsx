@@ -49,10 +49,19 @@ export const AICoachPanel = ({ bpm, timeSignature }: AICoachPanelProps) => {
       });
 
       if (functionError) {
+        // Check for authentication error
+        if (functionError.message?.includes('not authenticated') || functionData?.error === 'Unauthorized') {
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to use the AI Practice Coach.",
+            variant: "destructive"
+          });
+          return;
+        }
         throw functionError;
       }
 
-      if (functionData.error) {
+      if (functionData?.error) {
         if (functionData.error === 'trial_ended') {
           setTrialEnded(true);
           setResponse(functionData.message);
@@ -100,7 +109,7 @@ export const AICoachPanel = ({ bpm, timeSignature }: AICoachPanelProps) => {
             AI Practice Coach
           </CardTitle>
           <CardDescription>
-            Get personalized practice advice for Scottish pipe band drumming
+            Your personal drumming coach - Ask for practice tips, technique advice, or session recommendations. Keep it concise (under 150 words works best).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -126,17 +135,22 @@ export const AICoachPanel = ({ bpm, timeSignature }: AICoachPanelProps) => {
           <div className="space-y-2">
             <label className="text-sm font-medium">Your Question</label>
             <Textarea
-              placeholder="Ask for practice tips, technique advice, or session recommendations... 
-              
-Examples:
+              placeholder="Example questions:
 • How can I improve my flam technique?
-• Suggest a practice routine for 6/8 marches
-• What should I focus on at 92 BPM?"
+• Suggest a 20-minute practice routine for 6/8 marches
+• What exercises help with stick control at 92 BPM?
+• Tips for playing grace notes cleanly?
+
+Keep it focused - the coach gives advice, not code or notation."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              rows={5}
+              rows={6}
               disabled={loading || trialEnded}
+              maxLength={500}
             />
+            <p className="text-xs text-muted-foreground text-right">
+              {message.length}/500 characters
+            </p>
           </div>
 
           <Button 
@@ -168,11 +182,18 @@ Examples:
           )}
 
           <div className="text-xs text-muted-foreground pt-2 border-t">
-            <p className="font-semibold mb-1">Tips for better results:</p>
+            <p className="font-semibold mb-1">What the AI Coach can help with:</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>Be specific about what you're practicing</li>
-              <li>Mention your current skill level if relevant</li>
-              <li>Ask about Scottish pipe band traditions and techniques</li>
+              <li>Practice routines and technique improvement tips</li>
+              <li>Scottish pipe band drumming traditions and terminology</li>
+              <li>Metronome usage strategies and tempo progression</li>
+              <li>Specific rudiment practice advice</li>
+            </ul>
+            <p className="font-semibold mt-3 mb-1">What it can't do:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Create musical notation or scores</li>
+              <li>Add features or buttons to this app</li>
+              <li>Process uploaded files or PDFs</li>
             </ul>
           </div>
         </CardContent>
