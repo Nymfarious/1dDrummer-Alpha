@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { Circle, Upload, Download, Trash2, Mic, Play, Pause, Check, X, Edit2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,6 +23,8 @@ export const RecordingPanel = () => {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [currentRecording, setCurrentRecording] = useState<Recording | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [renameDialog, setRenameDialog] = useState<{ open: boolean; recordingId: string; currentName: string }>({
     open: false,
     recordingId: '',
@@ -34,6 +37,7 @@ export const RecordingPanel = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const progressTimerRef = useRef<number | null>(null);
   
   const { toast } = useToast();
 
@@ -126,23 +130,50 @@ export const RecordingPanel = () => {
   };
 
   const playRecording = (recording: Recording) => {
-    if (playingId === recording.id) {
-      audioRef.current?.pause();
+    if (playingId === recording.id && audioRef.current) {
+      // Pause current playback
+      audioRef.current.pause();
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+      }
       setPlayingId(null);
     } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
+      // Start or resume playback
+      if (!audioRef.current || playingId !== recording.id) {
+        // Create new audio instance
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        
+        const audio = new Audio(recording.url);
+        audioRef.current = audio;
+        
+        audio.onloadedmetadata = () => {
+          setDuration(audio.duration);
+        };
+        
+        audio.ontimeupdate = () => {
+          setCurrentTime(audio.currentTime);
+        };
+        
+        audio.onended = () => {
+          setPlayingId(null);
+          setCurrentTime(0);
+          if (progressTimerRef.current) {
+            clearInterval(progressTimerRef.current);
+          }
+        };
       }
       
-      const audio = new Audio(recording.url);
-      audioRef.current = audio;
-      
-      audio.onended = () => {
-        setPlayingId(null);
-      };
-      
-      audio.play();
+      audioRef.current?.play();
       setPlayingId(recording.id);
+    }
+  };
+
+  const seekAudio = (time: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
     }
   };
 
@@ -255,12 +286,25 @@ export const RecordingPanel = () => {
               </Button>
               
               {isRecording && (
-                <div className="p-4 bg-audio-danger/10 rounded-lg border border-audio-danger/20">
+                <div className="p-4 bg-audio-danger/10 rounded-lg border border-audio-danger/20 space-y-3">
                   <div className="flex items-center justify-center gap-2">
                     <Circle size={12} className="text-audio-danger animate-pulse" fill="currentColor" />
                     <span className="text-sm font-medium">Recording: {formatTime(recordingTime)} / 1:00</span>
                   </div>
-                  <p className="text-xs text-center text-muted-foreground mt-2">
+                  <div className="space-y-1">
+                    <Slider
+                      value={[recordingTime]}
+                      max={60}
+                      step={1}
+                      disabled
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{formatTime(recordingTime)}</span>
+                      <span>1:00</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground">
                     Recording will auto-stop at 1 minute
                   </p>
                 </div>
@@ -280,9 +324,25 @@ export const RecordingPanel = () => {
                       onClick={() => playRecording(currentRecording)}
                     >
                       {playingId === currentRecording.id ? <Pause size={16} /> : <Play size={16} />}
-                      {playingId === currentRecording.id ? 'Pause' : 'Play'}
+                      {playingId === currentRecording.id ? 'Pause' : 'Resume'}
                     </Button>
                   </div>
+                  
+                  {playingId === currentRecording.id && (
+                    <div className="space-y-1">
+                      <Slider
+                        value={[currentTime]}
+                        max={duration || currentRecording.duration}
+                        step={0.1}
+                        onValueChange={(value) => seekAudio(value[0])}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{formatTime(Math.floor(currentTime))}</span>
+                        <span>{formatTime(Math.floor(duration || currentRecording.duration))}</span>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex gap-2">
                     <Button
@@ -354,22 +414,40 @@ export const RecordingPanel = () => {
                         </Button>
                       </div>
                       
+                      {playingId === recording.id && (
+                        <div className="space-y-1">
+                          <Slider
+                            value={[currentTime]}
+                            max={duration || recording.duration}
+                            step={0.1}
+                            onValueChange={(value) => seekAudio(value[0])}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{formatTime(Math.floor(currentTime))}</span>
+                            <span>{formatTime(Math.floor(duration || recording.duration))}</span>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 relative"
                           onClick={() => downloadRecording(recording, 'webm')}
                         >
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
                           <Download size={14} />
                           Save WebM
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 relative"
                           onClick={() => downloadRecording(recording, 'wav')}
                         >
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
                           <Download size={14} />
                           Save WAV
                         </Button>
@@ -379,7 +457,7 @@ export const RecordingPanel = () => {
                         <Button
                           size="sm"
                           variant="default"
-                          className="flex-1"
+                          className="flex-1 bg-orange-500 hover:bg-orange-600"
                           onClick={() => uploadToCloud(recording)}
                           disabled={!recording.accepted}
                         >
