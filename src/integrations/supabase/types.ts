@@ -125,6 +125,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ai_access: {
+        Row: {
+          created_at: string | null
+          id: string
+          total_requests: number | null
+          trial_ends_at: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          total_requests?: number | null
+          trial_ends_at?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          total_requests?: number | null
+          trial_ends_at?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_audio_files: {
         Row: {
           created_at: string

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { Play, Music, Circle, Users, Settings, LogOut, User } from 'lucide-react';
+import { Play, Music, Circle, Users, Settings, LogOut, User, Sparkles } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -11,6 +11,7 @@ const tabs = [
   { id: 'transport', label: 'Transport', icon: Play },
   { id: 'metronome', label: 'Metronome', icon: Music },
   { id: 'recording', label: 'Recording', icon: Circle },
+  { id: 'aicoach', label: 'AI Coach', icon: Sparkles },
   { id: 'libraries', label: 'Libraries', icon: Music },
   { id: 'bandroom', label: 'Band Room', icon: Users },
   { id: 'settings', label: 'Settings', icon: Settings }

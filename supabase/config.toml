@@ -1,1 +1,4 @@
 project_id = "stnwvookqxwhzkirgtkq"
+
+[functions.practice-coach]
+verify_jwt = true

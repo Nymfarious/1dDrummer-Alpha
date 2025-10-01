@@ -8,6 +8,7 @@ import { MobileMetronomePanel } from '@/components/drummer/MobileMetronomePanel'
 import { RecordingPanel } from '@/components/drummer/RecordingPanel';
 import { BandRoomPanel } from '@/components/drummer/BandRoomPanel';
 import { SettingsPanel } from '@/components/drummer/SettingsPanel';
+import { AICoachPanel } from '@/components/drummer/AICoachPanel';
 import Libraries from '@/pages/Libraries';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -89,6 +90,8 @@ const DrummerStudio = () => {
         );
       case 'recording':
         return <RecordingPanel />;
+      case 'aicoach':
+        return <AICoachPanel bpm={bpm} timeSignature={timeSig} />;
       case 'libraries':
         return <Libraries />;
       case 'bandroom':

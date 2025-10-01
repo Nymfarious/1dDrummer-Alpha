@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { Play, Music, Circle, Users, Settings, LogOut, User, Menu } from 'lucide-react';
+import { Play, Music, Circle, Users, Settings, LogOut, User, Menu, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import {
   Sheet,
@@ -19,6 +19,7 @@ const tabs = [
   { id: 'transport', label: 'Transport', icon: Play },
   { id: 'metronome', label: 'Metronome', icon: Music },
   { id: 'recording', label: 'Recording', icon: Circle },
+  { id: 'aicoach', label: 'AI Coach', icon: Sparkles },
   { id: 'libraries', label: 'Libraries', icon: Music },
   { id: 'bandroom', label: 'Band Room', icon: Users },
   { id: 'settings', label: 'Settings', icon: Settings }
