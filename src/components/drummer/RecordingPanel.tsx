@@ -1,38 +1,104 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Circle, Upload, Download, Trash2, Mic } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Circle, Upload, Download, Trash2, Mic, Play, Pause, Check, X, Edit2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+interface Recording {
+  id: string;
+  name: string;
+  blob: Blob;
+  url: string;
+  duration: number;
+  timestamp: Date;
+  accepted: boolean;
+}
 
 export const RecordingPanel = () => {
   const [isRecording, setIsRecording] = useState(false);
-  const [recordings, setRecordings] = useState<string[]>([]);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [currentRecording, setCurrentRecording] = useState<Recording | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [renameDialog, setRenameDialog] = useState<{ open: boolean; recordingId: string; currentName: string }>({
+    open: false,
+    recordingId: '',
+    currentName: ''
+  });
+  const [newName, setNewName] = useState('');
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
   const { toast } = useToast();
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setIsRecording(true);
+      streamRef.current = stream;
       
-      toast({
-        title: "Recording Started",
-        description: "2-minute session recording in progress...",
-      });
-
-      // Simulate 2-minute recording
-      setTimeout(() => {
-        setIsRecording(false);
-        const recordingName = `Session ${new Date().toLocaleTimeString()}`;
-        setRecordings(prev => [...prev, recordingName]);
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        const newRecording: Recording = {
+          id: Date.now().toString(),
+          name: `Session ${new Date().toLocaleTimeString()}`,
+          blob: audioBlob,
+          url: audioUrl,
+          duration: recordingTime,
+          timestamp: new Date(),
+          accepted: false
+        };
+        
+        setCurrentRecording(newRecording);
+        setRecordingTime(0);
+        
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
         
         toast({
           title: "Recording Complete",
-          description: "2-minute session saved successfully!",
+          description: "Review your recording - replay, accept, or re-record.",
         });
-        
-        // Stop the stream
-        stream.getTracks().forEach(track => track.stop());
-      }, 120000); // 2 minutes
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Timer to track recording duration
+      timerRef.current = window.setInterval(() => {
+        setRecordingTime(prev => {
+          const newTime = prev + 1;
+          // Auto-stop at 60 seconds (1 minute)
+          if (newTime >= 60) {
+            stopRecording();
+          }
+          return newTime;
+        });
+      }, 1000);
+      
+      toast({
+        title: "Recording Started",
+        description: "Maximum duration: 1 minute",
+      });
       
     } catch (error) {
       toast({
@@ -44,104 +110,323 @@ export const RecordingPanel = () => {
   };
 
   const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+    
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    
     setIsRecording(false);
+  };
+
+  const playRecording = (recording: Recording) => {
+    if (playingId === recording.id) {
+      audioRef.current?.pause();
+      setPlayingId(null);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      
+      const audio = new Audio(recording.url);
+      audioRef.current = audio;
+      
+      audio.onended = () => {
+        setPlayingId(null);
+      };
+      
+      audio.play();
+      setPlayingId(recording.id);
+    }
+  };
+
+  const acceptRecording = () => {
+    if (currentRecording) {
+      setRecordings(prev => [...prev, { ...currentRecording, accepted: true }]);
+      setCurrentRecording(null);
+      toast({
+        title: "Recording Saved",
+        description: "Recording added to your library. You can now upload it to cloud.",
+      });
+    }
+  };
+
+  const reRecord = () => {
+    if (currentRecording) {
+      URL.revokeObjectURL(currentRecording.url);
+      setCurrentRecording(null);
+    }
+  };
+
+  const downloadRecording = (recording: Recording, format: 'webm' | 'wav') => {
+    const link = document.createElement('a');
+    link.href = recording.url;
+    link.download = `${recording.name}.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
     toast({
-      title: "Recording Stopped",
-      description: "Session recording ended early",
+      title: "Download Started",
+      description: `Saving ${recording.name}.${format}`,
     });
   };
 
-  return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-foreground mb-6">Recording Studio</h2>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recording Controls */}
-        <Card className="bg-gradient-card border-border card-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-accent">
-              <Mic size={20} />
-              Audio Recording
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button
-              onClick={isRecording ? stopRecording : startRecording}
-              variant={isRecording ? "audio-danger" : "audio"}
-              size="wide"
-              className="w-full"
-            >
-              <Circle 
-                size={20} 
-                fill={isRecording ? "currentColor" : "transparent"} 
-                className={isRecording ? "animate-pulse" : ""}
-              />
-              {isRecording ? 'Stop Recording' : 'Start 2-Min Recording'}
-            </Button>
-            
-            <Button
-              variant="audio-inactive"
-              size="wide"
-              className="w-full status-inactive"
-              disabled
-            >
-              <Upload size={20} />
-              Upload to Cloud
-            </Button>
-            
-            {isRecording && (
-              <div className="p-4 bg-audio-danger/10 rounded-lg border border-audio-danger/20">
-                <div className="flex items-center justify-center gap-2">
-                  <Circle size={12} className="text-audio-danger animate-pulse" fill="currentColor" />
-                  <span className="text-sm font-medium">Recording in progress...</span>
-                </div>
-                <p className="text-xs text-center text-muted-foreground mt-2">
-                  Session will auto-stop after 2 minutes
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+  const deleteRecording = (recordingId: string) => {
+    setRecordings(prev => {
+      const recording = prev.find(r => r.id === recordingId);
+      if (recording) {
+        URL.revokeObjectURL(recording.url);
+      }
+      return prev.filter(r => r.id !== recordingId);
+    });
+    
+    toast({
+      title: "Recording Deleted",
+      description: "Recording removed from library",
+    });
+  };
 
-        {/* Recordings List */}
-        <Card className="bg-gradient-card border-border card-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-accent">
-              <Download size={20} />
-              Your Recordings
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recordings.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Mic size={48} className="mx-auto mb-4 opacity-50" />
-                <p>No recordings yet</p>
-                <p className="text-sm">Start recording to see your sessions here</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recordings.map((recording, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-secondary rounded-lg border border-border">
-                    <span className="text-sm font-medium">{recording}</span>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
-                        <Download size={14} />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="destructive"
-                        onClick={() => setRecordings(prev => prev.filter((_, i) => i !== index))}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
+  const openRenameDialog = (recordingId: string, currentName: string) => {
+    setRenameDialog({ open: true, recordingId, currentName });
+    setNewName(currentName);
+  };
+
+  const renameRecording = () => {
+    if (newName.trim()) {
+      setRecordings(prev => prev.map(r => 
+        r.id === renameDialog.recordingId ? { ...r, name: newName.trim() } : r
+      ));
+      setRenameDialog({ open: false, recordingId: '', currentName: '' });
+      toast({
+        title: "Recording Renamed",
+        description: `Renamed to "${newName.trim()}"`,
+      });
+    }
+  };
+
+  const uploadToCloud = (recording: Recording) => {
+    toast({
+      title: "Upload to Cloud",
+      description: "Cloud upload feature coming soon!",
+    });
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <>
+      <div className="space-y-6">
+        <h2 className="text-3xl font-bold text-foreground mb-6">Recording Studio</h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recording Controls */}
+          <Card className="bg-gradient-card border-border card-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-accent">
+                <Mic size={20} />
+                Audio Recording
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                onClick={isRecording ? stopRecording : startRecording}
+                variant={isRecording ? "audio-danger" : "audio"}
+                size="wide"
+                className="w-full"
+                disabled={!!currentRecording}
+              >
+                <Circle 
+                  size={20} 
+                  fill={isRecording ? "currentColor" : "transparent"} 
+                  className={isRecording ? "animate-pulse" : ""}
+                />
+                {isRecording ? `Stop Recording (${formatTime(recordingTime)})` : 'Start Recording (1 Min Max)'}
+              </Button>
+              
+              {isRecording && (
+                <div className="p-4 bg-audio-danger/10 rounded-lg border border-audio-danger/20">
+                  <div className="flex items-center justify-center gap-2">
+                    <Circle size={12} className="text-audio-danger animate-pulse" fill="currentColor" />
+                    <span className="text-sm font-medium">Recording: {formatTime(recordingTime)} / 1:00</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    Recording will auto-stop at 1 minute
+                  </p>
+                </div>
+              )}
+
+              {/* Current Recording Review */}
+              {currentRecording && (
+                <div className="p-4 bg-primary/10 rounded-lg border border-primary/20 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">New Recording Ready</p>
+                      <p className="text-xs text-muted-foreground">{formatTime(currentRecording.duration)}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={playingId === currentRecording.id ? "outline" : "default"}
+                      onClick={() => playRecording(currentRecording)}
+                    >
+                      {playingId === currentRecording.id ? <Pause size={16} /> : <Play size={16} />}
+                      {playingId === currentRecording.id ? 'Pause' : 'Play'}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="flex-1"
+                      onClick={acceptRecording}
+                    >
+                      <Check size={16} />
+                      Accept & Save
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={reRecord}
+                    >
+                      <X size={16} />
+                      Discard & Re-record
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recordings Library */}
+          <Card className="bg-gradient-card border-border card-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-accent">
+                <Download size={20} />
+                Your Recordings ({recordings.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recordings.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Mic size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No saved recordings yet</p>
+                  <p className="text-sm">Accept recordings to add them to your library</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {recordings.map((recording) => (
+                    <div key={recording.id} className="p-3 bg-secondary rounded-lg border border-border space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium truncate">{recording.name}</p>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => openRenameDialog(recording.id, recording.name)}
+                            >
+                              <Edit2 size={12} />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {formatTime(recording.duration)} • {recording.timestamp.toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={playingId === recording.id ? "outline" : "ghost"}
+                          onClick={() => playRecording(recording)}
+                        >
+                          {playingId === recording.id ? <Pause size={14} /> : <Play size={14} />}
+                        </Button>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => downloadRecording(recording, 'webm')}
+                        >
+                          <Download size={14} />
+                          Save WebM
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => downloadRecording(recording, 'wav')}
+                        >
+                          <Download size={14} />
+                          Save WAV
+                        </Button>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="flex-1"
+                          onClick={() => uploadToCloud(recording)}
+                          disabled={!recording.accepted}
+                        >
+                          <Upload size={14} />
+                          Upload to Cloud
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteRecording(recording.id)}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+
+      {/* Rename Dialog */}
+      <Dialog open={renameDialog.open} onOpenChange={(open) => !open && setRenameDialog({ open: false, recordingId: '', currentName: '' })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Recording</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Enter new name..."
+              onKeyDown={(e) => e.key === 'Enter' && renameRecording()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameDialog({ open: false, recordingId: '', currentName: '' })}>
+              Cancel
+            </Button>
+            <Button onClick={renameRecording} disabled={!newName.trim()}>
+              Rename
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
