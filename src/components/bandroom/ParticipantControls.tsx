@@ -1,8 +1,13 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Mic, MicOff, Hand, MessageCircle } from 'lucide-react';
+import { Mic, MicOff, Hand, MessageCircle, Settings, Video, VideoOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface ParticipantControlsProps {
   onHandRaise: () => void;
@@ -12,6 +17,7 @@ interface ParticipantControlsProps {
 export const ParticipantControls = ({ onHandRaise, onMessageOpen }: ParticipantControlsProps) => {
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
   const [isPushToTalk, setIsPushToTalk] = useState(false);
   const [handRaised, setHandRaised] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -39,6 +45,14 @@ export const ParticipantControls = ({ onHandRaise, onMessageOpen }: ParticipantC
     setIsMuted(!isMuted);
     toast({
       title: isMuted ? "Microphone unmuted" : "Microphone muted",
+      duration: 2000,
+    });
+  };
+
+  const handleVideoToggle = () => {
+    setIsVideoOff(!isVideoOff);
+    toast({
+      title: isVideoOff ? "Video enabled" : "Video disabled",
       duration: 2000,
     });
   };
@@ -119,6 +133,51 @@ export const ParticipantControls = ({ onHandRaise, onMessageOpen }: ParticipantC
             <MessageCircle size={24} />
             <span className="text-xs mt-1">Messages</span>
           </Button>
+          
+          {/* Settings */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="audio-inactive"
+                size="audio"
+                className="flex-col h-auto py-3 px-6"
+              >
+                <Settings size={24} />
+                <span className="text-xs mt-1">Settings</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-3 text-sm">Audio & Video Settings</h4>
+                  <div className="space-y-2">
+                    <Button
+                      variant={isVideoOff ? "outline" : "default"}
+                      className="w-full justify-start"
+                      onClick={handleVideoToggle}
+                    >
+                      {isVideoOff ? <VideoOff size={16} className="mr-2" /> : <Video size={16} className="mr-2" />}
+                      {isVideoOff ? 'Enable Video' : 'Disable Video'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                    >
+                      <Settings size={16} className="mr-2" />
+                      Audio Devices
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                    >
+                      <Video size={16} className="mr-2" />
+                      Video Devices
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </CardContent>
     </Card>
