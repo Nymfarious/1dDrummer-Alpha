@@ -130,42 +130,45 @@ export const RecordingPanel = () => {
   };
 
   const playRecording = (recording: Recording) => {
-    if (playingId === recording.id && audioRef.current) {
-      // Pause current playback
+    // If currently playing this recording, pause it
+    if (playingId === recording.id && audioRef.current && !audioRef.current.paused) {
       audioRef.current.pause();
-      if (progressTimerRef.current) {
-        clearInterval(progressTimerRef.current);
-      }
       setPlayingId(null);
-    } else {
-      // Start or resume playback
-      if (!audioRef.current || playingId !== recording.id) {
-        // Create new audio instance
-        if (audioRef.current) {
-          audioRef.current.pause();
-        }
-        
-        const audio = new Audio(recording.url);
-        audioRef.current = audio;
-        
-        audio.onloadedmetadata = () => {
-          setDuration(audio.duration);
-        };
-        
-        audio.ontimeupdate = () => {
-          setCurrentTime(audio.currentTime);
-        };
-        
-        audio.onended = () => {
-          setPlayingId(null);
-          setCurrentTime(0);
-          if (progressTimerRef.current) {
-            clearInterval(progressTimerRef.current);
-          }
-        };
+      return;
+    }
+    
+    // If paused on this recording, resume it
+    if (playingId === recording.id && audioRef.current && audioRef.current.paused) {
+      audioRef.current.play();
+      setPlayingId(recording.id);
+      return;
+    }
+    
+    // If switching to a different recording or first time playing
+    if (!audioRef.current || playingId !== recording.id) {
+      // Clean up previous audio if exists
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
       }
       
-      audioRef.current?.play();
+      const audio = new Audio(recording.url);
+      audioRef.current = audio;
+      
+      audio.onloadedmetadata = () => {
+        setDuration(audio.duration);
+      };
+      
+      audio.ontimeupdate = () => {
+        setCurrentTime(audio.currentTime);
+      };
+      
+      audio.onended = () => {
+        setPlayingId(null);
+        setCurrentTime(0);
+      };
+      
+      audio.play();
       setPlayingId(recording.id);
     }
   };
@@ -320,11 +323,25 @@ export const RecordingPanel = () => {
                     </div>
                     <Button
                       size="sm"
-                      variant={playingId === currentRecording.id ? "outline" : "default"}
+                      variant={playingId === currentRecording.id && audioRef.current && !audioRef.current.paused ? "outline" : "default"}
                       onClick={() => playRecording(currentRecording)}
                     >
-                      {playingId === currentRecording.id ? <Pause size={16} /> : <Play size={16} />}
-                      {playingId === currentRecording.id ? 'Pause' : 'Resume'}
+                      {playingId === currentRecording.id && audioRef.current && !audioRef.current.paused ? (
+                        <>
+                          <Pause size={16} />
+                          Pause
+                        </>
+                      ) : playingId === currentRecording.id ? (
+                        <>
+                          <Play size={16} />
+                          Resume
+                        </>
+                      ) : (
+                        <>
+                          <Play size={16} />
+                          Play
+                        </>
+                      )}
                     </Button>
                   </div>
                   
@@ -437,7 +454,7 @@ export const RecordingPanel = () => {
                           className="flex-1 relative"
                           onClick={() => downloadRecording(recording, 'webm')}
                         >
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-green-500"></span>
                           <Download size={14} />
                           Save WebM
                         </Button>
@@ -447,7 +464,7 @@ export const RecordingPanel = () => {
                           className="flex-1 relative"
                           onClick={() => downloadRecording(recording, 'wav')}
                         >
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-green-500"></span>
                           <Download size={14} />
                           Save WAV
                         </Button>
