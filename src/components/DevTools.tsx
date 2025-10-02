@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ChevronRight, Key, Settings, Zap, Brain, Plus, Minus, X } from 'lucide-react';
+import { ChevronRight, Key, Settings, Zap, Brain, Plus, Minus, X, TestTube } from 'lucide-react';
+import { useDevSettings } from '@/contexts/DevSettingsContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -32,7 +33,10 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
     features: false,
     mcps: false,
     ai: false,
+    devOverrides: false,
   });
+
+  const { settings, updateSettings } = useDevSettings();
 
   // Captcha settings
   const [hCaptchaEnabled, setHCaptchaEnabled] = useState(false);
@@ -256,6 +260,38 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Dev Overrides Section */}
+          <div className="space-y-2">
+            <button
+              onClick={() => toggleSection('devOverrides')}
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                {renderExpandIcon(openSections.devOverrides)}
+                <TestTube className="h-4 w-4" />
+                <span className="text-sm font-medium">Dev Overrides</span>
+              </div>
+            </button>
+            
+            {openSections.devOverrides && (
+              <div className="ml-6 space-y-3 p-3 border-l-2 border-primary/20">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="guest-audio" className="text-xs">Guest Audio Upload</Label>
+                  <Switch
+                    id="guest-audio"
+                    checked={settings.guestAudioUploadOverride}
+                    onCheckedChange={(checked) => updateSettings({ guestAudioUploadOverride: checked })}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Allow guests to upload audio files for testing without authentication
+                </p>
               </div>
             )}
           </div>

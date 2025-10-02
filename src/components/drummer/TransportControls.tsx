@@ -6,9 +6,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Play, Pause, SkipBack, RotateCcw, RotateCw, Upload, Volume2, Music, FileAudio, Trash2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { secureStorage, migrateSensitiveData } from '@/lib/secureStorage';
 import { useAuth } from '@/hooks/useAuth';
+import { useDevSettings } from '@/contexts/DevSettingsContext';
 
 interface TransportControlsProps {
   bpm: number;
@@ -43,6 +45,7 @@ export const TransportControls = ({
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const { settings } = useDevSettings();
   const { 
     uploads, 
     userFiles, 
@@ -294,14 +297,26 @@ export const TransportControls = ({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-5 gap-2">
-              <Button
-                onClick={handlePlay}
-                variant={isPlaying ? "transport-active" : "transport"}
-                size="sm"
-                className="status-active flex items-center justify-center"
-              >
-                <Play size={18} />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handlePlay}
+                      variant={isPlaying ? "transport-active" : "transport"}
+                      size="sm"
+                      className="status-active flex items-center justify-center"
+                      disabled={!currentAudioFile}
+                    >
+                      <Play size={18} />
+                    </Button>
+                  </TooltipTrigger>
+                  {!currentAudioFile && (
+                    <TooltipContent>
+                      <p>Upload a file to enable playback</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
               
               <Button
                 onClick={handlePause}
@@ -345,7 +360,7 @@ export const TransportControls = ({
         {/* Audio Progress & Volume */}
         <Card className="bg-gradient-card border-border card-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-accent">
+            <CardTitle className="flex items-center gap-2 text-accent status-active">
               <Volume2 size={20} />
               Audio Control
             </CardTitle>
@@ -455,7 +470,7 @@ export const TransportControls = ({
                     onClick={() => fileInputRef.current?.click()}
                     variant="outline"
                     className="relative status-active"
-                    disabled={!user || uploadLoading}
+                    disabled={(!user && !settings.guestAudioUploadOverride) || uploadLoading}
                   >
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
                     <Upload size={20} />
@@ -473,7 +488,7 @@ export const TransportControls = ({
                   )}
                 </div>
 
-                {!user && (
+                {(!user && !settings.guestAudioUploadOverride) && (
                   <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                     <p className="text-sm text-yellow-600 dark:text-yellow-400">
                       Sign in to upload and manage your audio files securely.

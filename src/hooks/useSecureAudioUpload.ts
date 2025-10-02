@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useDevSettings } from '@/contexts/DevSettingsContext';
 import { 
   validateAudioFile, 
   generateSecureFileName, 
@@ -41,6 +42,7 @@ export const useSecureAudioUpload = () => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { settings } = useDevSettings();
 
   /**
    * Validate file before upload
@@ -53,7 +55,7 @@ export const useSecureAudioUpload = () => {
    * Upload a single audio file securely
    */
   const uploadFile = async (file: File): Promise<AudioFile | null> => {
-    if (!user) {
+    if (!user && !settings.guestAudioUploadOverride) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to upload files.",
@@ -88,7 +90,7 @@ export const useSecureAudioUpload = () => {
 
     try {
       // Generate secure file name
-      const secureFileName = generateSecureFileName(file.name, user.id);
+      const secureFileName = generateSecureFileName(file.name, user?.id || 'guest');
       
       // Update upload progress
       const uploadId = `${file.name}_${Date.now()}`;
@@ -125,25 +127,41 @@ export const useSecureAudioUpload = () => {
         console.warn('Could not get audio duration:', error);
       }
 
-      // Save file metadata to database
-      const { data: dbData, error: dbError } = await supabase
-        .from('user_audio_files')
-        .insert({
-          user_id: user.id,
+      // Save file metadata to database (skip if guest override)
+      let dbData;
+      if (user) {
+        const { data, error: dbError } = await supabase
+          .from('user_audio_files')
+          .insert({
+            user_id: user.id,
+          file_name: secureFileName,
+          original_name: file.name,
+          file_size: file.size,
+          mime_type: file.type,
+            storage_path: storageData.path,
+            duration_seconds: duration ? Math.round(duration) : null
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          // Clean up storage if database insert fails
+          await supabase.storage.from('audio-files').remove([secureFileName]);
+          throw dbError;
+        }
+        dbData = data;
+      } else {
+        // Guest mode - create temporary metadata
+        dbData = {
+          id: `guest-${Date.now()}`,
           file_name: secureFileName,
           original_name: file.name,
           file_size: file.size,
           mime_type: file.type,
           storage_path: storageData.path,
-          duration_seconds: duration ? Math.round(duration) : null
-        })
-        .select()
-        .single();
-
-      if (dbError) {
-        // Clean up storage if database insert fails
-        await supabase.storage.from('audio-files').remove([secureFileName]);
-        throw dbError;
+          duration_seconds: duration ? Math.round(duration) : null,
+          created_at: new Date().toISOString()
+        };
       }
 
       // Update progress to completed
@@ -169,7 +187,9 @@ export const useSecureAudioUpload = () => {
       setUserFiles(prev => [audioFile, ...prev]);
 
       // Log successful upload
-      await securityLogger.logFileUpload(user.id, file.name, file.size, file.type);
+      if (user) {
+        await securityLogger.logFileUpload(user.id, file.name, file.size, file.type);
+      }
 
       toast({
         title: "Upload Successful",
