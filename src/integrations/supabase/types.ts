@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bandroom_visits: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          id: string
+          room_id: string
+          user_id: string
+          visited_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          room_id: string
+          user_id: string
+          visited_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          room_id?: string
+          user_id?: string
+          visited_at?: string
+        }
+        Relationships: []
+      }
       device_sessions: {
         Row: {
           browser_info: string | null
@@ -96,9 +126,12 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          bragging_links: Json | null
           created_at: string
           full_name: string | null
           id: string
+          skill_level: number | null
+          title: string | null
           updated_at: string
           user_id: string
           username: string | null
@@ -106,9 +139,12 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          bragging_links?: Json | null
           created_at?: string
           full_name?: string | null
           id?: string
+          skill_level?: number | null
+          title?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
@@ -116,9 +152,12 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          bragging_links?: Json | null
           created_at?: string
           full_name?: string | null
           id?: string
+          skill_level?: number | null
+          title?: string | null
           updated_at?: string
           user_id?: string
           username?: string | null

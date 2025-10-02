@@ -125,8 +125,12 @@
     height: 8px;
     background: hsl(var(--audio-success));
     border-radius: 50%;
-    animation: pulse 2s infinite;
+    animation: led-pulse 2s infinite;
     z-index: 10;
+    box-shadow: 
+      0 0 8px hsl(var(--audio-success)),
+      0 0 12px hsl(var(--audio-success) / 0.6),
+      0 0 16px hsl(var(--audio-success) / 0.3);
   }
 
   .status-inactive::before {
@@ -156,6 +160,23 @@
     }
     50% {
       opacity: 0.5;
+    }
+  }
+
+  @keyframes led-pulse {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 
+        0 0 8px hsl(var(--audio-success)),
+        0 0 12px hsl(var(--audio-success) / 0.6),
+        0 0 16px hsl(var(--audio-success) / 0.3);
+    }
+    50% {
+      opacity: 0.85;
+      box-shadow: 
+        0 0 6px hsl(var(--audio-success)),
+        0 0 10px hsl(var(--audio-success) / 0.5),
+        0 0 14px hsl(var(--audio-success) / 0.25);
     }
   }
 
