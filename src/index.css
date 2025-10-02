@@ -112,15 +112,21 @@
   }
 
   /* Status indicators */
+  .status-active {
+    position: relative;
+  }
+  
   .status-active::before {
     content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
     width: 8px;
     height: 8px;
     background: hsl(var(--audio-success));
     border-radius: 50%;
-    display: inline-block;
-    margin-right: 0.5rem;
     animation: pulse 2s infinite;
+    z-index: 10;
   }
 
   .status-inactive::before {

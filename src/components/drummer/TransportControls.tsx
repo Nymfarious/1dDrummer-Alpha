@@ -293,52 +293,50 @@ export const TransportControls = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-5 gap-2">
               <Button
                 onClick={handlePlay}
                 variant={isPlaying ? "transport-active" : "transport"}
-                size="transport"
-                className="status-active"
+                size="sm"
+                className="status-active flex items-center justify-center"
               >
-                <Play size={24} />
+                <Play size={18} />
               </Button>
               
               <Button
                 onClick={handlePause}
                 variant={isPaused ? "transport-active" : "transport"}
-                size="transport"
-                className="status-active"
+                size="sm"
+                className="status-active flex items-center justify-center"
               >
-                <Pause size={24} />
+                <Pause size={18} />
               </Button>
               
               <Button
                 onClick={handleRewind}
                 variant="transport"
-                size="transport"
-                className="status-active"
+                size="sm"
+                className="status-active flex items-center justify-center"
               >
-                <SkipBack size={24} />
+                <SkipBack size={18} />
               </Button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
+              
               <Button
                 onClick={handleSkipBackward}
                 variant="transport"
-                size="transport"
-                className="status-active"
+                size="sm"
+                className="status-active flex items-center justify-center"
               >
-                <RotateCcw size={24} />
+                <RotateCcw size={18} />
               </Button>
               
               <Button
                 onClick={handleSkipForward}
                 variant="transport"
-                size="transport"
-                className="status-active"
+                size="sm"
+                className="status-active flex items-center justify-center"
               >
-                <RotateCw size={24} />
+                <RotateCw size={18} />
               </Button>
             </div>
           </CardContent>
