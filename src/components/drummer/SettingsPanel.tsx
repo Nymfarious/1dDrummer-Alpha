@@ -233,6 +233,8 @@ export const SettingsPanel = ({
                   <SelectItem value="standard">Standard</SelectItem>
                   <SelectItem value="sticks">Sticks</SelectItem>
                   <SelectItem value="high">High Tone</SelectItem>
+                  <SelectItem value="two-tone-high">Two-Tone High/Low</SelectItem>
+                  <SelectItem value="two-tone-subtle">Two-Tone Subtle</SelectItem>
                 </SelectContent>
               </Select>
             </div>

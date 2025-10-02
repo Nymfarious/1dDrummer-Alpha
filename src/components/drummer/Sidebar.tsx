@@ -12,7 +12,7 @@ const tabs = [
   { id: 'metronome', label: 'Metronome', icon: Music },
   { id: 'recording', label: 'Recording', icon: Circle },
   { id: 'aicoach', label: 'AI Coach', icon: Sparkles },
-  { id: 'libraries', label: 'Libraries', icon: Music },
+  { id: 'libraries', label: 'Library', icon: Music },
   { id: 'bandroom', label: 'Band Room', icon: Users },
   { id: 'settings', label: 'Settings', icon: Settings }
 ];

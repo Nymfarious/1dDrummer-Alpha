@@ -435,129 +435,141 @@ export const TransportControls = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-accent">
               <Shield size={20} />
-              Secure Audio Files
+              Audio Library
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".mp3,.wav,.m4a,.mid,.midi,.mp4,.avi,.mov,.mkv"
-              multiple
-              onChange={handleFileUpload}
-              className="hidden"
-              id="secure-audio-upload"
-            />
-            
-            <div className="flex gap-4">
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                variant="outline"
-                className="relative status-active"
-                disabled={!user || uploadLoading}
-              >
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
-                <Upload size={20} />
-                {uploadLoading ? 'Uploading...' : 'Import Audio/Video'}
-              </Button>
-              
-              {uploads.length > 0 && (
-                <Button
-                  onClick={clearUploads}
-                  variant="outline"
-                  size="sm"
-                >
-                  Clear Progress
-                </Button>
-              )}
-            </div>
-
-            {!user && (
-              <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-                <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                  Sign in to upload and manage your audio files securely.
-                </p>
-              </div>
-            )}
-
-            {/* Upload Progress */}
-            {uploads.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Upload Progress</h4>
-                {uploads.map((upload, index) => (
-                  <div key={index} className="p-2 bg-secondary rounded border">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="truncate">{upload.file.name}</span>
-                      <span className="capitalize">{upload.status}</span>
-                    </div>
-                    {upload.status === 'uploading' && (
-                      <div className="w-full bg-muted rounded-full h-1 mt-1">
-                        <div 
-                          className="bg-primary h-1 rounded-full transition-all duration-300"
-                          style={{ width: `${upload.progress}%` }}
-                        />
-                      </div>
-                    )}
-                    {upload.error && (
-                      <p className="text-xs text-destructive mt-1">{upload.error}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Current File */}
-            {currentAudioFile && (
-              <div className="p-3 bg-secondary rounded-lg border border-border">
-                <p className="text-sm text-muted-foreground">Currently Loaded:</p>
-                <p className="text-sm font-medium truncate">{currentAudioFile.originalName}</p>
-                <p className="text-xs text-muted-foreground">
-                  Size: {(currentAudioFile.fileSize / 1024 / 1024).toFixed(2)} MB
-                  {currentAudioFile.durationSeconds && (
-                    <> • Duration: {Math.floor(currentAudioFile.durationSeconds / 60)}:{(currentAudioFile.durationSeconds % 60).toString().padStart(2, '0')}</>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Upload Section */}
+              <div className="space-y-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".mp3,.wav,.m4a,.mid,.midi,.mp4,.avi,.mov,.mkv"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="secure-audio-upload"
+                />
+                
+                <div className="flex gap-4">
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    className="relative status-active"
+                    disabled={!user || uploadLoading}
+                  >
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
+                    <Upload size={20} />
+                    {uploadLoading ? 'Uploading...' : 'Import Audio/Video'}
+                  </Button>
+                  
+                  {uploads.length > 0 && (
+                    <Button
+                      onClick={clearUploads}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Clear Progress
+                    </Button>
                   )}
-                </p>
-              </div>
-            )}
-
-            {/* User Files List */}
-            {user && userFiles.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Your Audio Files</h4>
-                <div className="max-h-48 overflow-y-auto space-y-2">
-                  {userFiles.slice(0, 10).map((file) => (
-                    <div key={file.id} className="flex items-center justify-between p-2 bg-secondary rounded border">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{file.originalName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {(file.fileSize / 1024 / 1024).toFixed(2)} MB
-                          {file.durationSeconds && (
-                            <> • {Math.floor(file.durationSeconds / 60)}:{(file.durationSeconds % 60).toString().padStart(2, '0')}</>
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSelectFile(file)}
-                          disabled={currentAudioFile?.id === file.id}
-                        >
-                          <FileAudio size={14} />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteFile(file)}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
                 </div>
+
+                {!user && (
+                  <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                      Sign in to upload and manage your audio files securely.
+                    </p>
+                  </div>
+                )}
+
+                {/* Upload Progress */}
+                {uploads.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Upload Progress</h4>
+                    {uploads.map((upload, index) => (
+                      <div key={index} className="p-2 bg-secondary rounded border">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="truncate">{upload.file.name}</span>
+                          <span className="capitalize">{upload.status}</span>
+                        </div>
+                        {upload.status === 'uploading' && (
+                          <div className="w-full bg-muted rounded-full h-1 mt-1">
+                            <div 
+                              className="bg-primary h-1 rounded-full transition-all duration-300"
+                              style={{ width: `${upload.progress}%` }}
+                            />
+                          </div>
+                        )}
+                        {upload.error && (
+                          <p className="text-xs text-destructive mt-1">{upload.error}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Current File */}
+                {currentAudioFile && (
+                  <div className="p-3 bg-secondary rounded-lg border border-border">
+                    <p className="text-sm text-muted-foreground">Currently Loaded:</p>
+                    <p className="text-sm font-medium truncate">{currentAudioFile.originalName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Size: {(currentAudioFile.fileSize / 1024 / 1024).toFixed(2)} MB
+                      {currentAudioFile.durationSeconds && (
+                        <> • Duration: {Math.floor(currentAudioFile.durationSeconds / 60)}:{(currentAudioFile.durationSeconds % 60).toString().padStart(2, '0')}</>
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Recents List */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Recent Files</h4>
+                {user && userFiles.length > 0 ? (
+                  <div className="max-h-80 overflow-y-auto space-y-2">
+                    {userFiles.slice(0, 10).map((file) => (
+                      <div key={file.id} className="flex items-center justify-between p-2 bg-secondary rounded border">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{file.originalName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(file.fileSize / 1024 / 1024).toFixed(2)} MB
+                            {file.durationSeconds && (
+                              <> • {Math.floor(file.durationSeconds / 60)}:{(file.durationSeconds % 60).toString().padStart(2, '0')}</>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSelectFile(file)}
+                            disabled={currentAudioFile?.id === file.id}
+                          >
+                            <FileAudio size={14} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteFile(file)}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 bg-secondary/50 rounded-lg border border-border text-center">
+                    <FileAudio size={32} className="mx-auto mb-2 opacity-50" />
+                    <p className="text-sm text-muted-foreground">
+                      {user ? 'No files uploaded yet' : 'Sign in to see recent files'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

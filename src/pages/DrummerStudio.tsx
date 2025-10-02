@@ -9,6 +9,7 @@ import { RecordingPanel } from '@/components/drummer/RecordingPanel';
 import { BandRoomPanel } from '@/components/drummer/BandRoomPanel';
 import { SettingsPanel } from '@/components/drummer/SettingsPanel';
 import { AICoachPanel } from '@/components/drummer/AICoachPanel';
+import { SoundMapperButton } from '@/components/drummer/SoundMapperButton';
 import Libraries from '@/pages/Libraries';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -143,6 +144,9 @@ const DrummerStudio = () => {
       
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
+          <div className="flex justify-end mb-4">
+            <SoundMapperButton />
+          </div>
           {renderContent()}
         </div>
       </main>

@@ -287,26 +287,16 @@ export const BandRoomPanel = () => {
       </div>
 
       {/* Features Info */}
-      <Card className="bg-card border-border card-shadow">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-              <Video size={24} className="text-primary-foreground" />
+      <Card className="bg-card/50 border-border">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Video size={16} className="text-primary" />
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-foreground mb-2">
-                Powered by Jitsi
-              </h3>
-              <p className="text-foreground/80 mb-4">
-                High-quality video chat with mute, push-to-talk, hand raise, and direct messaging between participants across all rooms.
+            <div className="flex-1">
+              <p className="text-sm text-foreground/70">
+                Powered by <span className="font-semibold text-primary">Jitsi</span> • Video, Audio, Messaging & Breakout Rooms
               </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-xs px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full">Video & Audio</span>
-                <span className="text-xs px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full">Push to Talk</span>
-                <span className="text-xs px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full">Hand Raise</span>
-                <span className="text-xs px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full">Direct Messages</span>
-                <span className="text-xs px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full">Breakout Rooms</span>
-              </div>
             </div>
           </div>
         </CardContent>

@@ -36,6 +36,8 @@ export const MetronomePanel = ({
   const audioContextRef = useRef<AudioContext | null>(null);
   const { toast } = useToast();
 
+  const beatCountRef = useRef(0);
+
   const playMetronomeSound = () => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -48,25 +50,38 @@ export const MetronomePanel = ({
     oscillator.connect(gainNode);
     gainNode.connect(ctx.destination);
 
+    let frequency = 800;
+    
     // Different sounds based on selection
     switch (metronomeSound) {
       case 'standard':
-        oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+        frequency = 800;
         break;
       case 'sticks':
-        oscillator.frequency.setValueAtTime(1200, ctx.currentTime);
+        frequency = 1200;
         oscillator.type = 'square';
         break;
       case 'high':
-        oscillator.frequency.setValueAtTime(1600, ctx.currentTime);
+        frequency = 1600;
+        break;
+      case 'two-tone-high':
+        // High-Low-High-Low pattern
+        frequency = beatCountRef.current % 2 === 0 ? 1200 : 600;
+        break;
+      case 'two-tone-subtle':
+        // Subtle High-Low pattern
+        frequency = beatCountRef.current % 2 === 0 ? 900 : 700;
         break;
     }
 
+    oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
     gainNode.gain.setValueAtTime((metronomeVolume / 100) * 0.5, ctx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
 
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + 0.1);
+    
+    beatCountRef.current++;
   };
 
   const startMetronome = () => {
@@ -127,40 +142,71 @@ export const MetronomePanel = ({
   }, []);
 
   const testSound = (sound: string) => {
-    const originalSound = metronomeSound;
     setMetronomeSound(sound);
     
-    // Temporarily set the sound and play it
+    // Play test sound
     setTimeout(() => {
       if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 
       const ctx = audioContextRef.current;
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
+      
+      // For two-tone sounds, play both tones in sequence
+      if (sound === 'two-tone-high' || sound === 'two-tone-subtle') {
+        const freq1 = sound === 'two-tone-high' ? 1200 : 900;
+        const freq2 = sound === 'two-tone-high' ? 600 : 700;
+        
+        // Play first tone
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.frequency.setValueAtTime(freq1, ctx.currentTime);
+        gain1.gain.setValueAtTime((metronomeVolume / 100) * 0.5, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        osc1.start(ctx.currentTime);
+        osc1.stop(ctx.currentTime + 0.1);
+        
+        // Play second tone after a short delay
+        setTimeout(() => {
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.frequency.setValueAtTime(freq2, ctx.currentTime);
+          gain2.gain.setValueAtTime((metronomeVolume / 100) * 0.5, ctx.currentTime);
+          gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+          osc2.start(ctx.currentTime);
+          osc2.stop(ctx.currentTime + 0.1);
+        }, 200);
+      } else {
+        // Single tone sounds
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
 
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
+        let frequency = 800;
+        switch (sound) {
+          case 'standard':
+            frequency = 800;
+            break;
+          case 'sticks':
+            frequency = 1200;
+            oscillator.type = 'square';
+            break;
+          case 'high':
+            frequency = 1600;
+            break;
+        }
 
-      switch (sound) {
-        case 'standard':
-          oscillator.frequency.setValueAtTime(800, ctx.currentTime);
-          break;
-        case 'sticks':
-          oscillator.frequency.setValueAtTime(1200, ctx.currentTime);
-          oscillator.type = 'square';
-          break;
-        case 'high':
-          oscillator.frequency.setValueAtTime(1600, ctx.currentTime);
-          break;
+        oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
+        gainNode.gain.setValueAtTime((metronomeVolume / 100) * 0.5, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.1);
       }
-
-      gainNode.gain.setValueAtTime((metronomeVolume / 100) * 0.5, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.1);
     }, 50);
   };
 
@@ -243,6 +289,24 @@ export const MetronomePanel = ({
             >
               <Clock size={16} />
               High Tone
+            </Button>
+            
+            <Button
+              onClick={() => testSound('two-tone-high')}
+              variant={metronomeSound === 'two-tone-high' ? "metronome" : "audio-inactive"}
+              className="w-full justify-start gap-3"
+            >
+              <Music size={16} />
+              Two-Tone High/Low
+            </Button>
+            
+            <Button
+              onClick={() => testSound('two-tone-subtle')}
+              variant={metronomeSound === 'two-tone-subtle' ? "metronome" : "audio-inactive"}
+              className="w-full justify-start gap-3"
+            >
+              <Music size={16} />
+              Two-Tone Subtle
             </Button>
           </CardContent>
         </Card>
