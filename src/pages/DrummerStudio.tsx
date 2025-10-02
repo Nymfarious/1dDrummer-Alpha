@@ -107,6 +107,8 @@ const DrummerStudio = () => {
             setMetronomeSound={setMetronomeSound}
             metronomeVolume={metronomeVolume}
             setMetronomeVolume={setMetronomeVolume}
+            metronomeEnabled={metronomeEnabled}
+            setMetronomeEnabled={setMetronomeEnabled}
           />
         );
       default:

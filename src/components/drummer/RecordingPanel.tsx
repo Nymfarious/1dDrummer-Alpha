@@ -473,11 +473,12 @@ export const RecordingPanel = () => {
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          variant="default"
-                          className="flex-1 bg-orange-500 hover:bg-orange-600"
+                          variant="outline"
+                          className="flex-1 relative"
                           onClick={() => uploadToCloud(recording)}
                           disabled={!recording.accepted}
                         >
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
                           <Upload size={14} />
                           Upload to Cloud
                         </Button>

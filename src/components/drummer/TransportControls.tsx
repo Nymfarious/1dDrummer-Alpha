@@ -412,17 +412,6 @@ export const TransportControls = ({
               />
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="metronome-enabled"
-                checked={metronomeEnabled}
-                onCheckedChange={setMetronomeEnabled}
-              />
-              <Label htmlFor="metronome-enabled" className="text-sm">
-                Enable Metronome
-              </Label>
-            </div>
-            
             <Button
               onClick={toggleMetronome}
               variant={metronomeOn ? "audio-active" : "metronome"}
@@ -432,6 +421,12 @@ export const TransportControls = ({
               <Music size={20} />
               {metronomeOn ? 'Stop Metronome' : 'Start Metronome'}
             </Button>
+            
+            {!metronomeEnabled && (
+              <p className="text-xs text-muted-foreground text-center">
+                Enable metronome in Settings to use
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -447,7 +442,7 @@ export const TransportControls = ({
             <input
               ref={fileInputRef}
               type="file"
-              accept=".mp3,.wav,.m4a"
+              accept=".mp3,.wav,.m4a,.mid,.midi,.mp4,.avi,.mov,.mkv"
               multiple
               onChange={handleFileUpload}
               className="hidden"
@@ -457,12 +452,13 @@ export const TransportControls = ({
             <div className="flex gap-4">
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                variant="audio"
-                className="status-active"
+                variant="outline"
+                className="relative status-active"
                 disabled={!user || uploadLoading}
               >
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
                 <Upload size={20} />
-                {uploadLoading ? 'Uploading...' : 'Upload Audio Files'}
+                {uploadLoading ? 'Uploading...' : 'Import Audio/Video'}
               </Button>
               
               {uploads.length > 0 && (

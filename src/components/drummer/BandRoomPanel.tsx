@@ -7,6 +7,7 @@ import { RoomList } from '@/components/bandroom/RoomList';
 import { ParticipantControls } from '@/components/bandroom/ParticipantControls';
 import { DirectMessaging } from '@/components/bandroom/DirectMessaging';
 import { CreateRoomDialog } from '@/components/bandroom/CreateRoomDialog';
+import { ParticipantNameDialog } from '@/components/bandroom/ParticipantNameDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -35,6 +36,9 @@ export const BandRoomPanel = () => {
   const [showMessaging, setShowMessaging] = useState(false);
   const [showRoomsList, setShowRoomsList] = useState(false);
   const [isPanelPinned, setIsPanelPinned] = useState(false);
+  const [showNameDialog, setShowNameDialog] = useState(false);
+  const [pendingRoomId, setPendingRoomId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
   const [rooms, setRooms] = useState<Room[]>([
     { id: 'band-hall', name: 'Band Hall', participantCount: 0, participants: [], isParent: true, isFavorite: false }
   ]);
@@ -59,6 +63,17 @@ export const BandRoomPanel = () => {
   };
 
   const handleRoomSelect = (roomId: string) => {
+    // Show name dialog if display name not set
+    if (!displayName) {
+      setPendingRoomId(roomId);
+      setShowNameDialog(true);
+      return;
+    }
+    
+    joinRoom(roomId);
+  };
+
+  const joinRoom = (roomId: string) => {
     // Update last visited timestamp
     setRooms(prev => prev.map(room => 
       room.id === roomId 
@@ -74,6 +89,15 @@ export const BandRoomPanel = () => {
       title: "Joining room",
       description: rooms.find(r => r.id === roomId)?.name,
     });
+  };
+
+  const handleNameConfirm = (name: string) => {
+    setDisplayName(name);
+    setShowNameDialog(false);
+    if (pendingRoomId) {
+      joinRoom(pendingRoomId);
+      setPendingRoomId(null);
+    }
   };
 
   const handleLeaveRoom = () => {
@@ -196,7 +220,7 @@ export const BandRoomPanel = () => {
                 <CardContent className="p-4">
                   <JitsiMeet
                     roomName={currentRoom}
-                    displayName={user?.email?.split('@')[0] || 'Participant'}
+                    displayName={displayName || user?.email?.split('@')[0] || 'Participant'}
                     onParticipantJoined={handleParticipantJoined}
                     onParticipantLeft={handleParticipantLeft}
                   />
@@ -287,6 +311,15 @@ export const BandRoomPanel = () => {
           </div>
         </CardContent>
       </Card>
+
+      <ParticipantNameDialog
+        open={showNameDialog}
+        onConfirm={handleNameConfirm}
+        onCancel={() => {
+          setShowNameDialog(false);
+          setPendingRoomId(null);
+        }}
+      />
     </div>
   );
 };

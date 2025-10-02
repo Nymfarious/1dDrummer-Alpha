@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings, Palette, Save, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,8 @@ interface SettingsPanelProps {
   setMetronomeSound: (sound: string) => void;
   metronomeVolume: number;
   setMetronomeVolume: (volume: number) => void;
+  metronomeEnabled: boolean;
+  setMetronomeEnabled: (enabled: boolean) => void;
 }
 
 interface UserSettings {
@@ -36,7 +39,9 @@ export const SettingsPanel = ({
   metronomeSound,
   setMetronomeSound,
   metronomeVolume,
-  setMetronomeVolume
+  setMetronomeVolume,
+  metronomeEnabled,
+  setMetronomeEnabled
 }: SettingsPanelProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -243,6 +248,17 @@ export const SettingsPanel = ({
                 max="100"
                 className="bg-input border-border focus:border-primary"
               />
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="metronome-enabled"
+                checked={metronomeEnabled}
+                onCheckedChange={setMetronomeEnabled}
+              />
+              <Label htmlFor="metronome-enabled" className="text-sm cursor-pointer">
+                Enable Metronome
+              </Label>
             </div>
           </CardContent>
         </Card>
