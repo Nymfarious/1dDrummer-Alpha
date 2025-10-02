@@ -8,6 +8,7 @@ import { ParticipantControls } from '@/components/bandroom/ParticipantControls';
 import { DirectMessaging } from '@/components/bandroom/DirectMessaging';
 import { CreateRoomDialog } from '@/components/bandroom/CreateRoomDialog';
 import { ParticipantNameDialog } from '@/components/bandroom/ParticipantNameDialog';
+import { LobbyChat } from '@/components/bandroom/LobbyChat';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -56,9 +57,11 @@ export const BandRoomPanel = () => {
     };
 
     setRooms(prev => [...prev, newRoom]);
+    
+    const roomType = isBreakout ? 'Breakout room' : 'Main room';
     toast({
-      title: "Room created",
-      description: `${roomName} is ready for participants`,
+      title: "✓ Room created successfully",
+      description: `${roomType} "${roomName}" is ready! ${isBreakout ? 'This room is connected to Band Hall.' : ''}`,
     });
   };
 
@@ -255,7 +258,7 @@ export const BandRoomPanel = () => {
         </p>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Create Room */}
         <Card className="bg-gradient-card border-border card-shadow">
           <CardHeader>
@@ -271,18 +274,33 @@ export const BandRoomPanel = () => {
               <h4 className="font-semibold mb-2 text-sm">About Rooms</h4>
               <ul className="text-xs text-muted-foreground space-y-1">
                 <li>• Band Hall is the main gathering space</li>
-                <li>• Create breakout rooms for focused practice</li>
-                <li>• Move freely between rooms anytime</li>
+                <li>• Breakout rooms are connected to Band Hall</li>
+                <li>• Move freely between all rooms anytime</li>
+                <li>• Chat with participants across rooms</li>
               </ul>
             </div>
           </CardContent>
         </Card>
 
         {/* Room List */}
-        <RoomList
+        <Card className="bg-gradient-card border-border card-shadow">
+          <CardHeader>
+            <CardTitle className="text-accent">Available Rooms</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RoomList
+              rooms={rooms}
+              currentRoomId={currentRoom}
+              onRoomSelect={handleRoomSelect}
+              onToggleFavorite={handleToggleFavorite}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Lobby Chat */}
+        <LobbyChat 
+          displayName={displayName} 
           rooms={rooms}
-          currentRoomId={currentRoom}
-          onRoomSelect={handleRoomSelect}
         />
       </div>
 
