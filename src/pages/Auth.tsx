@@ -213,17 +213,37 @@ const Auth = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <button
+            <div className="mt-6 space-y-3">
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  className="text-primary hover:text-primary-glow smooth-transition"
+                >
+                  {isSignUp 
+                    ? 'Already have an account? Sign in'
+                    : "Don't have an account? Sign up"
+                  }
+                </button>
+              </div>
+              
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or</span>
+                </div>
+              </div>
+              
+              <Button
                 type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-primary hover:text-primary-glow smooth-transition"
+                variant="outline"
+                className="w-full"
+                onClick={() => window.location.href = '/'}
               >
-                {isSignUp 
-                  ? 'Already have an account? Sign in'
-                  : "Don't have an account? Sign up"
-                }
-              </button>
+                Continue as Guest
+              </Button>
             </div>
           </CardContent>
         </Card>

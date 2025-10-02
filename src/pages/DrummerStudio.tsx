@@ -10,15 +10,19 @@ import { BandRoomPanel } from '@/components/drummer/BandRoomPanel';
 import { SettingsPanel } from '@/components/drummer/SettingsPanel';
 import { AICoachPanel } from '@/components/drummer/AICoachPanel';
 import { SoundMapperButton } from '@/components/drummer/SoundMapperButton';
+import { DevTools } from '@/components/DevTools';
 import Libraries from '@/pages/Libraries';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Code } from 'lucide-react';
 
 const DrummerStudio = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('transport');
+  const [devToolsOpen, setDevToolsOpen] = useState(false);
   
   // Audio state
   const [bpm, setBpm] = useState(92);
@@ -140,6 +144,20 @@ const DrummerStudio = () => {
 
   return (
     <div className="min-h-screen bg-gradient-background flex">
+      <DevTools isOpen={devToolsOpen} onClose={() => setDevToolsOpen(false)} />
+      
+      {/* DevTools Trigger - Hidden on left edge */}
+      {!devToolsOpen && (
+        <Button
+          onClick={() => setDevToolsOpen(true)}
+          className="fixed left-0 top-1/2 -translate-y-1/2 rounded-l-none status-active z-40"
+          size="sm"
+          variant="default"
+        >
+          <Code className="h-4 w-4" />
+        </Button>
+      )}
+      
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
       
       <main className="flex-1 p-8">
