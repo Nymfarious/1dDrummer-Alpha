@@ -297,26 +297,40 @@ export const TransportControls = ({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-5 gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handlePlay}
-                      variant={isPlaying ? "transport-active" : "transport"}
-                      size="sm"
-                      className="flex items-center justify-center"
-                      disabled={!currentAudioFile}
-                    >
-                      <Play size={18} />
-                    </Button>
-                  </TooltipTrigger>
-                  {!currentAudioFile && (
-                    <TooltipContent>
-                      <p>Upload a file to enable playback</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
+              <div className="flex flex-col gap-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={handlePlay}
+                        variant={isPlaying ? "transport-active" : "transport"}
+                        size="sm"
+                        className="flex items-center justify-center"
+                        disabled={!currentAudioFile}
+                      >
+                        <Play size={18} />
+                      </Button>
+                    </TooltipTrigger>
+                    {!currentAudioFile && (
+                      <TooltipContent>
+                        <p>Upload a file to enable playback</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+                
+                {/* Tiny Loop Button Under Play */}
+                <Button
+                  onClick={handleLoop}
+                  variant={isLooping ? "transport-active" : "outline"}
+                  size="sm"
+                  className="h-5 w-full flex items-center justify-center p-0"
+                  disabled={!currentAudioFile}
+                  title={isLooping ? "Loop enabled" : "Loop disabled"}
+                >
+                  <RefreshCcw size={12} />
+                </Button>
+              </div>
               
               <Button
                 onClick={handlePause}
@@ -349,14 +363,13 @@ export const TransportControls = ({
               </Button>
               
               <Button
-                onClick={handleLoop}
-                variant={isLooping ? "transport-active" : "transport"}
+                onClick={handleSkipForward}
+                variant="transport"
                 size="sm"
                 className="flex items-center justify-center"
                 disabled={!currentAudioFile}
-                title={isLooping ? "Loop enabled" : "Loop disabled"}
               >
-                <RefreshCcw size={18} />
+                <RotateCw size={18} />
               </Button>
             </div>
           </CardContent>

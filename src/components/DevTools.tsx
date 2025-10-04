@@ -91,7 +91,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-80 bg-card/95 backdrop-blur-lg border-r border-border shadow-2xl z-50 animate-slide-in-right">
+    <div className="fixed left-0 top-0 h-screen w-80 bg-card/95 backdrop-blur-lg border-r border-border shadow-2xl z-50 transition-transform duration-700 ease-out" style={{ transform: isOpen ? 'translateX(0)' : 'translateX(-100%)' }}>
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <Button
