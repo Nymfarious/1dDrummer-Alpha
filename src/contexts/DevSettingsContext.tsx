@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState } from 'react';
 
 interface DevSettings {
   guestAudioUploadOverride: boolean;
+  masterVisibility: boolean;
 }
 
 interface DevSettingsContextType {
@@ -14,6 +15,7 @@ const DevSettingsContext = createContext<DevSettingsContextType | undefined>(und
 export const DevSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<DevSettings>({
     guestAudioUploadOverride: false,
+    masterVisibility: true,
   });
 
   const updateSettings = (updates: Partial<DevSettings>) => {

@@ -31,7 +31,6 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
   const [expandIcon, setExpandIcon] = useState<ExpandIcon>('dots');
   const [testLabOpen, setTestLabOpen] = useState(false);
   const [bugTrackerOpen, setBugTrackerOpen] = useState(false);
-  const [masterVisibility, setMasterVisibility] = useState(true);
   const [openSections, setOpenSections] = useState({
     devPrefs: true,
     captcha: false,
@@ -97,10 +96,10 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setMasterVisibility(!masterVisibility)}
-            title={masterVisibility ? "Hide all dev elements" : "Show all dev elements"}
+            onClick={() => updateSettings({ masterVisibility: !settings.masterVisibility })}
+            title={settings.masterVisibility ? "Hide all dev elements" : "Show all dev elements"}
           >
-            {masterVisibility ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            {settings.masterVisibility ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </Button>
           <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             d'DevTools
@@ -157,8 +156,8 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
                   <div className="flex items-center justify-between">
                     <Label className="text-xs">Master Visibility</Label>
                     <Switch
-                      checked={masterVisibility}
-                      onCheckedChange={setMasterVisibility}
+                      checked={settings.masterVisibility}
+                      onCheckedChange={(checked) => updateSettings({ masterVisibility: checked })}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">

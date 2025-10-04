@@ -116,7 +116,7 @@
     position: relative;
   }
   
-  .status-active::before {
+  body:not([data-dev-hidden="true"]) .status-active::before {
     content: '';
     position: absolute;
     top: 6px;
@@ -138,7 +138,7 @@
     position: relative;
   }
 
-  .status-inactive::before {
+  body:not([data-dev-hidden="true"]) .status-inactive::before {
     content: '';
     position: absolute;
     top: 6px;
@@ -155,7 +155,7 @@
     position: relative;
   }
 
-  .status-error::before {
+  body:not([data-dev-hidden="true"]) .status-error::before {
     content: '';
     position: absolute;
     top: 6px;
@@ -176,7 +176,7 @@
     position: relative;
   }
 
-  .status-warning::before {
+  body:not([data-dev-hidden="true"]) .status-warning::before {
     content: '';
     position: absolute;
     top: 6px;

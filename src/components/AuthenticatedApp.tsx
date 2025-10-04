@@ -1,18 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { DevSettingsProvider } from '@/contexts/DevSettingsContext';
+import { DevSettingsProvider, useDevSettings } from '@/contexts/DevSettingsContext';
 import { DevTools } from '@/components/DevTools';
 import { ButterflyToggle } from '@/components/ButterflyToggle';
 import Index from "../pages/Index";
 import Auth from "../pages/Auth";
 import NotFound from "../pages/NotFound";
 
-const AuthenticatedApp = () => {
+const AppContent = () => {
   const { loading } = useAuth();
   const [devToolsOpen, setDevToolsOpen] = useState(false);
+  const { settings } = useDevSettings();
+
+  // Update body data attribute based on masterVisibility
+  useEffect(() => {
+    if (!settings.masterVisibility) {
+      document.body.setAttribute('data-dev-hidden', 'true');
+    } else {
+      document.body.removeAttribute('data-dev-hidden');
+    }
+  }, [settings.masterVisibility]);
 
   if (loading) {
     return (
@@ -26,7 +36,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <DevSettingsProvider>
+    <>
       <Toaster />
       <Sonner />
       <BrowserRouter>
@@ -45,6 +55,14 @@ const AuthenticatedApp = () => {
       
       {/* DevTools Panel */}
       <DevTools isOpen={devToolsOpen} onClose={() => setDevToolsOpen(false)} />
+    </>
+  );
+};
+
+const AuthenticatedApp = () => {
+  return (
+    <DevSettingsProvider>
+      <AppContent />
     </DevSettingsProvider>
   );
 };
