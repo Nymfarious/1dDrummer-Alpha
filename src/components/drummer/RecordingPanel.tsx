@@ -4,8 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { Circle, Upload, Download, Trash2, Mic, Play, Pause, Check, X, Edit2 } from 'lucide-react';
+import { Circle, Upload, Download, Trash2, Mic, Play, Pause, Check, X, Edit2, CloudUpload } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
+import { useDropbox } from '@/hooks/useDropbox';
+import { useGoogleDrive } from '@/hooks/useGoogleDrive';
 
 interface Recording {
   id: string;
@@ -40,6 +44,9 @@ export const RecordingPanel = () => {
   const progressTimerRef = useRef<number | null>(null);
   
   const { toast } = useToast();
+  const { uploadFile: uploadToSupabase } = useSecureAudioUpload();
+  const dropbox = useDropbox();
+  const googleDrive = useGoogleDrive();
 
   const startRecording = async () => {
     try {
@@ -245,11 +252,17 @@ export const RecordingPanel = () => {
     }
   };
 
-  const uploadToCloud = (recording: Recording) => {
-    toast({
-      title: "Upload to Cloud",
-      description: "Cloud upload feature coming soon!",
-    });
+  const uploadToDropbox = async (recording: Recording) => {
+    await dropbox.uploadFile(recording.blob, `${recording.name}.webm`);
+  };
+
+  const uploadToGoogleDrive = async (recording: Recording) => {
+    await googleDrive.uploadFile(recording.blob, `${recording.name}.webm`);
+  };
+
+  const uploadToSupabaseCloud = async (recording: Recording) => {
+    const file = new File([recording.blob], `${recording.name}.webm`, { type: 'audio/webm' });
+    await uploadToSupabase(file);
   };
 
   const formatTime = (seconds: number) => {
@@ -471,17 +484,40 @@ export const RecordingPanel = () => {
                       </div>
                       
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 relative"
-                          onClick={() => uploadToCloud(recording)}
-                          disabled={!recording.accepted}
-                        >
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
-                          <Upload size={14} />
-                          Upload to Cloud
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 relative"
+                              disabled={!recording.accepted}
+                            >
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
+                              <CloudUpload size={14} />
+                              Save to Cloud
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => uploadToSupabaseCloud(recording)}>
+                              <CloudUpload size={14} className="mr-2" />
+                              Supabase Cloud
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => uploadToDropbox(recording)}
+                              disabled={!dropbox.isConnected}
+                            >
+                              <CloudUpload size={14} className="mr-2" />
+                              Dropbox {!dropbox.isConnected && "(Connect in Settings)"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => uploadToGoogleDrive(recording)}
+                              disabled={!googleDrive.isConnected}
+                            >
+                              <CloudUpload size={14} className="mr-2" />
+                              Google Drive {!googleDrive.isConnected && "(Connect in Settings)"}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <Button
                           size="sm"
                           variant="destructive"

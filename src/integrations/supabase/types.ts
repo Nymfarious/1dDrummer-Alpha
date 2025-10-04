@@ -128,7 +128,9 @@ export type Database = {
           bio: string | null
           bragging_links: Json | null
           created_at: string
+          dropbox_token: string | null
           full_name: string | null
+          google_drive_token: string | null
           id: string
           skill_level: number | null
           title: string | null
@@ -141,7 +143,9 @@ export type Database = {
           bio?: string | null
           bragging_links?: Json | null
           created_at?: string
+          dropbox_token?: string | null
           full_name?: string | null
+          google_drive_token?: string | null
           id?: string
           skill_level?: number | null
           title?: string | null
@@ -154,7 +158,9 @@ export type Database = {
           bio?: string | null
           bragging_links?: Json | null
           created_at?: string
+          dropbox_token?: string | null
           full_name?: string | null
+          google_drive_token?: string | null
           id?: string
           skill_level?: number | null
           title?: string | null

@@ -5,10 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings, Palette, Save, RotateCcw } from 'lucide-react';
+import { Settings, Palette, Save, RotateCcw, CloudUpload, CloudOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useDropbox } from '@/hooks/useDropbox';
+import { useGoogleDrive } from '@/hooks/useGoogleDrive';
 
 interface SettingsPanelProps {
   bpm: number;
@@ -45,6 +47,8 @@ export const SettingsPanel = ({
 }: SettingsPanelProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const dropbox = useDropbox();
+  const googleDrive = useGoogleDrive();
   
   const [settings, setSettings] = useState<UserSettings>({
     default_bpm: 92,
@@ -287,6 +291,72 @@ export const SettingsPanel = ({
           Apply to Current Session
         </Button>
       </div>
+
+      {/* Cloud Storage Section */}
+      <Card className="bg-gradient-card border-border card-shadow">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-accent">
+            <CloudUpload size={20} />
+            Cloud Storage Connections
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+              <div className="flex-1">
+                <p className="font-medium">Dropbox</p>
+                <p className="text-sm text-muted-foreground">
+                  {dropbox.isConnected ? "✓ Connected" : "Not connected"}
+                </p>
+              </div>
+              {dropbox.isConnected ? (
+                <Button onClick={dropbox.disconnect} variant="outline" size="sm">
+                  <CloudOff size={16} />
+                  Disconnect
+                </Button>
+              ) : (
+                <Button onClick={dropbox.connectDropbox} size="sm">
+                  <CloudUpload size={16} />
+                  Connect
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+              <div className="flex-1">
+                <p className="font-medium">Google Drive</p>
+                <p className="text-sm text-muted-foreground">
+                  {googleDrive.isConnected ? "✓ Connected" : "Not connected"}
+                </p>
+              </div>
+              {googleDrive.isConnected ? (
+                <Button onClick={googleDrive.disconnect} variant="outline" size="sm">
+                  <CloudOff size={16} />
+                  Disconnect
+                </Button>
+              ) : (
+                <Button onClick={googleDrive.connectGoogleDrive} size="sm">
+                  <CloudUpload size={16} />
+                  Connect
+                </Button>
+              )}
+            </div>
+
+            <div className="p-4 border rounded-lg bg-primary/10">
+              <p className="font-medium mb-1">Supabase Cloud Storage</p>
+              <p className="text-sm text-muted-foreground">
+                ✓ Always available - no connection needed
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              <strong>Note:</strong> To use Dropbox/Google Drive, you'll need to set up API keys. Visit the Settings panel for configuration instructions.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
