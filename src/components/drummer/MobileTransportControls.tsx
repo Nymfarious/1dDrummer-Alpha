@@ -44,12 +44,6 @@ export const MobileTransportControls = ({
   const { toast } = useToast();
   const { settings } = useDevSettings();
   const { getFileUrl, userFiles, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
-  
-  console.log('=== MobileTransportControls Render ===');
-  console.log('userFiles count:', userFiles.length);
-  console.log('currentAudioFile:', currentAudioFile);
-  console.log('user:', user ? 'logged in' : 'guest');
-  console.log('guestAudioUploadOverride:', settings.guestAudioUploadOverride);
 
   // Update audio progress
   useEffect(() => {
@@ -75,10 +69,6 @@ export const MobileTransportControls = ({
     };
   }, [audioVolume]);
 
-  // Log userFiles changes for debugging
-  useEffect(() => {
-    console.log('userFiles updated:', userFiles);
-  }, [userFiles]);
 
   // Metronome functionality
   const playMetronomeSound = () => {
@@ -128,11 +118,9 @@ export const MobileTransportControls = ({
   };
 
   const handlePlay = async () => {
-    console.log('Play clicked, currentAudioFile:', currentAudioFile);
     if (audioRef.current && currentAudioFile) {
       try {
         const url = await getFileUrl(currentAudioFile);
-        console.log('Got file URL:', url);
         if (url) {
           if (audioRef.current.src !== url) {
             audioRef.current.src = url;
@@ -226,23 +214,17 @@ export const MobileTransportControls = ({
     }
 
     try {
-      console.log('Starting upload of', acceptedFiles.length, 'files');
-      await uploadFiles(acceptedFiles);
+      const uploadedFiles = await uploadFiles(acceptedFiles);
       
-      toast({
-        title: "Upload Successful",
-        description: `${acceptedFiles.length} file(s) uploaded to library`,
-      });
-      
-      // After upload, wait for state update and auto-select newest file
-      setTimeout(() => {
-        console.log('After upload, userFiles:', userFiles);
-        if (userFiles.length > 0) {
-          const newestFile = userFiles[0];
-          setCurrentAudioFile(newestFile);
-          console.log('Auto-selected file:', newestFile);
-        }
-      }, 500);
+      if (uploadedFiles.length > 0) {
+        // Immediately set the first uploaded file as current
+        setCurrentAudioFile(uploadedFiles[0]);
+        
+        toast({
+          title: "Upload Successful",
+          description: `${uploadedFiles.length} file(s) uploaded and ready to play`,
+        });
+      }
     } catch (error) {
       console.error('Upload error:', error);
       toast({
@@ -251,7 +233,7 @@ export const MobileTransportControls = ({
         variant: "destructive",
       });
     }
-  }, [user, settings.guestAudioUploadOverride, uploadFiles, validateFile, toast, userFiles]);
+  }, [user, settings.guestAudioUploadOverride, uploadFiles, validateFile, toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -457,24 +439,18 @@ export const MobileTransportControls = ({
         <CardContent>
           {userFiles.length > 0 ? (
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {userFiles.map((file: any) => {
-                console.log('Rendering file in library:', file);
-                return (
-                  <Button
-                    key={file.id}
-                    onClick={() => {
-                      console.log('File clicked in library:', file);
-                      setCurrentAudioFile(file);
-                    }}
-                    variant={currentAudioFile?.id === file.id ? "audio-active" : "outline"}
-                    className="w-full justify-start text-sm"
-                    size="sm"
-                  >
-                    <Music size={14} className="mr-2" />
-                    {file.originalName}
-                  </Button>
-                );
-              })}
+              {userFiles.map((file: any) => (
+                <Button
+                  key={file.id}
+                  onClick={() => setCurrentAudioFile(file)}
+                  variant={currentAudioFile?.id === file.id ? "audio-active" : "outline"}
+                  className="w-full justify-start text-sm"
+                  size="sm"
+                >
+                  <Music size={14} className="mr-2" />
+                  {file.originalName}
+                </Button>
+              ))}
             </div>
           ) : (
             <div className="text-center py-4">

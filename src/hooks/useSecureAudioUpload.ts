@@ -239,16 +239,22 @@ export const useSecureAudioUpload = () => {
   /**
    * Upload multiple files
    */
-  const uploadFiles = async (files: File[]): Promise<void> => {
+  const uploadFiles = async (files: File[]): Promise<AudioFile[]> => {
     setLoading(true);
+    const uploadedFiles: AudioFile[] = [];
     
     try {
       for (const file of files) {
-        await uploadFile(file);
+        const uploadedFile = await uploadFile(file);
+        if (uploadedFile) {
+          uploadedFiles.push(uploadedFile);
+        }
       }
     } finally {
       setLoading(false);
     }
+    
+    return uploadedFiles;
   };
 
   /**
@@ -259,9 +265,12 @@ export const useSecureAudioUpload = () => {
       // Determine bucket based on file path
       const bucketName = audioFile.fileName.startsWith('guest/') ? 'guest-audio-files' : 'audio-files';
       
+      // Use storagePath if available, otherwise fall back to fileName
+      const filePath = audioFile.storagePath || audioFile.fileName;
+      
       const { data, error } = await supabase.storage
         .from(bucketName)
-        .createSignedUrl(audioFile.fileName, 3600); // 1 hour expiry
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
 
       if (error) throw error;
       return data.signedUrl;
