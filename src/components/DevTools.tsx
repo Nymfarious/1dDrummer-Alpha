@@ -33,7 +33,6 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
   const [bugTrackerOpen, setBugTrackerOpen] = useState(false);
   const [openSections, setOpenSections] = useState({
     devPrefs: false,
-    captcha: false,
     apis: false,
     features: false,
     mcps: false,
@@ -42,10 +41,6 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
   });
 
   const { settings, updateSettings } = useDevSettings();
-
-  // Captcha settings
-  const [hCaptchaEnabled, setHCaptchaEnabled] = useState(false);
-  const [turnstileEnabled, setTurnstileEnabled] = useState(false);
 
   // AI Helper
   const [aiPrompt, setAiPrompt] = useState('');
@@ -197,43 +192,6 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
 
           <Separator />
 
-          {/* Captcha Section */}
-          <div className="space-y-2">
-            <button
-              onClick={() => toggleSection('captcha')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                {renderExpandIcon(openSections.captcha)}
-                <span className="text-sm font-medium">Captcha Settings</span>
-              </div>
-            </button>
-            
-            {openSections.captcha && (
-              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="hcaptcha" className="text-xs">hCaptcha</Label>
-                  <Switch
-                    id="hcaptcha"
-                    checked={hCaptchaEnabled}
-                    onCheckedChange={setHCaptchaEnabled}
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="turnstile" className="text-xs">Cloudflare Turnstile</Label>
-                  <Switch
-                    id="turnstile"
-                    checked={turnstileEnabled}
-                    onCheckedChange={setTurnstileEnabled}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <Separator />
-
           {/* APIs Section */}
           <div className="space-y-2">
             <button
@@ -318,9 +276,9 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
                   <div key={key.name} className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground truncate flex-1">{key.name}</span>
                     {key.isSet ? (
-                      <span className="status-active text-xs px-2 py-0.5 rounded">READY</span>
+                      <Check className="h-3 w-3 text-primary" />
                     ) : (
-                      <Button size="sm" className="h-6 px-2 status-error animate-pulse">
+                      <Button size="sm" className="h-6 px-2 bg-muted text-muted-foreground">
                         <Plus className="h-3 w-3" />
                         ADD
                       </Button>
