@@ -32,9 +32,9 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
   const [testLabOpen, setTestLabOpen] = useState(false);
   const [bugTrackerOpen, setBugTrackerOpen] = useState(false);
   const [openSections, setOpenSections] = useState({
-    devPrefs: true,
+    devPrefs: false,
     captcha: false,
-    apis: true,
+    apis: false,
     features: false,
     mcps: false,
     ai: false,
@@ -111,7 +111,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
       </div>
 
       <ScrollArea className="h-[calc(100vh-73px)]">
-        <div className="p-4 space-y-4">
+        <div className="p-3 space-y-2">
           {/* Dev Preferences Section */}
           <div className="space-y-2">
             <button
@@ -126,7 +126,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
             </button>
             
             {openSections.devPrefs && (
-              <div className="ml-6 space-y-3 p-3 border-l-2 border-primary/20">
+              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
                 {/* Test Lab Button */}
                 <Button
                   variant="outline"
@@ -210,7 +210,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
             </button>
             
             {openSections.captcha && (
-              <div className="ml-6 space-y-3 p-3 border-l-2 border-primary/20">
+              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="hcaptcha" className="text-xs">hCaptcha</Label>
                   <Switch
@@ -248,7 +248,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
             </button>
             
             {openSections.apis && (
-              <div className="ml-6 space-y-2 p-3 border-l-2 border-primary/20">
+              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
                 {apiKeys.filter(k => k.category === 'api').map((key) => (
                   <div key={key.env} className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground truncate flex-1">{key.name}</span>
@@ -282,7 +282,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
             </button>
             
             {openSections.features && (
-              <div className="ml-6 space-y-2 p-3 border-l-2 border-primary/20">
+              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
                 {apiKeys.filter(k => k.category === 'feature').map((key) => (
                   <div key={key.env} className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground truncate flex-1">{key.name}</span>
@@ -313,7 +313,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
             </button>
             
             {openSections.mcps && (
-              <div className="ml-6 space-y-2 p-3 border-l-2 border-primary/20">
+              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
                 {apiKeys.filter(k => k.category === 'mcp').map((key) => (
                   <div key={key.name} className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground truncate flex-1">{key.name}</span>
@@ -347,7 +347,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
             </button>
             
             {openSections.devOverrides && (
-              <div className="ml-6 space-y-3 p-3 border-l-2 border-primary/20">
+              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="guest-audio" className="text-xs">Guest Audio Upload</Label>
                   <Switch
@@ -379,7 +379,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
             </button>
             
             {openSections.ai && (
-              <div className="ml-6 space-y-3 p-3 border-l-2 border-primary/20">
+              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
                 <p className="text-xs text-muted-foreground">
                   Ask questions about dDrummer development
                 </p>

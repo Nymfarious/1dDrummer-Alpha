@@ -17,10 +17,10 @@ const AppContent = () => {
 
   // Update body data attribute based on masterVisibility
   useEffect(() => {
-    if (!settings.masterVisibility) {
-      document.body.setAttribute('data-dev-hidden', 'true');
-    } else {
+    if (settings.masterVisibility) {
       document.body.removeAttribute('data-dev-hidden');
+    } else {
+      document.body.setAttribute('data-dev-hidden', 'true');
     }
   }, [settings.masterVisibility]);
 
