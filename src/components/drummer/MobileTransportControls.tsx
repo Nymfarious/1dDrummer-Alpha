@@ -214,16 +214,21 @@ export const MobileTransportControls = ({
     }
 
     try {
+      console.log('=== Starting file upload ===');
       const uploadedFiles = await uploadFiles(acceptedFiles);
+      console.log('Upload complete, received files:', uploadedFiles);
       
       if (uploadedFiles.length > 0) {
         // Immediately set the first uploaded file as current
+        console.log('Setting currentAudioFile to:', uploadedFiles[0]);
         setCurrentAudioFile(uploadedFiles[0]);
         
         toast({
           title: "Upload Successful",
           description: `${uploadedFiles.length} file(s) uploaded and ready to play`,
         });
+      } else {
+        console.log('No files were uploaded successfully');
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -266,9 +271,19 @@ export const MobileTransportControls = ({
             </Button>
             
             <Button
-              onClick={isPlaying ? handleStop : handlePlay}
+              onClick={() => {
+                console.log('Play/Stop button clicked');
+                console.log('isPlaying:', isPlaying);
+                console.log('currentAudioFile:', currentAudioFile);
+                if (isPlaying) {
+                  handleStop();
+                } else {
+                  handlePlay();
+                }
+              }}
               variant={isPlaying ? "transport-active" : "transport"}
               size="audio"
+              disabled={!currentAudioFile}
             >
               {isPlaying ? <Square size={20} /> : <Play size={20} />}
             </Button>
