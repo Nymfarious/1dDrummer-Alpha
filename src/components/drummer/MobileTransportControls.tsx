@@ -8,6 +8,7 @@ import { Play, Pause, SkipBack, RotateCcw, RotateCw, Volume2, Music, Upload, Fol
 import { useToast } from '@/hooks/use-toast';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { useAuth } from '@/hooks/useAuth';
+import { useDevSettings } from '@/contexts/DevSettingsContext';
 import { useDropzone } from 'react-dropzone';
 
 interface MobileTransportControlsProps {
@@ -178,7 +179,9 @@ export const MobileTransportControls = ({
 
   // Handle file upload
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (!user) {
+    const { settings } = useDevSettings();
+    
+    if (!user && !settings.guestAudioUploadOverride) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to upload files",
@@ -206,16 +209,16 @@ export const MobileTransportControls = ({
         title: "Upload Successful",
         description: `${acceptedFiles.length} file(s) uploaded to library`,
       });
-      // Auto-select the first uploaded file
-      if (acceptedFiles.length > 0) {
-        await loadUserFiles();
-        // Wait a moment for the files to load, then select the newest one
-        setTimeout(() => {
-          if (userFiles.length > 0) {
-            setCurrentAudioFile(userFiles[0]);
-          }
-        }, 500);
-      }
+      
+      // After upload, the uploadFile hook automatically adds to userFiles state
+      // Wait a moment for state to update, then auto-select the first file
+      setTimeout(() => {
+        if (userFiles.length > 0) {
+          const newestFile = userFiles[0];
+          setCurrentAudioFile(newestFile);
+          console.log('Auto-selected file:', newestFile);
+        }
+      }, 300);
     } catch (error) {
       toast({
         title: "Upload Failed",
@@ -223,7 +226,7 @@ export const MobileTransportControls = ({
         variant: "destructive",
       });
     }
-  }, [user, uploadFiles, validateFile, toast, loadUserFiles]);
+  }, [user, uploadFiles, validateFile, toast, userFiles]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
