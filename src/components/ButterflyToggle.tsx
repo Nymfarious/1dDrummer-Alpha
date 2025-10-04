@@ -16,7 +16,7 @@ export const ButterflyToggle = ({ onToggle, isVisible }: ButterflyToggleProps) =
         fixed bottom-6 right-6 z-50
         w-12 h-12 
         transition-all duration-300 ease-out
-        ${isVisible ? 'opacity-30 hover:opacity-100' : 'opacity-20 hover:opacity-80'}
+        ${isVisible ? 'opacity-60 hover:opacity-100' : 'opacity-40 hover:opacity-80'}
         hover:scale-110
         group
       `}
@@ -32,7 +32,6 @@ export const ButterflyToggle = ({ onToggle, isVisible }: ButterflyToggleProps) =
         className={`
           w-full h-full icon-hollow-glow
           ${variant === 'blue' ? 'text-blue-400' : 'text-purple-400'}
-          group-hover:animate-pulse
         `}
       >
         {/* Hollow butterfly outline */}

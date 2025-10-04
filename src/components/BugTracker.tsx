@@ -60,6 +60,7 @@ export const BugTracker = ({ open, onOpenChange }: BugTrackerProps) => {
   });
 
   const [wishlist, setWishlist] = useState([
+    { id: 'w0', description: 'Video player component with playback controls', checked: false },
     { id: 'w1', description: 'Embossed button system with press-down animation', checked: false },
     { id: 'w2', description: 'Tron-like glowing strokes for active states', checked: false },
     { id: 'w3', description: 'Auto-unpress previous button when new button activated', checked: false },

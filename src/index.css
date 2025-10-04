@@ -172,6 +172,27 @@
       0 0 16px hsl(var(--destructive) / 0.3);
   }
 
+  .status-warning {
+    position: relative;
+  }
+
+  .status-warning::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 8px;
+    height: 8px;
+    background: hsl(var(--audio-warning));
+    border-radius: 50%;
+    z-index: 10;
+    box-shadow: 
+      0 0 8px hsl(var(--audio-warning)),
+      0 0 12px hsl(var(--audio-warning) / 0.6),
+      0 0 16px hsl(var(--audio-warning) / 0.3);
+    opacity: 0.9;
+  }
+
   @keyframes pulse {
     0%, 100% {
       opacity: 1;

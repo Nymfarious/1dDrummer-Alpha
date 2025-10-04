@@ -304,7 +304,7 @@ export const TransportControls = ({
                       onClick={handlePlay}
                       variant={isPlaying ? "transport-active" : "transport"}
                       size="sm"
-                      className="status-active flex items-center justify-center"
+                      className="flex items-center justify-center"
                       disabled={!currentAudioFile}
                     >
                       <Play size={18} />
@@ -322,7 +322,7 @@ export const TransportControls = ({
                 onClick={handlePause}
                 variant={isPaused ? "transport-active" : "transport"}
                 size="sm"
-                className="status-active flex items-center justify-center"
+                className="flex items-center justify-center"
               >
                 <Pause size={18} />
               </Button>
@@ -331,7 +331,7 @@ export const TransportControls = ({
                 onClick={handleRewind}
                 variant="transport"
                 size="sm"
-                className="status-active flex items-center justify-center"
+                className="flex items-center justify-center"
               >
                 <SkipBack size={18} />
               </Button>
@@ -340,7 +340,7 @@ export const TransportControls = ({
                 onClick={handleSkipBackward}
                 variant="transport"
                 size="sm"
-                className="status-active flex items-center justify-center"
+                className="flex items-center justify-center"
               >
                 <RotateCcw size={18} />
               </Button>
@@ -349,7 +349,7 @@ export const TransportControls = ({
                 onClick={handleSkipForward}
                 variant="transport"
                 size="sm"
-                className="status-active flex items-center justify-center"
+                className="flex items-center justify-center"
               >
                 <RotateCw size={18} />
               </Button>
@@ -360,7 +360,7 @@ export const TransportControls = ({
         {/* Audio Progress & Volume */}
         <Card className="bg-gradient-card border-border card-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-accent status-active">
+            <CardTitle className="flex items-center gap-2 text-accent">
               <Volume2 size={20} />
               Audio Control
             </CardTitle>
@@ -428,7 +428,7 @@ export const TransportControls = ({
             <Button
               onClick={toggleMetronome}
               variant={metronomeOn ? "audio-active" : "metronome"}
-              className="w-full status-active"
+              className="w-full"
               disabled={!metronomeEnabled}
             >
               <Music size={20} />
@@ -469,10 +469,9 @@ export const TransportControls = ({
                   <Button
                     onClick={() => fileInputRef.current?.click()}
                     variant="outline"
-                    className="relative status-active"
+                    className="relative"
                     disabled={(!user && !settings.guestAudioUploadOverride) || uploadLoading}
                   >
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-yellow-500"></span>
                     <Upload size={20} />
                     {uploadLoading ? 'Uploading...' : 'Import Audio/Video'}
                   </Button>
