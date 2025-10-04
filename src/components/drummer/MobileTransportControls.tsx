@@ -118,39 +118,44 @@ export const MobileTransportControls = ({
   };
 
   const handlePlay = async () => {
-    if (audioRef.current && currentAudioFile) {
-      try {
-        const url = await getFileUrl(currentAudioFile);
-        if (url) {
-          if (audioRef.current.src !== url) {
-            audioRef.current.src = url;
-          }
-          await audioRef.current.play();
-          setIsPlaying(true);
-          setIsPaused(false);
-          
-          if (metronomeEnabled && metronomeOn) {
-            startMetronome();
-          }
-        } else {
-          toast({
-            title: "Error",
-            description: "Could not load audio file",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error('Error playing audio:', error);
-        toast({
-          title: "Playback Error",
-          description: "Failed to play audio file",
-          variant: "destructive",
-        });
-      }
-    } else {
+    if (!currentAudioFile) {
       toast({
         title: "No Audio File",
         description: "Please select an audio file to play",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!audioRef.current) return;
+
+    try {
+      const url = await getFileUrl(currentAudioFile);
+      if (!url) {
+        toast({
+          title: "Error",
+          description: "Could not load audio file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (audioRef.current.src !== url) {
+        audioRef.current.src = url;
+      }
+      
+      await audioRef.current.play();
+      setIsPlaying(true);
+      setIsPaused(false);
+      
+      if (metronomeEnabled && metronomeOn) {
+        startMetronome();
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      toast({
+        title: "Playback Error",
+        description: "Failed to play audio file",
         variant: "destructive",
       });
     }
@@ -252,75 +257,78 @@ export const MobileTransportControls = ({
     <div className="space-y-4">
       <h2 className="text-2xl font-bold text-foreground mb-4">Transport</h2>
       
-      {/* Compact Playback Controls */}
+      {/* Playback Controls - Icon Only */}
       <Card className="bg-gradient-card border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-accent text-lg">
+<CardTitle className="flex items-center gap-2 text-accent text-lg">
             <Play size={18} />
             Playback
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-center gap-2 mb-4">
-            <Button
+          {/* Icon-only transport buttons */}
+          <div className="flex justify-center items-center gap-6 mb-4">
+            <button
               onClick={handleRewind}
-              variant="transport"
-              size="audio"
-            >
-              <SkipBack size={20} />
-            </Button>
-            
-            <Button
-              onClick={() => {
-                console.log('Play/Stop button clicked');
-                console.log('isPlaying:', isPlaying);
-                console.log('currentAudioFile:', currentAudioFile);
-                if (isPlaying) {
-                  handleStop();
-                } else {
-                  handlePlay();
-                }
-              }}
-              variant={isPlaying ? "transport-active" : "transport"}
-              size="audio"
+              className="text-foreground hover:text-primary hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!currentAudioFile}
+              title="Rewind to start"
             >
-              {isPlaying ? <Square size={20} /> : <Play size={20} />}
-            </Button>
+              <SkipBack size={32} />
+            </button>
             
-            <Button
+            <button
               onClick={() => {
-                if (audioRef.current) {
-                  audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 30);
-                }
-              }}
-              variant="transport"
-              size="audio"
-              title="Skip forward 30 seconds"
-            >
-              <RotateCw size={20} />
-            </Button>
-            
-            <Button
-              onClick={() => {
-                if (audioRef.current) {
+                if (audioRef.current && currentAudioFile) {
                   audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 30);
                 }
               }}
-              variant="transport"
-              size="audio"
-              title="Skip back 30 seconds"
+              className="text-foreground hover:text-primary hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!currentAudioFile}
+              title="Skip back 30s"
             >
-              <RotateCcw size={20} />
-            </Button>
+              <RotateCcw size={28} />
+            </button>
+            
+            {/* Main Play/Stop Button */}
+            <button
+              onClick={isPlaying ? handleStop : handlePlay}
+              className={`transition-all duration-200 ${
+                isPlaying 
+                  ? 'text-primary scale-110 animate-pulse' 
+                  : 'text-foreground hover:text-primary hover:scale-110'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              disabled={!currentAudioFile}
+              title={isPlaying ? "Stop" : "Play"}
+            >
+              {isPlaying ? <Square size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
+            </button>
+            
+            <button
+              onClick={() => {
+                if (audioRef.current && currentAudioFile) {
+                  audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 30);
+                }
+              }}
+              className="text-foreground hover:text-primary hover:scale-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!currentAudioFile}
+              title="Skip forward 30s"
+            >
+              <RotateCw size={28} />
+            </button>
 
-            <Button
+            <button
               onClick={handlePause}
-              variant={isPaused ? "transport-active" : "transport"}
-              size="audio"
+              className={`transition-all duration-200 ${
+                isPaused 
+                  ? 'text-primary scale-110' 
+                  : 'text-foreground hover:text-primary hover:scale-110'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              disabled={!currentAudioFile}
+              title="Pause"
             >
-              <Pause size={20} />
-            </Button>
+              <Pause size={32} />
+            </button>
           </div>
           
           {/* Audio Scrubber Bar */}
