@@ -40,6 +40,11 @@ export const MobileTransportControls = ({
   const metronomeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { settings } = useDevSettings();
+  const { getFileUrl, userFiles, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
+
   // Update audio progress
   useEffect(() => {
     const audio = audioRef.current;
@@ -63,17 +68,11 @@ export const MobileTransportControls = ({
       audio.removeEventListener('loadedmetadata', updateProgress);
     };
   }, [audioVolume]);
-  
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const { getFileUrl, userFiles, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
 
-  // Load user files when user changes
+  // Log userFiles changes for debugging
   useEffect(() => {
-    if (user) {
-      loadUserFiles();
-    }
-  }, [user, loadUserFiles]);
+    console.log('userFiles updated:', userFiles);
+  }, [userFiles]);
 
   // Metronome functionality
   const playMetronomeSound = () => {
@@ -198,8 +197,6 @@ export const MobileTransportControls = ({
 
   // Handle file upload
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const { settings } = useDevSettings();
-    
     if (!user && !settings.guestAudioUploadOverride) {
       toast({
         title: "Authentication Required",
@@ -223,29 +220,32 @@ export const MobileTransportControls = ({
     }
 
     try {
+      console.log('Starting upload of', acceptedFiles.length, 'files');
       await uploadFiles(acceptedFiles);
+      
       toast({
         title: "Upload Successful",
         description: `${acceptedFiles.length} file(s) uploaded to library`,
       });
       
-      // After upload, the uploadFile hook automatically adds to userFiles state
-      // Wait a moment for state to update, then auto-select the first file
+      // After upload, wait for state update and auto-select newest file
       setTimeout(() => {
+        console.log('After upload, userFiles:', userFiles);
         if (userFiles.length > 0) {
           const newestFile = userFiles[0];
           setCurrentAudioFile(newestFile);
           console.log('Auto-selected file:', newestFile);
         }
-      }, 300);
+      }, 500);
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
         title: "Upload Failed",
         description: "Failed to upload files. Please try again.",
         variant: "destructive",
       });
     }
-  }, [user, uploadFiles, validateFile, toast, userFiles]);
+  }, [user, settings.guestAudioUploadOverride, uploadFiles, validateFile, toast, userFiles]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
