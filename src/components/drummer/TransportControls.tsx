@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, RotateCcw, RotateCw, Upload, Volume2, Music, FileAudio, Trash2, Shield } from 'lucide-react';
+import { Play, Pause, SkipBack, RotateCcw, RotateCw, Upload, Volume2, Music, FileAudio, Trash2, Shield, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
@@ -295,7 +295,7 @@ export const TransportControls = ({
               Playback
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-5 gap-2">
               <TooltipProvider>
                 <Tooltip>
@@ -323,6 +323,7 @@ export const TransportControls = ({
                 variant={isPaused ? "transport-active" : "transport"}
                 size="sm"
                 className="flex items-center justify-center"
+                disabled={!currentAudioFile}
               >
                 <Pause size={18} />
               </Button>
@@ -332,6 +333,7 @@ export const TransportControls = ({
                 variant="transport"
                 size="sm"
                 className="flex items-center justify-center"
+                disabled={!currentAudioFile}
               >
                 <SkipBack size={18} />
               </Button>
@@ -341,6 +343,7 @@ export const TransportControls = ({
                 variant="transport"
                 size="sm"
                 className="flex items-center justify-center"
+                disabled={!currentAudioFile}
               >
                 <RotateCcw size={18} />
               </Button>
@@ -350,8 +353,36 @@ export const TransportControls = ({
                 variant="transport"
                 size="sm"
                 className="flex items-center justify-center"
+                disabled={!currentAudioFile}
               >
                 <RotateCw size={18} />
+              </Button>
+            </div>
+
+            {/* BPM Control */}
+            <div className="space-y-2">
+              <Label>BPM: {bpm}</Label>
+              <Slider
+                value={[bpm]}
+                onValueChange={(value) => setBpm(value[0])}
+                min={40}
+                max={240}
+                step={1}
+                className="w-full"
+              />
+            </div>
+
+            {/* Loop Button */}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleLoop}
+                variant={isLooping ? "transport-active" : "outline"}
+                size="sm"
+                className="flex items-center gap-2"
+                disabled={!currentAudioFile}
+              >
+                <RefreshCcw size={16} />
+                {isLooping ? 'Looping' : 'Loop'}
               </Button>
             </div>
           </CardContent>
@@ -367,18 +398,16 @@ export const TransportControls = ({
           </CardHeader>
           <CardContent className="space-y-4">
             {currentAudioFile && (
-              <>
-                <div className="space-y-2">
-                  <Label>Progress: {formatTime(currentTime)} / {formatTime(duration)}</Label>
-                  <Slider
-                    value={[duration > 0 ? (currentTime / duration) * 100 : 0]}
-                    onValueChange={handleProgressChange}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
-              </>
+              <div className="space-y-2">
+                <Label>Progress: {formatTime(currentTime)} / {formatTime(duration)}</Label>
+                <Slider
+                  value={[duration > 0 ? (currentTime / duration) * 100 : 0]}
+                  onValueChange={handleProgressChange}
+                  max={100}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
             )}
             
             <div className="space-y-2">
@@ -390,17 +419,6 @@ export const TransportControls = ({
                 step={1}
                 className="w-full"
               />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="loop-enabled"
-                checked={isLooping}
-                onCheckedChange={(checked) => setIsLooping(checked === true)}
-              />
-              <Label htmlFor="loop-enabled" className="text-sm">
-                Loop Audio
-              </Label>
             </div>
           </CardContent>
         </Card>
