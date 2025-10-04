@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, Key, Settings, Zap, Brain, Plus, Minus, X, TestTube, Beaker } from 'lucide-react';
+import { MoreVertical, Key, Settings, Zap, Brain, Plus, Minus, X, TestTube, Beaker, Eye, EyeOff } from 'lucide-react';
 import { useDevSettings } from '@/contexts/DevSettingsContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,13 +10,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { TestLabDialog } from '@/components/TestLabDialog';
+import { BugTracker } from '@/components/BugTracker';
 
 interface DevToolsProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type ExpandIcon = 'chevron' | 'plusminus';
+type ExpandIcon = 'chevron' | 'plusminus' | 'dots';
 
 interface APIKeyStatus {
   name: string;
@@ -27,8 +28,10 @@ interface APIKeyStatus {
 
 export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
   const { toast } = useToast();
-  const [expandIcon, setExpandIcon] = useState<ExpandIcon>('chevron');
+  const [expandIcon, setExpandIcon] = useState<ExpandIcon>('dots');
   const [testLabOpen, setTestLabOpen] = useState(false);
+  const [bugTrackerOpen, setBugTrackerOpen] = useState(false);
+  const [masterVisibility, setMasterVisibility] = useState(true);
   const [openSections, setOpenSections] = useState({
     devPrefs: true,
     captcha: false,
@@ -66,7 +69,10 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
 
   const renderExpandIcon = (isOpen: boolean) => {
     if (expandIcon === 'chevron') {
-      return <ChevronRight className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />;
+      return <MoreVertical className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />;
+    }
+    if (expandIcon === 'dots') {
+      return <MoreVertical className={`h-4 w-4 icon-hollow-glow transition-transform ${isOpen ? 'rotate-90' : ''}`} />;
     }
     return isOpen ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />;
   };
@@ -87,9 +93,19 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
   return (
     <div className="fixed left-0 top-0 h-screen w-80 bg-card/95 backdrop-blur-lg border-r border-border shadow-2xl z-50 animate-slide-in-right">
       <div className="flex items-center justify-between p-4 border-b border-border">
-        <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          d'DevTools
-        </h2>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMasterVisibility(!masterVisibility)}
+            title={masterVisibility ? "Hide all dev elements" : "Show all dev elements"}
+          >
+            {masterVisibility ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </Button>
+          <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            d'DevTools
+          </h2>
+        </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
@@ -123,6 +139,33 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
                   Open Test Lab
                 </Button>
 
+                {/* Bug Tracker Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBugTrackerOpen(true)}
+                  className="w-full justify-start gap-2"
+                >
+                  <span className="text-lg">🪱</span>
+                  Bug Tracker
+                </Button>
+
+                <Separator />
+
+                {/* Master Visibility Toggle */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Master Visibility</Label>
+                    <Switch
+                      checked={masterVisibility}
+                      onCheckedChange={setMasterVisibility}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Hide all dev elements (butterfly, LEDs, indicators)
+                  </p>
+                </div>
+
                 <Separator />
 
                 {/* Expand Icon Selector */}
@@ -131,17 +174,19 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      variant={expandIcon === 'chevron' ? 'default' : 'outline'}
-                      onClick={() => setExpandIcon('chevron')}
+                      variant={expandIcon === 'dots' ? 'default' : 'outline'}
+                      onClick={() => setExpandIcon('dots')}
                       className="h-7 px-2 flex-1"
+                      title="Dots Expand ⋯"
                     >
-                      <ChevronRight className="h-3 w-3" />
+                      <MoreVertical className="h-3 w-3 icon-hollow-glow" />
                     </Button>
                     <Button
                       size="sm"
                       variant={expandIcon === 'plusminus' ? 'default' : 'outline'}
                       onClick={() => setExpandIcon('plusminus')}
                       className="h-7 px-2 flex-1"
+                      title="Plus/Minus"
                     >
                       <Plus className="h-3 w-3" />
                     </Button>
@@ -365,6 +410,9 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
 
       {/* Test Lab Dialog */}
       <TestLabDialog open={testLabOpen} onOpenChange={setTestLabOpen} />
+      
+      {/* Bug Tracker Dialog */}
+      <BugTracker open={bugTrackerOpen} onOpenChange={setBugTrackerOpen} />
     </div>
   );
 };

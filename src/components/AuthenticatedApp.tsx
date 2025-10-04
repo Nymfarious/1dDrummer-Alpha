@@ -1,13 +1,18 @@
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { DevSettingsProvider } from '@/contexts/DevSettingsContext';
+import { DevTools } from '@/components/DevTools';
+import { ButterflyToggle } from '@/components/ButterflyToggle';
 import Index from "../pages/Index";
 import Auth from "../pages/Auth";
 import NotFound from "../pages/NotFound";
 
 const AuthenticatedApp = () => {
   const { loading } = useAuth();
+  const [devToolsOpen, setDevToolsOpen] = useState(false);
 
   if (loading) {
     return (
@@ -21,7 +26,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <>
+    <DevSettingsProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
@@ -31,7 +36,16 @@ const AuthenticatedApp = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    </>
+      
+      {/* Hidden Butterfly Toggle - Bottom Right */}
+      <ButterflyToggle 
+        onToggle={() => setDevToolsOpen(!devToolsOpen)} 
+        isVisible={!devToolsOpen}
+      />
+      
+      {/* DevTools Panel */}
+      <DevTools isOpen={devToolsOpen} onClose={() => setDevToolsOpen(false)} />
+    </DevSettingsProvider>
   );
 };
 
