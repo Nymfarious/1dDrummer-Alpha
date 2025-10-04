@@ -331,30 +331,20 @@ export const MetronomePanel = ({
                     });
                     return;
                   }
-                  startMetronome();
-                  setMetronomeOn(true);
+                  if (metronomeOn) {
+                    stopMetronome();
+                    setMetronomeOn(false);
+                  } else {
+                    startMetronome();
+                    setMetronomeOn(true);
+                  }
                 }}
                 variant={metronomeOn ? "audio-active" : "audio"}
                 size="wide"
                 className="flex-1"
-                disabled={!metronomeEnabled || metronomeOn}
+                disabled={!metronomeEnabled}
               >
-                <Play size={16} />
-                START
-              </Button>
-              
-              <Button
-                onClick={() => {
-                  stopMetronome();
-                  setMetronomeOn(false);
-                }}
-                variant={!metronomeOn ? "audio-inactive" : "audio-danger"}
-                size="wide"
-                className="flex-1"
-                disabled={!metronomeOn}
-              >
-                <Pause size={16} />
-                STOP
+                {metronomeOn ? <Pause size={20} /> : <Play size={20} />}
               </Button>
             </div>
             
