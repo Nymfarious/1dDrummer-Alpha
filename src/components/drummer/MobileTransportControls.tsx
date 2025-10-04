@@ -290,20 +290,6 @@ export const MobileTransportControls = ({
               <RotateCcw size={28} />
             </button>
             
-            {/* Main Play/Stop Button */}
-            <button
-              onClick={isPlaying ? handleStop : handlePlay}
-              className={`transition-all duration-200 ${
-                isPlaying 
-                  ? 'text-primary scale-110 animate-pulse' 
-                  : 'text-foreground hover:text-primary hover:scale-110'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              disabled={!currentAudioFile}
-              title={isPlaying ? "Stop" : "Play"}
-            >
-              {isPlaying ? <Square size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
-            </button>
-            
             <button
               onClick={() => {
                 if (audioRef.current && currentAudioFile) {
