@@ -123,17 +123,36 @@ export const MobileTransportControls = ({
   };
 
   const handlePlay = async () => {
+    console.log('Play clicked, currentAudioFile:', currentAudioFile);
     if (audioRef.current && currentAudioFile) {
-      const url = await getFileUrl(currentAudioFile);
-      if (url && audioRef.current.src !== url) {
-        audioRef.current.src = url;
-      }
-      audioRef.current.play();
-      setIsPlaying(true);
-      setIsPaused(false);
-      
-      if (metronomeEnabled && metronomeOn) {
-        startMetronome();
+      try {
+        const url = await getFileUrl(currentAudioFile);
+        console.log('Got file URL:', url);
+        if (url) {
+          if (audioRef.current.src !== url) {
+            audioRef.current.src = url;
+          }
+          await audioRef.current.play();
+          setIsPlaying(true);
+          setIsPaused(false);
+          
+          if (metronomeEnabled && metronomeOn) {
+            startMetronome();
+          }
+        } else {
+          toast({
+            title: "Error",
+            description: "Could not load audio file",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error playing audio:', error);
+        toast({
+          title: "Playback Error",
+          description: "Failed to play audio file",
+          variant: "destructive",
+        });
       }
     } else {
       toast({
