@@ -349,40 +349,14 @@ export const TransportControls = ({
               </Button>
               
               <Button
-                onClick={handleSkipForward}
-                variant="transport"
+                onClick={handleLoop}
+                variant={isLooping ? "transport-active" : "transport"}
                 size="sm"
                 className="flex items-center justify-center"
                 disabled={!currentAudioFile}
+                title={isLooping ? "Loop enabled" : "Loop disabled"}
               >
-                <RotateCw size={18} />
-              </Button>
-            </div>
-
-            {/* BPM Control */}
-            <div className="space-y-2">
-              <Label>BPM: {bpm}</Label>
-              <Slider
-                value={[bpm]}
-                onValueChange={(value) => setBpm(value[0])}
-                min={40}
-                max={240}
-                step={1}
-                className="w-full"
-              />
-            </div>
-
-            {/* Loop Button */}
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleLoop}
-                variant={isLooping ? "transport-active" : "outline"}
-                size="sm"
-                className="flex items-center gap-2"
-                disabled={!currentAudioFile}
-              >
-                <RefreshCcw size={16} />
-                {isLooping ? 'Looping' : 'Loop'}
+                <RefreshCcw size={18} />
               </Button>
             </div>
           </CardContent>
@@ -432,6 +406,18 @@ export const TransportControls = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>BPM: {bpm}</Label>
+              <Slider
+                value={[bpm]}
+                onValueChange={(value) => setBpm(value[0])}
+                min={40}
+                max={240}
+                step={1}
+                className="w-full"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label>Metronome Volume: {metronomeVolume}%</Label>
               <Slider
