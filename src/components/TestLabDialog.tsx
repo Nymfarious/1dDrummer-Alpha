@@ -43,7 +43,7 @@ export const TestLabDialog = ({ open, onOpenChange }: TestLabDialogProps) => {
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground">Test A: Concave (Inset)</h4>
                   <Button 
-                    className="w-full button-concave active:button-concave-pressed"
+                    className="w-full button-concave"
                     onClick={() => console.log('Concave button clicked')}
                   >
                     Press Me (Concave)
@@ -54,7 +54,7 @@ export const TestLabDialog = ({ open, onOpenChange }: TestLabDialogProps) => {
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground">Test B: Embossed (Raised)</h4>
                   <Button 
-                    className="w-full button-embossed active:button-embossed-pressed"
+                    className="w-full button-embossed"
                     onClick={() => console.log('Embossed button clicked')}
                   >
                     Press Me (Embossed)
