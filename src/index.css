@@ -128,9 +128,10 @@
     animation: led-pulse 2s infinite;
     z-index: 10;
     box-shadow: 
-      0 0 8px hsl(var(--audio-success)),
-      0 0 12px hsl(var(--audio-success) / 0.6),
-      0 0 16px hsl(var(--audio-success) / 0.3);
+      0 0 10px hsl(var(--audio-success)),
+      0 0 16px hsl(var(--audio-success) / 0.8),
+      0 0 24px hsl(var(--audio-success) / 0.5);
+    opacity: 1;
   }
 
   .status-inactive {
