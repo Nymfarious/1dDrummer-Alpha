@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreVertical, Key, Settings, Zap, Brain, Plus, Minus, X, TestTube, Beaker, Eye, EyeOff } from 'lucide-react';
+import { MoreVertical, Key, Settings, Zap, Brain, Plus, Minus, X, TestTube, Beaker, Eye, EyeOff, Check } from 'lucide-react';
 import { useDevSettings } from '@/contexts/DevSettingsContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -253,9 +253,9 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
                   <div key={key.env} className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground truncate flex-1">{key.name}</span>
                     {key.isSet ? (
-                      <span className="status-active text-xs px-2 py-0.5 rounded">SET</span>
+                      <Check className="h-3 w-3 text-primary" />
                     ) : (
-                      <Button size="sm" className="h-6 px-2 status-error animate-pulse">
+                      <Button size="sm" className="h-6 px-2 bg-muted text-muted-foreground">
                         <Plus className="h-3 w-3" />
                         ADD
                       </Button>
@@ -286,14 +286,11 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
                 {apiKeys.filter(k => k.category === 'feature').map((key) => (
                   <div key={key.env} className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground truncate flex-1">{key.name}</span>
-                    {key.isSet ? (
-                      <span className="status-active text-xs px-2 py-0.5 rounded">SET</span>
-                    ) : (
-                      <Button size="sm" className="h-6 px-2 status-error animate-pulse">
-                        <Plus className="h-3 w-3" />
-                        ADD
-                      </Button>
-                    )}
+                    <Switch
+                      checked={key.isSet}
+                      disabled={!key.isSet}
+                      className="scale-75"
+                    />
                   </div>
                 ))}
               </div>
