@@ -296,41 +296,7 @@ export const TransportControls = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-5 gap-2">
-              <div className="flex flex-col gap-1">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={handlePlay}
-                        variant={isPlaying ? "transport-active" : "transport"}
-                        size="sm"
-                        className="flex items-center justify-center"
-                        disabled={!currentAudioFile}
-                      >
-                        <Play size={18} />
-                      </Button>
-                    </TooltipTrigger>
-                    {!currentAudioFile && (
-                      <TooltipContent>
-                        <p>Upload a file to enable playback</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
-                
-                {/* Tiny Loop Button Under Play */}
-                <Button
-                  onClick={handleLoop}
-                  variant={isLooping ? "transport-active" : "outline"}
-                  size="sm"
-                  className="h-5 w-full flex items-center justify-center p-0"
-                  disabled={!currentAudioFile}
-                  title={isLooping ? "Loop enabled" : "Loop disabled"}
-                >
-                  <RefreshCcw size={12} />
-                </Button>
-              </div>
+            <div className="grid grid-cols-4 gap-2">
               
               <Button
                 onClick={handlePause}
