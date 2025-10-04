@@ -100,9 +100,12 @@ export const useSecureAudioUpload = () => {
         status: 'uploading'
       }]);
 
+      // Determine which bucket to use based on guest mode
+      const bucketName = (settings.guestAudioUploadOverride && !user) ? 'guest-audio-files' : 'audio-files';
+      
       // Upload to Supabase Storage
       const { data: storageData, error: storageError } = await supabase.storage
-        .from('audio-files')
+        .from(bucketName)
         .upload(secureFileName, file, {
           cacheControl: '3600',
           upsert: false
@@ -146,12 +149,13 @@ export const useSecureAudioUpload = () => {
 
         if (dbError) {
           // Clean up storage if database insert fails
-          await supabase.storage.from('audio-files').remove([secureFileName]);
+          const bucketName = (settings.guestAudioUploadOverride && !user) ? 'guest-audio-files' : 'audio-files';
+          await supabase.storage.from(bucketName).remove([secureFileName]);
           throw dbError;
         }
         dbData = data;
       } else {
-        // Guest mode - create temporary metadata
+        // Guest mode - create temporary metadata (not persisted to DB)
         dbData = {
           id: `guest-${Date.now()}`,
           file_name: secureFileName,
@@ -162,6 +166,13 @@ export const useSecureAudioUpload = () => {
           duration_seconds: duration ? Math.round(duration) : null,
           created_at: new Date().toISOString()
         };
+        
+        // Show warning about temporary guest files
+        toast({
+          title: "Guest Upload",
+          description: "File uploaded temporarily. Sign in to save permanently.",
+          variant: "default",
+        });
       }
 
       // Update progress to completed
@@ -245,8 +256,11 @@ export const useSecureAudioUpload = () => {
    */
   const getFileUrl = async (audioFile: AudioFile): Promise<string | null> => {
     try {
+      // Determine bucket based on file path
+      const bucketName = audioFile.fileName.startsWith('guest/') ? 'guest-audio-files' : 'audio-files';
+      
       const { data, error } = await supabase.storage
-        .from('audio-files')
+        .from(bucketName)
         .createSignedUrl(audioFile.fileName, 3600); // 1 hour expiry
 
       if (error) throw error;
@@ -294,9 +308,12 @@ export const useSecureAudioUpload = () => {
    */
   const deleteFile = async (audioFile: AudioFile): Promise<void> => {
     try {
+      // Determine bucket based on file path
+      const bucketName = audioFile.fileName.startsWith('guest/') ? 'guest-audio-files' : 'audio-files';
+      
       // Delete from storage
       const { error: storageError } = await supabase.storage
-        .from('audio-files')
+        .from(bucketName)
         .remove([audioFile.fileName]);
 
       if (storageError) throw storageError;
