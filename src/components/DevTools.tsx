@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, Key, Settings, Zap, Brain, Plus, Minus, X, TestTube } from 'lucide-react';
+import { ChevronRight, Key, Settings, Zap, Brain, Plus, Minus, X, TestTube, Beaker } from 'lucide-react';
 import { useDevSettings } from '@/contexts/DevSettingsContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { TestLabDialog } from '@/components/TestLabDialog';
 
 interface DevToolsProps {
   isOpen: boolean;
@@ -27,7 +28,9 @@ interface APIKeyStatus {
 export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
   const { toast } = useToast();
   const [expandIcon, setExpandIcon] = useState<ExpandIcon>('chevron');
+  const [testLabOpen, setTestLabOpen] = useState(false);
   const [openSections, setOpenSections] = useState({
+    devPrefs: true,
     captcha: false,
     apis: true,
     features: false,
@@ -94,38 +97,61 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
 
       <ScrollArea className="h-[calc(100vh-73px)]">
         <div className="p-4 space-y-4">
-          {/* Expand Icon Selector */}
-          <Card className="bg-card/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
+          {/* Dev Preferences Section */}
+          <div className="space-y-2">
+            <button
+              onClick={() => toggleSection('devPrefs')}
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                {renderExpandIcon(openSections.devPrefs)}
                 <Settings className="h-4 w-4" />
-                UI Preferences
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Expand Icon Style</Label>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant={expandIcon === 'chevron' ? 'default' : 'outline'}
-                    onClick={() => setExpandIcon('chevron')}
-                    className="h-7 px-2"
-                  >
-                    <ChevronRight className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={expandIcon === 'plusminus' ? 'default' : 'outline'}
-                    onClick={() => setExpandIcon('plusminus')}
-                    className="h-7 px-2"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
+                <span className="text-sm font-medium">Dev Preferences</span>
+              </div>
+            </button>
+            
+            {openSections.devPrefs && (
+              <div className="ml-6 space-y-3 p-3 border-l-2 border-primary/20">
+                {/* Test Lab Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTestLabOpen(true)}
+                  className="w-full justify-start gap-2"
+                >
+                  <Beaker className="h-4 w-4" />
+                  Open Test Lab
+                </Button>
+
+                <Separator />
+
+                {/* Expand Icon Selector */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Expand Icon Style</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant={expandIcon === 'chevron' ? 'default' : 'outline'}
+                      onClick={() => setExpandIcon('chevron')}
+                      className="h-7 px-2 flex-1"
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={expandIcon === 'plusminus' ? 'default' : 'outline'}
+                      onClick={() => setExpandIcon('plusminus')}
+                      className="h-7 px-2 flex-1"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
+
+          <Separator />
 
           {/* Captcha Section */}
           <div className="space-y-2">
@@ -336,6 +362,9 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           </div>
         </div>
       </ScrollArea>
+
+      {/* Test Lab Dialog */}
+      <TestLabDialog open={testLabOpen} onOpenChange={setTestLabOpen} />
     </div>
   );
 };
