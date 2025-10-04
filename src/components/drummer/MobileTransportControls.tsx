@@ -44,6 +44,12 @@ export const MobileTransportControls = ({
   const { toast } = useToast();
   const { settings } = useDevSettings();
   const { getFileUrl, userFiles, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
+  
+  console.log('=== MobileTransportControls Render ===');
+  console.log('userFiles count:', userFiles.length);
+  console.log('currentAudioFile:', currentAudioFile);
+  console.log('user:', user ? 'logged in' : 'guest');
+  console.log('guestAudioUploadOverride:', settings.guestAudioUploadOverride);
 
   // Update audio progress
   useEffect(() => {
@@ -451,18 +457,24 @@ export const MobileTransportControls = ({
         <CardContent>
           {userFiles.length > 0 ? (
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {userFiles.map((file: any) => (
-                <Button
-                  key={file.id}
-                  onClick={() => setCurrentAudioFile(file)}
-                  variant={currentAudioFile?.id === file.id ? "audio-active" : "outline"}
-                  className="w-full justify-start text-sm"
-                  size="sm"
-                >
-                  <Music size={14} className="mr-2" />
-                  {file.originalName}
-                </Button>
-              ))}
+              {userFiles.map((file: any) => {
+                console.log('Rendering file in library:', file);
+                return (
+                  <Button
+                    key={file.id}
+                    onClick={() => {
+                      console.log('File clicked in library:', file);
+                      setCurrentAudioFile(file);
+                    }}
+                    variant={currentAudioFile?.id === file.id ? "audio-active" : "outline"}
+                    className="w-full justify-start text-sm"
+                    size="sm"
+                  >
+                    <Music size={14} className="mr-2" />
+                    {file.originalName}
+                  </Button>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-4">
