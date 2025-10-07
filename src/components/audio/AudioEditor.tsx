@@ -30,6 +30,7 @@ import { useDropzone } from 'react-dropzone';
 import { useDropbox } from '@/hooks/useDropbox';
 import { useGoogleDrive } from '@/hooks/useGoogleDrive';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
+import { DropboxFilePicker } from './DropboxFilePicker';
 import {
   Dialog,
   DialogContent,
@@ -63,6 +64,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [selectedFileId, setSelectedFileId] = useState('');
   const [newTrackName, setNewTrackName] = useState('');
   const [showCloudPicker, setShowCloudPicker] = useState(false);
+  const [showDropboxPicker, setShowDropboxPicker] = useState(false);
   const [uploadSource, setUploadSource] = useState<'library' | 'local' | 'cloud'>('library');
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -130,14 +132,84 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
   const handleCloudConnect = async (provider: 'dropbox' | 'drive') => {
     if (provider === 'dropbox') {
-      toast({
-        title: "Dropbox Connected",
-        description: "Dropbox is connected in dev mode",
-      });
+      setShowCloudPicker(false);
+      setShowDropboxPicker(true);
     } else if (provider === 'drive') {
       if (!driveConnected) {
         await connectGoogleDrive();
       }
+      setShowCloudPicker(false);
+    }
+  };
+
+  const handleDropboxFileSelect = async (file: Blob, fileName: string) => {
+    const url = URL.createObjectURL(file);
+    const trackId = `track-${Date.now()}`;
+    const trackName = fileName;
+
+    setTracks(prev => [...prev, {
+      id: trackId,
+      name: trackName,
+      fileId: `dropbox-${trackId}`,
+      waveform: null,
+      regions: null,
+      audioBuffer: null,
+      isPlaying: false,
+      volume: 1
+    }]);
+
+    // Load the audio after track is added
+    setTimeout(() => loadDropboxAudio(trackId, url, fileName), 100);
+  };
+
+  const loadDropboxAudio = async (trackId: string, url: string, fileName: string) => {
+    const container = trackRefs.current[trackId];
+    if (!container) return;
+
+    try {
+      const wavesurfer = WaveSurfer.create({
+        container,
+        waveColor: 'hsl(var(--primary))',
+        progressColor: 'hsl(var(--primary-foreground))',
+        cursorColor: 'hsl(var(--accent))',
+        barWidth: 2,
+        barGap: 1,
+        height: 80,
+        normalize: true,
+        backend: 'WebAudio'
+      });
+
+      const regions = wavesurfer.registerPlugin(RegionsPlugin.create());
+
+      await wavesurfer.load(url);
+
+      setTracks(prev => prev.map(t => 
+        t.id === trackId 
+          ? { ...t, waveform: wavesurfer, regions, audioBuffer: wavesurfer.getDecodedData() }
+          : t
+      ));
+
+      wavesurfer.on('finish', () => {
+        if (loopEnabled) {
+          wavesurfer.play();
+        } else {
+          setTracks(prev => prev.map(t => 
+            t.id === trackId ? { ...t, isPlaying: false } : t
+          ));
+        }
+      });
+
+      toast({
+        title: "Track loaded",
+        description: `${fileName} ready for editing`
+      });
+    } catch (error) {
+      console.error('Error loading audio:', error);
+      toast({
+        title: "Load failed",
+        description: "Could not load audio file from Dropbox",
+        variant: "destructive"
+      });
     }
   };
 
@@ -505,6 +577,13 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Dropbox File Picker */}
+        <DropboxFilePicker
+          open={showDropboxPicker}
+          onOpenChange={setShowDropboxPicker}
+          onFileSelect={handleDropboxFileSelect}
+        />
 
         {/* Global Controls */}
         {tracks.length > 0 && (
