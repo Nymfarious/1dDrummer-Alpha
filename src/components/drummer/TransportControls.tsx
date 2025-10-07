@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, RotateCcw, RotateCw, Upload, Volume2, Music, FileAudio, Trash2, Shield, RefreshCcw, Clock } from 'lucide-react';
+import { Play, Pause, SkipBack, RotateCcw, RotateCw, Upload, Volume2, Music, FileAudio, Trash2, Shield, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { secureStorage, migrateSensitiveData } from '@/lib/secureStorage';
 import { useAuth } from '@/hooks/useAuth';
 import { useDevSettings } from '@/contexts/DevSettingsContext';
+import { MetronomeIcon } from '@/components/icons/MetronomeIcon';
 
 interface TransportControlsProps {
   bpm: number;
@@ -436,7 +437,7 @@ export const TransportControls = ({
                   disabled={!metronomeEnabled}
                 />
                 <Label htmlFor="metronome-toggle" className="flex items-center gap-1 cursor-pointer text-sm">
-                  <Clock size={14} />
+                  <MetronomeIcon size={14} />
                 </Label>
               </div>
               
