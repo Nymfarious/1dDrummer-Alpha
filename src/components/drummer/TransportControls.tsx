@@ -349,16 +349,17 @@ export const TransportControls = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* First row - Main controls */}
             <div className="grid grid-cols-4 gap-2">
               <div className="flex flex-col items-center gap-1">
                 <Button
                   onClick={handlePlay}
                   variant={isPlaying ? "transport-active" : "transport"}
                   size="sm"
-                  className="flex items-center justify-center w-full"
+                  className="flex items-center justify-center w-full h-8"
                   disabled={!currentAudioFile}
                 >
-                  <Play size={18} />
+                  <Play size={16} />
                 </Button>
               </div>
               
@@ -367,10 +368,10 @@ export const TransportControls = ({
                   onClick={handlePause}
                   variant={isPaused ? "transport-active" : "transport"}
                   size="sm"
-                  className="flex items-center justify-center w-full"
+                  className="flex items-center justify-center w-full h-8"
                   disabled={!currentAudioFile}
                 >
-                  <Pause size={18} />
+                  <Pause size={16} />
                 </Button>
               </div>
               
@@ -379,39 +380,11 @@ export const TransportControls = ({
                   onClick={handleRewind}
                   variant="transport"
                   size="sm"
-                  className="flex items-center justify-center w-full"
+                  className="flex items-center justify-center w-full h-8"
                   disabled={!currentAudioFile}
                 >
-                  <SkipBack size={18} />
+                  <SkipBack size={16} />
                 </Button>
-              </div>
-              
-              <div className="flex flex-col items-center gap-1">
-                <Button
-                  onClick={handleSkipBackward}
-                  variant="transport"
-                  size="sm"
-                  className="flex items-center justify-center w-full"
-                  disabled={!currentAudioFile}
-                >
-                  <RotateCcw size={18} />
-                </Button>
-                <span className="text-[9px] text-muted-foreground">-30s</span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex flex-col items-center gap-1">
-                <Button
-                  onClick={handleSkipForward}
-                  variant="transport"
-                  size="sm"
-                  className="flex items-center justify-center w-full"
-                  disabled={!currentAudioFile}
-                >
-                  <RotateCw size={18} />
-                </Button>
-                <span className="text-[9px] text-muted-foreground">+30s</span>
               </div>
               
               <div className="flex flex-col items-center gap-1">
@@ -419,12 +392,41 @@ export const TransportControls = ({
                   onClick={handleLoop}
                   variant={isLooping ? "transport-active" : "transport"}
                   size="sm"
-                  className="flex items-center justify-center w-full"
+                  className="flex items-center justify-center w-full h-8"
                   disabled={!currentAudioFile}
                 >
-                  <RotateCcw size={18} className={isLooping ? "" : "opacity-50"} />
+                  <RefreshCcw size={16} className={isLooping ? "" : "opacity-50"} />
                 </Button>
                 <span className="text-[9px] text-muted-foreground">Loop</span>
+              </div>
+            </div>
+            
+            {/* Second row - Skip controls */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  onClick={handleSkipBackward}
+                  variant="transport"
+                  size="sm"
+                  className="flex items-center justify-center w-full h-8"
+                  disabled={!currentAudioFile}
+                >
+                  <RotateCcw size={16} />
+                </Button>
+                <span className="text-[9px] text-muted-foreground">-30s</span>
+              </div>
+              
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  onClick={handleSkipForward}
+                  variant="transport"
+                  size="sm"
+                  className="flex items-center justify-center w-full h-8"
+                  disabled={!currentAudioFile}
+                >
+                  <RotateCw size={16} />
+                </Button>
+                <span className="text-[9px] text-muted-foreground">+30s</span>
               </div>
             </div>
 
