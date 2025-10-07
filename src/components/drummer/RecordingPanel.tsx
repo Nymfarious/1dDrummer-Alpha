@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { useDropbox } from '@/hooks/useDropbox';
 import { useGoogleDrive } from '@/hooks/useGoogleDrive';
+import { DropboxFilePicker } from '@/components/audio/DropboxFilePicker';
 
 interface Recording {
   id: string;
@@ -35,6 +36,7 @@ export const RecordingPanel = () => {
     currentName: ''
   });
   const [newName, setNewName] = useState('');
+  const [showDropboxPicker, setShowDropboxPicker] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -265,6 +267,27 @@ export const RecordingPanel = () => {
     await uploadToSupabase(file, 'recording');
   };
 
+  const handleDropboxFileSelect = async (blob: Blob, fileName: string) => {
+    const audioUrl = URL.createObjectURL(blob);
+    const newRecording: Recording = {
+      id: Date.now().toString(),
+      name: fileName.replace(/\.[^/.]+$/, ''),
+      blob,
+      url: audioUrl,
+      duration: 0,
+      timestamp: new Date(),
+      accepted: true
+    };
+    
+    setRecordings(prev => [...prev, newRecording]);
+    setShowDropboxPicker(false);
+    
+    toast({
+      title: "File Loaded",
+      description: `${fileName} added to your library`,
+    });
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -402,10 +425,21 @@ export const RecordingPanel = () => {
           {/* Recordings Library */}
           <Card className="bg-gradient-card border-border card-shadow">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-accent">
-                <Download size={20} />
-                Your Recording Placeholder ({recordings.length})
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-accent">
+                  <Download size={20} />
+                  Your Recording Placeholder ({recordings.length})
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDropboxPicker(true)}
+                  disabled={!dropbox.isConnected}
+                >
+                  <CloudUpload size={16} />
+                  Import from Dropbox
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {recordings.length === 0 ? (
@@ -559,6 +593,13 @@ export const RecordingPanel = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dropbox File Picker */}
+      <DropboxFilePicker
+        open={showDropboxPicker}
+        onOpenChange={setShowDropboxPicker}
+        onFileSelect={handleDropboxFileSelect}
+      />
     </>
   );
 };
