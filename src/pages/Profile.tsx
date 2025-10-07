@@ -147,7 +147,8 @@ const Profile = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          user_id: user.id,
           full_name: profile.full_name,
           username: profile.username,
           bio: profile.bio.substring(0, 500),
