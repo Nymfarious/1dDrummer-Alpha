@@ -362,7 +362,7 @@ export const TransportControls = ({
               />
             </div>
 
-            {/* Metronome toggle with BPM control */}
+            {/* Metronome toggle with BPM and volume controls */}
             <div className="flex items-center gap-3 pt-1">
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -386,7 +386,20 @@ export const TransportControls = ({
                 </Label>
               </div>
               
-              <div className="flex items-center gap-1 ml-auto">
+              {/* Compact volume slider */}
+              <div className="flex items-center gap-1 flex-1 max-w-[80px]">
+                <Volume2 size={12} className="text-muted-foreground" />
+                <Slider
+                  value={[metronomeVolume]}
+                  onValueChange={(value) => setMetronomeVolume(value[0])}
+                  max={100}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
+              
+              {/* BPM control */}
+              <div className="flex items-center gap-1">
                 <span className="text-sm font-medium min-w-[3ch] text-center">{bpm}</span>
                 <div className="flex flex-col">
                   <Button
