@@ -1,3 +1,4 @@
+<!--
 interface LocationMapProps {
   city: string;
 }
@@ -13,3 +14,4 @@ export const LocationMap = ({ city }: LocationMapProps) => {
     </div>
   );
 };
+--!>
