@@ -55,7 +55,7 @@ export const useSecureAudioUpload = () => {
   /**
    * Upload a single audio file securely
    */
-  const uploadFile = async (file: File): Promise<AudioFile | null> => {
+  const uploadFile = async (file: File, category: 'recording' | 'imported' | 'shared' = 'imported'): Promise<AudioFile | null> => {
     if (!user && !settings.guestAudioUploadOverride) {
       toast({
         title: "Authentication Required",
@@ -144,7 +144,7 @@ export const useSecureAudioUpload = () => {
           mime_type: file.type,
             storage_path: storageData.path,
             duration_seconds: duration ? Math.round(duration) : null,
-            file_category: 'imported'
+            file_category: category
           })
           .select()
           .single();
@@ -194,7 +194,7 @@ export const useSecureAudioUpload = () => {
         storagePath: dbData.storage_path,
         durationSeconds: dbData.duration_seconds,
         createdAt: dbData.created_at,
-        file_category: dbData.file_category || 'imported'
+        file_category: category
       };
 
       // Add to user files

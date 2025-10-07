@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { useAuth } from '@/hooks/useAuth';
 import { useDropzone } from 'react-dropzone';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Recording {
   id: string;
@@ -42,34 +43,14 @@ export const Libraries = () => {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   
-  // Sample recordings data - in real app, this would come from your database
-  const [recordings, setRecordings] = useState<Recording[]>([
-    {
-      id: '1',
-      name: 'Practice Session 1',
-      duration: '2:00',
-      date: new Date().toISOString(),
-      size: '3.2 MB',
-      type: 'recording'
-    },
-    {
-      id: '2', 
-      name: 'Groove Experiment',
-      duration: '1:45',
-      date: new Date(Date.now() - 86400000).toISOString(),
-      size: '2.8 MB',
-      type: 'recording'
-    }
-  ]);
-
-  const filteredFiles = [...recordings, ...userFiles.map(file => ({
+  const filteredFiles = userFiles.map(file => ({
     id: file.id,
     name: file.originalName,
     duration: file.durationSeconds ? `${Math.floor(file.durationSeconds / 60)}:${(file.durationSeconds % 60).toString().padStart(2, '0')}` : '0:00',
     date: file.createdAt,
     size: file.fileSize ? `${(file.fileSize / 1024 / 1024).toFixed(1)} MB` : '0 MB',
-    type: 'upload' as const
-  }))]
+    type: (file.file_category === 'recording' ? 'recording' : 'upload') as 'recording' | 'upload'
+  }))
     .filter(file => 
       file.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (filterType === 'all' || file.type === filterType)
@@ -127,12 +108,30 @@ export const Libraries = () => {
     }
   };
 
-  const handleDelete = (fileId: string) => {
-    setRecordings(prev => prev.filter(r => r.id !== fileId));
-    toast({
-      title: "File Deleted",
-      description: "Recording removed from library",
-    });
+  const handleDelete = async (fileId: string) => {
+    const file = userFiles.find(f => f.id === fileId);
+    if (!file) return;
+    
+    try {
+      // Delete from Supabase
+      const bucketName = 'audio-files';
+      await supabase.storage.from(bucketName).remove([file.fileName]);
+      await supabase.from('user_audio_files').delete().eq('id', fileId);
+      
+      toast({
+        title: "File Deleted",
+        description: "Recording removed from library",
+      });
+      
+      // Reload files
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: "Could not delete the file",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -195,7 +194,7 @@ export const Libraries = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-foreground status-warning">Audio Libraries</h2>
+        <h2 className="text-3xl font-bold text-foreground status-warning">Library</h2>
         <Badge variant="secondary" className="text-sm">
           {filteredFiles.length} files
         </Badge>
@@ -364,8 +363,8 @@ export const Libraries = () => {
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>Library Storage</span>
             <span>
-              {userFiles.length + recordings.length} files • 
-              {((userFiles.reduce((acc, file) => acc + (file.fileSize || 0), 0) / 1024 / 1024) + (recordings.length * 3)).toFixed(1)} MB used
+              {userFiles.length} files • 
+              {(userFiles.reduce((acc, file) => acc + (file.fileSize || 0), 0) / 1024 / 1024).toFixed(1)} MB used
             </span>
           </div>
         </CardContent>

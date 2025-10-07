@@ -10,6 +10,7 @@ import { SettingsPanel } from '@/components/drummer/SettingsPanel';
 import { AICoachPanel } from '@/components/drummer/AICoachPanel';
 import { SoundMapperButton } from '@/components/drummer/SoundMapperButton';
 import Libraries from '@/pages/Libraries';
+import Music from '@/pages/Music';
 import UserProfile from '@/pages/UserProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -94,6 +95,8 @@ const DrummerStudio = () => {
         return <AICoachPanel bpm={bpm} timeSignature={timeSig} />;
       case 'libraries':
         return <Libraries />;
+      case 'music':
+        return <Music />;
       case 'bandroom':
         return <BandRoomPanel />;
       case 'userprofile':

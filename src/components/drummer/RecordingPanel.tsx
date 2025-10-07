@@ -262,7 +262,7 @@ export const RecordingPanel = () => {
 
   const uploadToSupabaseCloud = async (recording: Recording) => {
     const file = new File([recording.blob], `${recording.name}.webm`, { type: 'audio/webm' });
-    await uploadToSupabase(file);
+    await uploadToSupabase(file, 'recording');
   };
 
   const formatTime = (seconds: number) => {
