@@ -124,45 +124,66 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_position: Json | null
+          avatar_ring_color: string | null
           avatar_url: string | null
           bio: string | null
           bragging_links: Json | null
+          city: string | null
           created_at: string
+          default_metronome_sound: string | null
           dropbox_token: string | null
           full_name: string | null
           google_drive_token: string | null
+          group_skill_level: number | null
           id: string
+          notification_settings: Json | null
           skill_level: number | null
+          solo_skill_level: number | null
           title: string | null
           updated_at: string
           user_id: string
           username: string | null
         }
         Insert: {
+          avatar_position?: Json | null
+          avatar_ring_color?: string | null
           avatar_url?: string | null
           bio?: string | null
           bragging_links?: Json | null
+          city?: string | null
           created_at?: string
+          default_metronome_sound?: string | null
           dropbox_token?: string | null
           full_name?: string | null
           google_drive_token?: string | null
+          group_skill_level?: number | null
           id?: string
+          notification_settings?: Json | null
           skill_level?: number | null
+          solo_skill_level?: number | null
           title?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
         }
         Update: {
+          avatar_position?: Json | null
+          avatar_ring_color?: string | null
           avatar_url?: string | null
           bio?: string | null
           bragging_links?: Json | null
+          city?: string | null
           created_at?: string
+          default_metronome_sound?: string | null
           dropbox_token?: string | null
           full_name?: string | null
           google_drive_token?: string | null
+          group_skill_level?: number | null
           id?: string
+          notification_settings?: Json | null
           skill_level?: number | null
+          solo_skill_level?: number | null
           title?: string | null
           updated_at?: string
           user_id?: string
