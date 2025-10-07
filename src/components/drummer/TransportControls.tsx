@@ -362,27 +362,51 @@ export const TransportControls = ({
               />
             </div>
 
-            {/* Metronome toggle */}
-            <div className="flex items-center gap-2 pt-1">
-              <Checkbox
-                id="metronome-toggle"
-                checked={metronomeOn}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    if (metronomeEnabled) {
-                      startMetronome();
-                      setMetronomeOn(true);
+            {/* Metronome toggle with BPM control */}
+            <div className="flex items-center gap-3 pt-1">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="metronome-toggle"
+                  checked={metronomeOn}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      if (metronomeEnabled) {
+                        startMetronome();
+                        setMetronomeOn(true);
+                      }
+                    } else {
+                      stopMetronome();
+                      setMetronomeOn(false);
                     }
-                  } else {
-                    stopMetronome();
-                    setMetronomeOn(false);
-                  }
-                }}
-                disabled={!metronomeEnabled}
-              />
-              <Label htmlFor="metronome-toggle" className="flex items-center gap-1 cursor-pointer text-sm">
-                <Music size={14} />
-              </Label>
+                  }}
+                  disabled={!metronomeEnabled}
+                />
+                <Label htmlFor="metronome-toggle" className="flex items-center gap-1 cursor-pointer text-sm">
+                  <Music size={14} />
+                </Label>
+              </div>
+              
+              <div className="flex items-center gap-1 ml-auto">
+                <span className="text-sm font-medium min-w-[3ch] text-center">{bpm}</span>
+                <div className="flex flex-col">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-6 p-0 hover:bg-primary/10"
+                    onClick={() => setBpm(Math.min(240, bpm + 1))}
+                  >
+                    <span className="text-xs">▲</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-6 p-0 hover:bg-primary/10"
+                    onClick={() => setBpm(Math.max(40, bpm - 1))}
+                  >
+                    <span className="text-xs">▼</span>
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
