@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { AvatarUpload } from '@/components/profile/AvatarUpload';
 import { LocationMap } from '@/components/profile/LocationMap';
 import { useProfileExport } from '@/hooks/useProfileExport';
 import { toast } from 'sonner';
@@ -30,9 +29,6 @@ const Profile = () => {
     username: '',
     bio: '',
     city: '',
-    avatar_url: '',
-    avatar_ring_color: 'blue' as 'blue' | 'green' | 'red',
-    avatar_position: { x: 0, y: 0, zoom: 1 },
     group_skill_level: 1,
     solo_skill_level: 1,
     bragging_links: [] as BraggingLink[],
@@ -68,9 +64,6 @@ const Profile = () => {
           username: data.username || '',
           bio: data.bio || '',
           city: data.city || '',
-          avatar_url: data.avatar_url || '',
-          avatar_ring_color: (data.avatar_ring_color as 'blue' | 'green' | 'red') || 'blue',
-          avatar_position: (data.avatar_position as { x: number; y: number; zoom: number }) || { x: 0, y: 0, zoom: 1 },
           group_skill_level: data.group_skill_level || 1,
           solo_skill_level: data.solo_skill_level || 1,
           bragging_links: (data.bragging_links as any as BraggingLink[]) || [],
@@ -91,31 +84,6 @@ const Profile = () => {
       toast.error('Failed to load profile');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAvatarUpload = async (file: File) => {
-    if (!user) return;
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/avatar.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('audio-files')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('audio-files')
-        .getPublicUrl(filePath);
-
-      setProfile({ ...profile, avatar_url: data.publicUrl });
-      toast.success('Avatar uploaded!');
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
-      toast.error('Failed to upload avatar');
     }
   };
 
@@ -153,9 +121,6 @@ const Profile = () => {
           username: profile.username,
           bio: profile.bio.substring(0, 500),
           city: profile.city,
-          avatar_url: profile.avatar_url,
-          avatar_ring_color: profile.avatar_ring_color,
-          avatar_position: profile.avatar_position as any,
           group_skill_level: profile.group_skill_level,
           solo_skill_level: profile.solo_skill_level,
           bragging_links: profile.bragging_links as any,
@@ -189,17 +154,6 @@ const Profile = () => {
       </div>
 
       <Card className="p-6 space-y-6">
-        <div className="flex flex-col items-center">
-          <AvatarUpload
-            avatarUrl={profile.avatar_url}
-            ringColor={profile.avatar_ring_color}
-            position={profile.avatar_position}
-            onAvatarChange={handleAvatarUpload}
-            onRingColorChange={(color) => setProfile({ ...profile, avatar_ring_color: color })}
-            onPositionChange={(position) => setProfile({ ...profile, avatar_position: position })}
-          />
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="full_name">Full Name</Label>
