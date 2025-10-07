@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,11 +18,25 @@ import {
   Trash2,
   Plus,
   Volume2,
-  Download
+  Download,
+  Upload as UploadIcon,
+  Cloud,
+  FileAudio
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useDropzone } from 'react-dropzone';
+import { useDropbox } from '@/hooks/useDropbox';
+import { useGoogleDrive } from '@/hooks/useGoogleDrive';
+import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface AudioTrack {
   id: string;
@@ -48,7 +62,83 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [loopEnabled, setLoopEnabled] = useState(false);
   const [selectedFileId, setSelectedFileId] = useState('');
   const [newTrackName, setNewTrackName] = useState('');
+  const [showCloudPicker, setShowCloudPicker] = useState(false);
+  const [uploadSource, setUploadSource] = useState<'library' | 'local' | 'cloud'>('library');
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  const { uploadFiles, validateFile } = useSecureAudioUpload();
+  const { isConnected: dropboxConnected, connectDropbox, uploadFile: uploadToDropbox } = useDropbox();
+  const { isConnected: driveConnected, connectGoogleDrive, uploadFile: uploadToDrive } = useGoogleDrive();
+
+  // Local file upload via dropzone
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to upload files",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate and upload files
+    for (const file of acceptedFiles) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        toast({
+          title: "Invalid File",
+          description: `${file.name}: ${validation.errors.join(', ')}`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    try {
+      await uploadFiles(acceptedFiles);
+      toast({
+        title: "Upload Successful",
+        description: `${acceptedFiles.length} file(s) uploaded to library`,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [user, uploadFiles, validateFile, toast]);
+
+  const { getRootProps, getInputProps, open: openFilePicker } = useDropzone({
+    onDrop,
+    accept: {
+      'audio/*': ['.mp3', '.wav', '.m4a', '.aac', '.flac']
+    },
+    multiple: true,
+    noClick: true,
+    noKeyboard: true
+  });
+
+  const handleSourceChange = (source: 'library' | 'local' | 'cloud') => {
+    setUploadSource(source);
+    if (source === 'local') {
+      openFilePicker();
+    } else if (source === 'cloud') {
+      setShowCloudPicker(true);
+    }
+  };
+
+  const handleCloudConnect = async (provider: 'dropbox' | 'drive') => {
+    if (provider === 'dropbox') {
+      if (!dropboxConnected) {
+        connectDropbox();
+      }
+    } else if (provider === 'drive') {
+      if (!driveConnected) {
+        await connectGoogleDrive();
+      }
+    }
+  };
 
   const addTrack = async () => {
     if (!selectedFileId) {
@@ -293,32 +383,127 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       
       <CardContent className="space-y-4">
         {/* Add Track Section */}
-        <div className="flex flex-col sm:flex-row gap-3 p-4 bg-secondary rounded-lg border border-border">
-          <select
-            value={selectedFileId}
-            onChange={(e) => setSelectedFileId(e.target.value)}
-            className="flex-1 px-3 py-2 bg-background border border-border rounded-md text-sm"
-          >
-            <option value="">Select audio file...</option>
-            {userFiles.map(file => (
-              <option key={file.id} value={file.id}>
-                {file.originalName}
-              </option>
-            ))}
-          </select>
+        <div {...getRootProps()} className="flex flex-col gap-3 p-4 bg-secondary rounded-lg border border-border">
+          <input {...getInputProps()} />
           
-          <Input
-            placeholder="Track name (optional)"
-            value={newTrackName}
-            onChange={(e) => setNewTrackName(e.target.value)}
-            className="flex-1"
-          />
-          
-          <Button onClick={addTrack} className="gap-2">
-            <Plus size={16} />
-            Add Track
-          </Button>
+          <div className="flex items-center gap-2 mb-2">
+            <FileAudio size={16} className="text-muted-foreground" />
+            <span className="text-sm font-medium">Select Audio Source</span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={uploadSource === 'library' ? 'default' : 'outline'}
+              onClick={() => setUploadSource('library')}
+              className="gap-2"
+            >
+              <FileAudio size={14} />
+              From Library
+            </Button>
+            
+            <Button
+              size="sm"
+              variant={uploadSource === 'local' ? 'default' : 'outline'}
+              onClick={() => handleSourceChange('local')}
+              className="gap-2"
+            >
+              <UploadIcon size={14} />
+              Upload Local
+            </Button>
+            
+            <Button
+              size="sm"
+              variant={uploadSource === 'cloud' ? 'default' : 'outline'}
+              onClick={() => handleSourceChange('cloud')}
+              className="gap-2"
+            >
+              <Cloud size={14} />
+              From Cloud
+            </Button>
+          </div>
+
+          {uploadSource === 'library' && (
+            <div className="flex flex-col sm:flex-row gap-3 mt-2">
+              <select
+                value={selectedFileId}
+                onChange={(e) => setSelectedFileId(e.target.value)}
+                className="flex-1 px-3 py-2 bg-background border border-border rounded-md text-sm"
+              >
+                <option value="">Select from library...</option>
+                {userFiles.map(file => (
+                  <option key={file.id} value={file.id}>
+                    {file.originalName}
+                  </option>
+                ))}
+              </select>
+              
+              <Input
+                placeholder="Track name (optional)"
+                value={newTrackName}
+                onChange={(e) => setNewTrackName(e.target.value)}
+                className="flex-1"
+              />
+              
+              <Button onClick={addTrack} className="gap-2">
+                <Plus size={16} />
+                Add Track
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Cloud Picker Dialog */}
+        <Dialog open={showCloudPicker} onOpenChange={setShowCloudPicker}>
+          <DialogContent className="bg-background">
+            <DialogHeader>
+              <DialogTitle>Select Cloud Storage</DialogTitle>
+              <DialogDescription>
+                Choose a cloud storage provider to import audio files
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-3 py-4">
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-3 h-auto py-4"
+                onClick={() => {
+                  handleCloudConnect('dropbox');
+                  setShowCloudPicker(false);
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <Cloud size={20} />
+                  <div className="text-left">
+                    <div className="font-medium">Dropbox</div>
+                    <div className="text-xs text-muted-foreground">
+                      {dropboxConnected ? 'Connected' : 'Connect to import'}
+                    </div>
+                  </div>
+                </div>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-3 h-auto py-4"
+                onClick={() => {
+                  handleCloudConnect('drive');
+                  setShowCloudPicker(false);
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <Cloud size={20} />
+                  <div className="text-left">
+                    <div className="font-medium">Google Drive</div>
+                    <div className="text-xs text-muted-foreground">
+                      {driveConnected ? 'Connected' : 'Connect to import'}
+                    </div>
+                  </div>
+                </div>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Global Controls */}
         {tracks.length > 0 && (
