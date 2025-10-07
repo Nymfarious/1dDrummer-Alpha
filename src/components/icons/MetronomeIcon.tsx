@@ -22,25 +22,25 @@ export const MetronomeIcon: React.FC<MetronomeIconProps> = ({
       className={className}
     >
       {/* Base */}
-      <path d="M6 22 h12" />
+      <line x1="7" y1="22" x2="17" y2="22" />
       
-      {/* Body - pyramidal shape */}
-      <path d="M9 22 L11 8 L13 8 L15 22" />
+      {/* Body - pyramidal/triangular shape */}
+      <path d="M8.5 22 L10 6 L14 6 L15.5 22 Z" />
       
-      {/* Top cap */}
-      <path d="M10.5 8 h3" />
-      <circle cx="12" cy="6.5" r="1" />
+      {/* Top arc */}
+      <path d="M9 6 Q12 4 15 6" />
       
-      {/* Pendulum arm */}
-      <path d="M12 6.5 L13.5 16" strokeWidth="1.5" />
+      {/* Pendulum arm - make it more visible with thicker stroke */}
+      <line x1="12" y1="5" x2="14" y2="16" strokeWidth="2.5" />
       
       {/* Weight on pendulum */}
-      <rect x="12.5" y="14.5" width="2" height="3" rx="0.5" fill="currentColor" />
+      <circle cx="14" cy="16" r="1.5" fill="currentColor" />
       
-      {/* Tick marks on body */}
-      <path d="M10 12 h1.5" strokeWidth="1" opacity="0.5" />
-      <path d="M10 15 h1.5" strokeWidth="1" opacity="0.5" />
-      <path d="M10 18 h1.5" strokeWidth="1" opacity="0.5" />
+      {/* Tick marks on body for detail */}
+      <line x1="10.5" y1="12" x2="12" y2="12" strokeWidth="1" opacity="0.6" />
+      <line x1="10.8" y1="15" x2="12" y2="15" strokeWidth="1" opacity="0.6" />
+      <line x1="11.2" y1="18" x2="12.5" y2="18" strokeWidth="1" opacity="0.6" />
     </svg>
   );
 };
+
