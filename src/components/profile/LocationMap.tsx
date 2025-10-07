@@ -1,17 +1,15 @@
-<!--
 interface LocationMapProps {
-  city: string;
+  city?: string;
 }
 
 export const LocationMap = ({ city }: LocationMapProps) => {
   return (
-    <div className="w-full h-64 rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center relative">
-      <div className="text-center">
-        <div className="w-4 h-4 bg-red-500 rounded-full mx-auto mb-2"></div>
-        <p className="text-sm text-muted-foreground">{city}</p>
-        <p className="text-xs text-muted-foreground mt-1">Map placeholder - Coming soon</p>
+    <div className="w-full h-64 rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center">
+      <div className="text-center space-y-2">
+        <p className="text-sm text-muted-foreground font-medium">Location Map</p>
+        <p className="text-xs text-muted-foreground">Coming soon</p>
+        {city && <p className="text-xs text-muted-foreground mt-1">{city}</p>}
       </div>
     </div>
   );
 };
---!>
