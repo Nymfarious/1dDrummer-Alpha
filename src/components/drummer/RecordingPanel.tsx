@@ -404,7 +404,7 @@ export const RecordingPanel = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-accent">
                 <Download size={20} />
-                Your Recordings ({recordings.length})
+                Your Recording Placeholder ({recordings.length})
               </CardTitle>
             </CardHeader>
             <CardContent>

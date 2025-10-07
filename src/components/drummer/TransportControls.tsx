@@ -612,10 +612,12 @@ export const TransportControls = ({
 
               {/* Recents List - Categorized */}
               <div className="space-y-4">
+                <h4 className="text-sm font-medium">Recent Files</h4>
+                
                 {/* Recordings Section */}
-                {userFiles.filter(f => f.file_category === 'recording').length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-primary">Recordings</h4>
+                <div className="space-y-2">
+                  <h5 className="text-xs font-medium text-muted-foreground uppercase">Recordings</h5>
+                  {userFiles.filter(f => f.file_category === 'recording').length > 0 ? (
                     <div className="max-h-48 overflow-y-auto space-y-2">
                       {userFiles.filter(f => f.file_category === 'recording').slice(0, 5).map((file) => (
                         <div key={file.id} className="flex items-center justify-between p-2 bg-secondary rounded border">
@@ -648,15 +650,17 @@ export const TransportControls = ({
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No recordings yet</p>
+                  )}
+                </div>
 
                 {/* Imported Files Section */}
-                {userFiles.filter(f => f.file_category === 'imported').length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-primary">Imported Files</h4>
+                <div className="space-y-2">
+                  <h5 className="text-xs font-medium text-muted-foreground uppercase">Imported Files</h5>
+                  {userFiles.filter(f => f.file_category === 'imported' || !f.file_category).length > 0 ? (
                     <div className="max-h-48 overflow-y-auto space-y-2">
-                      {userFiles.filter(f => f.file_category === 'imported').slice(0, 5).map((file) => (
+                      {userFiles.filter(f => f.file_category === 'imported' || !f.file_category).slice(0, 5).map((file) => (
                         <div key={file.id} className="flex items-center justify-between p-2 bg-secondary rounded border">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{file.originalName}</p>
@@ -687,13 +691,15 @@ export const TransportControls = ({
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No imported files yet</p>
+                  )}
+                </div>
 
                 {/* Shared Files Section (Future) */}
                 {userFiles.filter(f => f.file_category === 'shared').length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-primary">Shared with Me</h4>
+                    <h5 className="text-xs font-medium text-muted-foreground uppercase">Shared with Me</h5>
                     <div className="max-h-48 overflow-y-auto space-y-2">
                       {userFiles.filter(f => f.file_category === 'shared').slice(0, 5).map((file) => (
                         <div key={file.id} className="flex items-center justify-between p-2 bg-secondary rounded border">
@@ -729,12 +735,12 @@ export const TransportControls = ({
                   </div>
                 )}
 
-                {/* Empty State */}
-                {userFiles.length === 0 && (
-                  <div className="p-8 bg-secondary/50 rounded-lg border border-border text-center">
+                {/* Overall Empty State */}
+                {!user && (
+                  <div className="p-8 bg-secondary/50 rounded-lg border border-border text-center mt-4">
                     <FileAudio size={32} className="mx-auto mb-2 opacity-50" />
                     <p className="text-sm text-muted-foreground">
-                      {user ? 'No files uploaded yet' : 'Sign in to see recent files'}
+                      Sign in to see your files
                     </p>
                   </div>
                 )}
