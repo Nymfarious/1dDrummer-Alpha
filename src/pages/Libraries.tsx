@@ -191,6 +191,9 @@ export const Libraries = () => {
     multiple: true
   });
 
+  const recordingFiles = filteredFiles.filter(file => file.type === 'recording');
+  const uploadedFiles = filteredFiles.filter(file => file.type === 'upload');
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -270,92 +273,166 @@ export const Libraries = () => {
         </CardContent>
       </Card>
 
-      {/* Files Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredFiles.length === 0 ? (
-          <Card className="col-span-full bg-gradient-card border-border">
-            <CardContent className="p-8 text-center">
-              <Music size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No files found</h3>
-              <p className="text-muted-foreground">
-                {searchTerm || filterType !== 'all' 
-                  ? 'Try adjusting your search or filter'
-                  : 'Start recording or upload audio files to build your library'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredFiles.map((file) => (
-            <Card key={file.id} className="bg-gradient-card border-border hover:border-primary/50 transition-colors">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg truncate">{file.name}</CardTitle>
-                    <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock size={14} />
-                        {file.duration}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar size={14} />
-                        {formatDate(file.date)}
-                      </span>
+      {/* Recording Studio Section */}
+      {(filterType === 'all' || filterType === 'recording') && (
+        <Card className="bg-gradient-card border-border card-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Music size={20} />
+              Recording Studio
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Your Recording Placeholder ({recordingFiles.length})</h3>
+              {recordingFiles.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Music size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No saved recordings yet</p>
+                  <p className="text-sm">Record audio to add them to your library</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {recordingFiles.map((file) => (
+                    <div key={file.id} className="p-3 bg-secondary rounded-lg border border-border space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {file.duration} • {formatDate(file.date)}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={playingId === file.id ? "outline" : "ghost"}
+                          onClick={() => handlePlay(file)}
+                        >
+                          {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
+                        </Button>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          title="Download"
+                        >
+                          <Download size={14} />
+                          Download
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(file.id)}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Uploaded Files Grid */}
+      {(filterType === 'all' || filterType === 'upload') && uploadedFiles.length > 0 && (
+        <>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold">Uploaded Audio Files</h3>
+            <Badge variant="secondary" className="text-sm">
+              {uploadedFiles.length} files
+            </Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {uploadedFiles.map((file) => (
+              <Card key={file.id} className="bg-gradient-card border-border hover:border-primary/50 transition-colors">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg truncate">{file.name}</CardTitle>
+                      <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock size={14} />
+                          {file.duration}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar size={14} />
+                          {formatDate(file.date)}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant="secondary">Uploaded</Badge>
                   </div>
-                  <Badge variant={file.type === 'recording' ? 'default' : 'secondary'}>
-                    {file.type === 'recording' ? 'Recorded' : 'Uploaded'}
-                  </Badge>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-3">
-                <div className="text-sm text-muted-foreground">
-                  Size: {file.size}
-                </div>
+                </CardHeader>
                 
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handlePlay(file)}
-                    variant={playingId === file.id ? "audio-active" : "audio"}
-                    size="sm"
-                    className="flex-1"
-                  >
-                    {playingId === file.id ? (
-                      <>
-                        <Square size={16} />
-                        Stop
-                      </>
-                    ) : (
-                      <>
-                        <Play size={16} />
-                        Play
-                      </>
-                    )}
-                  </Button>
+                <CardContent className="space-y-3">
+                  <div className="text-sm text-muted-foreground">
+                    Size: {file.size}
+                  </div>
                   
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    title="Download"
-                  >
-                    <Download size={16} />
-                  </Button>
-                  
-                  <Button
-                    onClick={() => handleDelete(file.id)}
-                    variant="destructive"
-                    size="sm"
-                    title="Delete"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handlePlay(file)}
+                      variant={playingId === file.id ? "audio-active" : "audio"}
+                      size="sm"
+                      className="flex-1"
+                    >
+                      {playingId === file.id ? (
+                        <>
+                          <Square size={16} />
+                          Stop
+                        </>
+                      ) : (
+                        <>
+                          <Play size={16} />
+                          Play
+                        </>
+                      )}
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      title="Download"
+                    >
+                      <Download size={16} />
+                    </Button>
+                    
+                    <Button
+                      onClick={() => handleDelete(file.id)}
+                      variant="destructive"
+                      size="sm"
+                      title="Delete"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Empty State */}
+      {filteredFiles.length === 0 && (
+        <Card className="bg-gradient-card border-border">
+          <CardContent className="p-8 text-center">
+            <Music size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h3 className="text-lg font-medium mb-2">No files found</h3>
+            <p className="text-muted-foreground">
+              {searchTerm || filterType !== 'all' 
+                ? 'Try adjusting your search or filter'
+                : 'Start recording or upload audio files to build your library'
+              }
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Storage Info */}
       <Card className="bg-gradient-card border-border">
