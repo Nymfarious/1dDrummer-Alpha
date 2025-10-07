@@ -104,10 +104,28 @@ export const TransportControls = ({
   // Update metronome interval when BPM changes while running
   useEffect(() => {
     if (metronomeOn && metronomeEnabled) {
-      stopMetronome();
-      startMetronome();
+      // Clear existing interval
+      if (metronomeIntervalRef.current) {
+        clearInterval(metronomeIntervalRef.current);
+        metronomeIntervalRef.current = null;
+      }
+      
+      // Start new interval with updated BPM
+      const interval = (60 / bpm) * 1000;
+      metronomeIntervalRef.current = setInterval(() => {
+        playMetronomeSound();
+      }, interval);
     }
-  }, [bpm]);
+    
+    // Cleanup when component unmounts or metronome is turned off
+    return () => {
+      if (metronomeIntervalRef.current) {
+        clearInterval(metronomeIntervalRef.current);
+        metronomeIntervalRef.current = null;
+      }
+    };
+  }, [bpm, metronomeOn, metronomeEnabled]);
+
 
 
   // Metronome functionality
