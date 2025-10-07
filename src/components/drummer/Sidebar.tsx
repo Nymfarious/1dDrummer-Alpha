@@ -15,6 +15,7 @@ const tabs = [
   { id: 'libraries', label: 'Library', icon: Music },
   { id: 'bandroom', label: 'Band Room', icon: Users },
   { id: 'profile', label: 'Profile', icon: User },
+  { id: 'profile2', label: 'Profile 2', icon: User },
   { id: 'settings', label: 'Settings', icon: Settings }
 ];
 

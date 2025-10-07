@@ -12,6 +12,7 @@ import { AICoachPanel } from '@/components/drummer/AICoachPanel';
 import { SoundMapperButton } from '@/components/drummer/SoundMapperButton';
 import Libraries from '@/pages/Libraries';
 import Profile from '@/pages/Profile';
+import Profile2 from '@/pages/Profile2';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -100,6 +101,8 @@ const DrummerStudio = () => {
         return <BandRoomPanel />;
       case 'profile':
         return <Profile />;
+      case 'profile2':
+        return <Profile2 />;
       case 'settings':
         return (
           <SettingsPanel
