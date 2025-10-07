@@ -350,46 +350,82 @@ export const TransportControls = ({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-4 gap-2">
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  onClick={handlePlay}
+                  variant={isPlaying ? "transport-active" : "transport"}
+                  size="sm"
+                  className="flex items-center justify-center w-full"
+                  disabled={!currentAudioFile}
+                >
+                  <Play size={18} />
+                </Button>
+              </div>
               
-              <Button
-                onClick={handlePause}
-                variant={isPaused ? "transport-active" : "transport"}
-                size="sm"
-                className="flex items-center justify-center"
-                disabled={!currentAudioFile}
-              >
-                <Pause size={18} />
-              </Button>
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  onClick={handlePause}
+                  variant={isPaused ? "transport-active" : "transport"}
+                  size="sm"
+                  className="flex items-center justify-center w-full"
+                  disabled={!currentAudioFile}
+                >
+                  <Pause size={18} />
+                </Button>
+              </div>
               
-              <Button
-                onClick={handleRewind}
-                variant="transport"
-                size="sm"
-                className="flex items-center justify-center"
-                disabled={!currentAudioFile}
-              >
-                <SkipBack size={18} />
-              </Button>
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  onClick={handleRewind}
+                  variant="transport"
+                  size="sm"
+                  className="flex items-center justify-center w-full"
+                  disabled={!currentAudioFile}
+                >
+                  <SkipBack size={18} />
+                </Button>
+              </div>
               
-              <Button
-                onClick={handleSkipBackward}
-                variant="transport"
-                size="sm"
-                className="flex items-center justify-center"
-                disabled={!currentAudioFile}
-              >
-                <RotateCcw size={18} />
-              </Button>
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  onClick={handleSkipBackward}
+                  variant="transport"
+                  size="sm"
+                  className="flex items-center justify-center w-full"
+                  disabled={!currentAudioFile}
+                >
+                  <RotateCcw size={18} />
+                </Button>
+                <span className="text-[9px] text-muted-foreground">-30s</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  onClick={handleSkipForward}
+                  variant="transport"
+                  size="sm"
+                  className="flex items-center justify-center w-full"
+                  disabled={!currentAudioFile}
+                >
+                  <RotateCw size={18} />
+                </Button>
+                <span className="text-[9px] text-muted-foreground">+30s</span>
+              </div>
               
-              <Button
-                onClick={handleSkipForward}
-                variant="transport"
-                size="sm"
-                className="flex items-center justify-center"
-                disabled={!currentAudioFile}
-              >
-                <RotateCw size={18} />
-              </Button>
+              <div className="flex flex-col items-center gap-1">
+                <Button
+                  onClick={handleLoop}
+                  variant={isLooping ? "transport-active" : "transport"}
+                  size="sm"
+                  className="flex items-center justify-center w-full"
+                  disabled={!currentAudioFile}
+                >
+                  <RotateCcw size={18} className={isLooping ? "" : "opacity-50"} />
+                </Button>
+                <span className="text-[9px] text-muted-foreground">Loop</span>
+              </div>
             </div>
 
             {/* Audio Control - moved from separate card */}
