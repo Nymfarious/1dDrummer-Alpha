@@ -73,6 +73,7 @@ const DrummerStudio = () => {
             setMetronomeVolume={setMetronomeVolume}
             metronomeEnabled={metronomeEnabled}
             setMetronomeEnabled={setMetronomeEnabled}
+            metronomeSound={metronomeSound}
           />
         );
       case 'metronome':
@@ -121,6 +122,7 @@ const DrummerStudio = () => {
             setMetronomeVolume={setMetronomeVolume}
             metronomeEnabled={metronomeEnabled}
             setMetronomeEnabled={setMetronomeEnabled}
+            metronomeSound={metronomeSound}
           />
         );
     }

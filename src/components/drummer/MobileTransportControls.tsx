@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, RotateCcw, RotateCw, Volume2, Music, Upload, FolderOpen, Square } from 'lucide-react';
+import { Play, Pause, SkipBack, RotateCcw, RotateCw, Volume2, Music, Upload, FolderOpen, Square, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +18,7 @@ interface MobileTransportControlsProps {
   setMetronomeVolume: (volume: number) => void;
   metronomeEnabled: boolean;
   setMetronomeEnabled: (enabled: boolean) => void;
+  metronomeSound?: string;
 }
 
 export const MobileTransportControls = ({
@@ -26,7 +27,8 @@ export const MobileTransportControls = ({
   metronomeVolume,
   setMetronomeVolume,
   metronomeEnabled,
-  setMetronomeEnabled
+  setMetronomeEnabled,
+  metronomeSound = 'standard'
 }: MobileTransportControlsProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -83,7 +85,31 @@ export const MobileTransportControls = ({
     oscillator.connect(gainNode);
     gainNode.connect(ctx.destination);
 
-    oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+    let frequency = 800;
+    
+    // Different sounds based on selection from Metronome page
+    switch (metronomeSound) {
+      case 'standard':
+        frequency = 800;
+        break;
+      case 'sticks':
+        frequency = 1200;
+        oscillator.type = 'square';
+        break;
+      case 'high':
+        frequency = 1600;
+        break;
+      case 'two-tone-high':
+        frequency = 800;
+        break;
+      case 'two-tone-subtle':
+        frequency = 800;
+        break;
+      default:
+        frequency = 800;
+    }
+
+    oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
     gainNode.gain.setValueAtTime((metronomeVolume / 100) * 0.5, ctx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
 

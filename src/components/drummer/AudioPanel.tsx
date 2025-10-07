@@ -8,6 +8,7 @@ interface AudioPanelProps {
   setMetronomeVolume: (volume: number) => void;
   metronomeEnabled: boolean;
   setMetronomeEnabled: (enabled: boolean) => void;
+  metronomeSound?: string;
 }
 
 export const AudioPanel = ({
@@ -16,7 +17,8 @@ export const AudioPanel = ({
   metronomeVolume,
   setMetronomeVolume,
   metronomeEnabled,
-  setMetronomeEnabled
+  setMetronomeEnabled,
+  metronomeSound
 }: AudioPanelProps) => {
   return (
     <div className="space-y-8">
@@ -35,6 +37,7 @@ export const AudioPanel = ({
         setMetronomeVolume={setMetronomeVolume}
         metronomeEnabled={metronomeEnabled}
         setMetronomeEnabled={setMetronomeEnabled}
+        metronomeSound={metronomeSound}
       />
 
       {/* Divider */}
