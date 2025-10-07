@@ -101,7 +101,7 @@ export const TransportControls = ({
     }
   }, [audioVolume]);
 
-  // Update metronome interval when BPM changes while running
+  // Update metronome interval when BPM or volume changes while running
   useEffect(() => {
     if (metronomeOn && metronomeEnabled) {
       // Clear existing interval
@@ -124,7 +124,7 @@ export const TransportControls = ({
         metronomeIntervalRef.current = null;
       }
     };
-  }, [bpm, metronomeOn, metronomeEnabled]);
+  }, [bpm, metronomeVolume, metronomeOn, metronomeEnabled]);
 
 
 
