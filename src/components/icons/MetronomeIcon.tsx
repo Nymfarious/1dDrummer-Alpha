@@ -33,11 +33,11 @@ export const MetronomeIcon: React.FC<MetronomeIconProps> = ({
       {/* Pivot point in exact center (12, 12) */}
       <circle cx="12" cy="12" r="0.8" fill="currentColor" />
       
-      {/* Pendulum arm - centered, pivoting from middle */}
-      <line x1="12" y1="12" x2="15" y2="19" strokeWidth="2" />
+      {/* Pendulum arm - centered, angled to the left */}
+      <line x1="12" y1="12" x2="9" y2="19" strokeWidth="2" />
       
       {/* Weight on pendulum */}
-      <circle cx="15" cy="19" r="1.5" fill="currentColor" />
+      <circle cx="9" cy="19" r="1.5" fill="currentColor" />
       
       {/* Tick marks on body for detail */}
       <line x1="10.5" y1="12" x2="11.5" y2="12" strokeWidth="0.8" opacity="0.5" />
