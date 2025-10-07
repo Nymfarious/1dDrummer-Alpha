@@ -27,6 +27,7 @@ export interface AudioFile {
   durationSeconds?: number;
   createdAt: string;
   url?: string;
+  file_category?: 'recording' | 'imported' | 'shared';
 }
 
 export interface UploadProgress {
@@ -142,7 +143,8 @@ export const useSecureAudioUpload = () => {
           file_size: file.size,
           mime_type: file.type,
             storage_path: storageData.path,
-            duration_seconds: duration ? Math.round(duration) : null
+            duration_seconds: duration ? Math.round(duration) : null,
+            file_category: 'imported'
           })
           .select()
           .single();
@@ -191,7 +193,8 @@ export const useSecureAudioUpload = () => {
         mimeType: dbData.mime_type,
         storagePath: dbData.storage_path,
         durationSeconds: dbData.duration_seconds,
-        createdAt: dbData.created_at
+        createdAt: dbData.created_at,
+        file_category: dbData.file_category || 'imported'
       };
 
       // Add to user files
@@ -303,7 +306,8 @@ export const useSecureAudioUpload = () => {
         mimeType: file.mime_type,
         storagePath: file.storage_path,
         durationSeconds: file.duration_seconds,
-        createdAt: file.created_at
+        createdAt: file.created_at,
+        file_category: (file.file_category as 'recording' | 'imported' | 'shared') || 'imported'
       }));
 
       setUserFiles(audioFiles);

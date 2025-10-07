@@ -610,43 +610,127 @@ export const TransportControls = ({
                 )}
               </div>
 
-              {/* Recents List */}
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Recent Files</h4>
-                {user && userFiles.length > 0 ? (
-                  <div className="max-h-80 overflow-y-auto space-y-2">
-                    {userFiles.slice(0, 10).map((file) => (
-                      <div key={file.id} className="flex items-center justify-between p-2 bg-secondary rounded border">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{file.originalName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {(file.fileSize / 1024 / 1024).toFixed(2)} MB
-                            {file.durationSeconds && (
-                              <> • {Math.floor(file.durationSeconds / 60)}:{(file.durationSeconds % 60).toString().padStart(2, '0')}</>
-                            )}
-                          </p>
+              {/* Recents List - Categorized */}
+              <div className="space-y-4">
+                {/* Recordings Section */}
+                {userFiles.filter(f => f.file_category === 'recording').length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-primary">Recordings</h4>
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {userFiles.filter(f => f.file_category === 'recording').slice(0, 5).map((file) => (
+                        <div key={file.id} className="flex items-center justify-between p-2 bg-secondary rounded border">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{file.originalName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.fileSize / 1024 / 1024).toFixed(2)} MB
+                              {file.durationSeconds && (
+                                <> • {Math.floor(file.durationSeconds / 60)}:{(file.durationSeconds % 60).toString().padStart(2, '0')}</>
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSelectFile(file)}
+                              disabled={currentAudioFile?.id === file.id}
+                            >
+                              <FileAudio size={14} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteFile(file)}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleSelectFile(file)}
-                            disabled={currentAudioFile?.id === file.id}
-                          >
-                            <FileAudio size={14} />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteFile(file)}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                ) : (
+                )}
+
+                {/* Imported Files Section */}
+                {userFiles.filter(f => f.file_category === 'imported').length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-primary">Imported Files</h4>
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {userFiles.filter(f => f.file_category === 'imported').slice(0, 5).map((file) => (
+                        <div key={file.id} className="flex items-center justify-between p-2 bg-secondary rounded border">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{file.originalName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.fileSize / 1024 / 1024).toFixed(2)} MB
+                              {file.durationSeconds && (
+                                <> • {Math.floor(file.durationSeconds / 60)}:{(file.durationSeconds % 60).toString().padStart(2, '0')}</>
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSelectFile(file)}
+                              disabled={currentAudioFile?.id === file.id}
+                            >
+                              <FileAudio size={14} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteFile(file)}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Shared Files Section (Future) */}
+                {userFiles.filter(f => f.file_category === 'shared').length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-primary">Shared with Me</h4>
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {userFiles.filter(f => f.file_category === 'shared').slice(0, 5).map((file) => (
+                        <div key={file.id} className="flex items-center justify-between p-2 bg-secondary rounded border">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{file.originalName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.fileSize / 1024 / 1024).toFixed(2)} MB
+                              {file.durationSeconds && (
+                                <> • {Math.floor(file.durationSeconds / 60)}:{(file.durationSeconds % 60).toString().padStart(2, '0')}</>
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSelectFile(file)}
+                              disabled={currentAudioFile?.id === file.id}
+                            >
+                              <FileAudio size={14} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteFile(file)}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {userFiles.length === 0 && (
                   <div className="p-8 bg-secondary/50 rounded-lg border border-border text-center">
                     <FileAudio size={32} className="mx-auto mb-2 opacity-50" />
                     <p className="text-sm text-muted-foreground">

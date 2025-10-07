@@ -222,6 +222,7 @@ export type Database = {
         Row: {
           created_at: string
           duration_seconds: number | null
+          file_category: string
           file_name: string
           file_size: number
           id: string
@@ -234,6 +235,7 @@ export type Database = {
         Insert: {
           created_at?: string
           duration_seconds?: number | null
+          file_category?: string
           file_name: string
           file_size: number
           id?: string
@@ -246,6 +248,7 @@ export type Database = {
         Update: {
           created_at?: string
           duration_seconds?: number | null
+          file_category?: string
           file_name?: string
           file_size?: number
           id?: string
