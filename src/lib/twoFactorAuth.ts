@@ -147,7 +147,8 @@ class TwoFactorAuth {
 
       // Verify code (either TOTP or backup code)
       const isValidToken = this.verifyToken(verificationCode, settings.two_factor_secret || '');
-      const isValidBackup = this.verifyBackupCode(verificationCode, settings.backup_codes || []);
+      const parsedBackupCodes = this.parseBackupCodes(settings.backup_codes);
+      const isValidBackup = this.verifyBackupCode(verificationCode, parsedBackupCodes);
 
       if (!isValidToken && !isValidBackup) {
         await securityLogger.logSuspiciousActivity({
@@ -183,6 +184,17 @@ class TwoFactorAuth {
   }
 
   /**
+   * Safely parse backup codes from Json type
+   */
+  private parseBackupCodes(backupCodes: any): string[] {
+    if (!backupCodes) return [];
+    if (Array.isArray(backupCodes)) {
+      return backupCodes.filter(code => typeof code === 'string') as string[];
+    }
+    return [];
+  }
+
+  /**
    * Verify backup code
    */
   private verifyBackupCode(code: string, backupCodes: string[]): boolean {
@@ -204,7 +216,7 @@ class TwoFactorAuth {
         return { success: false, error: 'Security settings not found' };
       }
 
-      const backupCodes = settings.backup_codes || [];
+      const backupCodes = this.parseBackupCodes(settings.backup_codes);
       const codeIndex = backupCodes.indexOf(code.toUpperCase());
 
       if (codeIndex === -1) {
@@ -288,7 +300,8 @@ class TwoFactorAuth {
       }
 
       // Then try backup code
-      if (this.verifyBackupCode(code, settings.backup_codes || [])) {
+      const parsedBackupCodes = this.parseBackupCodes(settings.backup_codes);
+      if (this.verifyBackupCode(code, parsedBackupCodes)) {
         const result = await this.useBackupCode(userId, code);
         if (result.success) {
           await securityLogger.logEvent('auth_success', { action: '2fa_verified', method: 'backup_code' }, 'info', userId);

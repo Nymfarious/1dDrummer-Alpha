@@ -80,7 +80,7 @@ class AccountLockoutManager {
       const mergedConfig = { ...this.defaultConfig, ...config };
       const clientIP = await this.getClientIP();
       
-      const query = supabase
+      let query: any = supabase
         .from('account_lockouts')
         .select('*')
         .gte('failed_attempts', mergedConfig.maxAttempts)
@@ -88,11 +88,11 @@ class AccountLockoutManager {
 
       // Add filters based on config
       if (mergedConfig.trackByEmail) {
-        query.eq('email', email);
+        query = query.eq('email', email);
       }
       
       if (mergedConfig.trackByIP && clientIP) {
-        query.eq('ip_address', clientIP);
+        query = query.eq('ip_address', clientIP);
       }
 
       const { data, error } = await query.single();
