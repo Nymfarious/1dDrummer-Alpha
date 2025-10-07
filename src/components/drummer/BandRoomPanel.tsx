@@ -252,23 +252,36 @@ export const BandRoomPanel = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-foreground mb-2">Band Room</h2>
+        <h2 className="text-3xl font-bold text-foreground mb-2">Band Hall</h2>
         <p className="text-muted-foreground">
           Connect with other drummers and practice together in real-time
         </p>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Create Room */}
-        <Card className="bg-gradient-card border-border card-shadow">
+        {/* Combined Room Management and Available Rooms - 1/3 width */}
+        <Card className="bg-gradient-card border-border card-shadow lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-accent">
               <Users size={20} />
-              Room Management
+              Rooms
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <CreateRoomDialog onCreateRoom={handleCreateRoom} />
+            {/* Room List */}
+            <div className="space-y-3">
+              <RoomList
+                rooms={rooms}
+                currentRoomId={currentRoom}
+                onRoomSelect={handleRoomSelect}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            </div>
+            
+            {/* Create Room Button - smaller, near bottom */}
+            <div className="pt-4 border-t border-border">
+              <CreateRoomDialog onCreateRoom={handleCreateRoom} />
+            </div>
             
             <div className="p-4 bg-secondary/50 rounded-lg border border-border">
               <h4 className="font-semibold mb-2 text-sm">About Rooms</h4>
@@ -282,26 +295,13 @@ export const BandRoomPanel = () => {
           </CardContent>
         </Card>
 
-        {/* Room List */}
-        <Card className="bg-gradient-card border-border card-shadow">
-          <CardHeader>
-            <CardTitle className="text-accent">Available Rooms</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RoomList
-              rooms={rooms}
-              currentRoomId={currentRoom}
-              onRoomSelect={handleRoomSelect}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Lobby Chat */}
-        <LobbyChat 
-          displayName={displayName} 
-          rooms={rooms}
-        />
+        {/* Lobby Chat - 2/3 width */}
+        <div className="lg:col-span-2">
+          <LobbyChat 
+            displayName={displayName} 
+            rooms={rooms}
+          />
+        </div>
       </div>
 
       {/* Features Info */}

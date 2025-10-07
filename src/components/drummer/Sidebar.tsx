@@ -8,12 +8,12 @@ interface SidebarProps {
 }
 
 const tabs = [
+  { id: 'bandroom', label: 'Band Hall', icon: Users },
   { id: 'transport', label: 'Transport', icon: Play },
   { id: 'metronome', label: 'Metronome', icon: Music },
   { id: 'recording', label: 'Recording', icon: Circle },
   { id: 'aicoach', label: 'AI Coach', icon: Sparkles },
   { id: 'libraries', label: 'Library', icon: Music },
-  { id: 'bandroom', label: 'Band Room', icon: Users },
   { id: 'userprofile', label: 'User Profile', icon: User },
   { id: 'settings', label: 'Settings', icon: Settings }
 ];
