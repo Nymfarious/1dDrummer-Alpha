@@ -37,7 +37,7 @@ export const MetronomeIcon: React.FC<MetronomeIconProps> = ({
       <line x1="12" y1="12" x2="9" y2="5" strokeWidth="2" />
       
       {/* Weight on pendulum */}
-      <circle cx="9" cy="5" r="1.5" fill="currentColor" />
+      <circle cx="9" cy="5" r="0.75" fill="currentColor" />
       
       {/* Tick marks on body for detail */}
       <line x1="10.5" y1="12" x2="11.5" y2="12" strokeWidth="0.8" opacity="0.5" />
