@@ -194,7 +194,7 @@ export const Libraries = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-foreground status-warning">Library</h2>
+        <h2 className="text-3xl font-bold text-foreground">Audio Library</h2>
         <Badge variant="secondary" className="text-sm">
           {filteredFiles.length} files
         </Badge>
