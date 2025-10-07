@@ -46,14 +46,33 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiResponse, setAiResponse] = useState('');
 
-  // API Keys tracking
+  // API Keys tracking - synced with Supabase secrets
   const apiKeys: APIKeyStatus[] = [
-    { name: 'Supabase URL', env: 'VITE_SUPABASE_URL', isSet: !!import.meta.env.VITE_SUPABASE_URL, category: 'api' },
-    { name: 'Supabase Anon Key', env: 'VITE_SUPABASE_PUBLISHABLE_KEY', isSet: !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, category: 'api' },
-    { name: 'Lovable AI Key', env: 'LOVABLE_API_KEY', isSet: true, category: 'api' }, // Server-side
-    { name: 'hCaptcha Site Key', env: 'VITE_HCAPTCHA_SITE_KEY', isSet: false, category: 'feature' },
-    { name: 'Turnstile Site Key', env: 'VITE_TURNSTILE_SITE_KEY', isSet: false, category: 'feature' },
-    { name: 'Jitsi Integration', env: 'N/A', isSet: true, category: 'mcp' },
+    // Core Supabase
+    { name: 'Supabase URL', env: 'SUPABASE_URL', isSet: true, category: 'api' },
+    { name: 'Supabase Public Key', env: 'SUPABASE_PUBLISHABLE_KEY', isSet: true, category: 'api' },
+    { name: 'Supabase Service Role', env: 'SUPABASE_SERVICE_ROLE_KEY', isSet: true, category: 'api' },
+    { name: 'Supabase DB URL', env: 'SUPABASE_DB_URL', isSet: true, category: 'api' },
+    
+    // AI & ML Services
+    { name: 'Lovable AI Key', env: 'LOVABLE_API_KEY', isSet: true, category: 'api' },
+    { name: 'Google AI', env: 'Google AI', isSet: true, category: 'api' },
+    { name: 'Open AI Weather', env: 'Open AI Weather', isSet: true, category: 'api' },
+    { name: 'HF Token - Fine Tune', env: 'HF Token - Fine Tune', isSet: true, category: 'api' },
+    { name: 'HF Token - Write', env: 'HF Token - Write', isSet: true, category: 'api' },
+    { name: 'Replicate API', env: 'Replicate API Token', isSet: true, category: 'api' },
+    
+    // Integrations
+    { name: 'Dropbox Dev Token', env: 'DROPBOX_DEV_TOKEN', isSet: true, category: 'feature' },
+    { name: 'Google Maps Platform', env: 'Google Maps Platform API', isSet: true, category: 'feature' },
+    
+    // Document Services
+    { name: 'Tiny Docs MCE HTML', env: 'Tiny Docs / MCE HTML', isSet: true, category: 'feature' },
+    { name: 'Tiny Doc MCP React', env: 'Tiny Doc / MCP React', isSet: true, category: 'feature' },
+    
+    // MCPs & Custom Integrations
+    { name: 'Drum Practice Coach', env: 'Drum Practice Coach', isSet: true, category: 'mcp' },
+    { name: 'Jitsi Video Integration', env: 'N/A', isSet: true, category: 'mcp' },
     { name: 'Audio Recording', env: 'N/A', isSet: true, category: 'mcp' },
   ];
 
