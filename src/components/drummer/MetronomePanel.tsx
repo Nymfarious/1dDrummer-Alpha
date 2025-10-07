@@ -380,6 +380,56 @@ export const MetronomePanel = ({
             </div>
           </CardContent>
         </Card>
+
+        {/* Transport Controls Metronome (For Comparison) */}
+        <Card className="bg-gradient-card border-border card-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-accent">
+              <Music size={20} />
+              Metronome (Transport Version)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>BPM: {bpm}</Label>
+              <Slider
+                value={[bpm]}
+                onValueChange={(value) => setBpm(value[0])}
+                min={40}
+                max={240}
+                step={1}
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Metronome Volume: {metronomeVolume}%</Label>
+              <Slider
+                value={[metronomeVolume]}
+                onValueChange={(value) => setMetronomeVolume(value[0])}
+                max={100}
+                step={1}
+                className="w-full"
+              />
+            </div>
+            
+            <Button
+              onClick={toggleMetronome}
+              variant={metronomeOn ? "audio-active" : "metronome"}
+              className="w-full"
+              disabled={!metronomeEnabled}
+            >
+              <Music size={20} />
+              {metronomeOn ? 'Stop Metronome' : 'Start Metronome'}
+            </Button>
+            
+            {!metronomeEnabled && (
+              <p className="text-xs text-muted-foreground text-center">
+                Enable metronome in Settings to use
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
