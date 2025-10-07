@@ -23,7 +23,6 @@ import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { useAuth } from '@/hooks/useAuth';
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/integrations/supabase/client';
-import { AudioEditor } from '@/components/audio/AudioEditor';
 
 interface Recording {
   id: string;
@@ -244,9 +243,6 @@ export const Libraries = () => {
           {filteredFiles.length} files
         </Badge>
       </div>
-
-      {/* Audio Editor */}
-      <AudioEditor userFiles={userFiles} getFileUrl={getFileUrl} />
 
       {/* Upload Area */}
       <Card className="bg-gradient-card border-border">

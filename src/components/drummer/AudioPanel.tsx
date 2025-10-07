@@ -1,5 +1,7 @@
 import { TransportControls } from './TransportControls';
 import { RecordingPanel } from './RecordingPanel';
+import { AudioEditor } from '@/components/audio/AudioEditor';
+import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 
 interface AudioPanelProps {
   bpm: number;
@@ -20,6 +22,8 @@ export const AudioPanel = ({
   setMetronomeEnabled,
   metronomeSound
 }: AudioPanelProps) => {
+  const { userFiles, getFileUrl } = useSecureAudioUpload();
+
   return (
     <div className="space-y-8">
       <div>
@@ -28,6 +32,12 @@ export const AudioPanel = ({
           Playback controls, recording, and audio library
         </p>
       </div>
+
+      {/* Audio Editor Section */}
+      <AudioEditor userFiles={userFiles} getFileUrl={getFileUrl} />
+
+      {/* Divider */}
+      <div className="border-t border-border" />
 
       {/* Transport Controls Section */}
       <TransportControls
