@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/drummer/Sidebar';
 import { MobileNavigation } from '@/components/drummer/MobileNavigation';
-import { TransportControls } from '@/components/drummer/TransportControls';
+import { AudioPanel } from '@/components/drummer/AudioPanel';
 import { MobileTransportControls } from '@/components/drummer/MobileTransportControls';
 import { MetronomePanel } from '@/components/drummer/MetronomePanel';
 import { MobileMetronomePanel } from '@/components/drummer/MobileMetronomePanel';
-import { RecordingPanel } from '@/components/drummer/RecordingPanel';
 import { BandRoomPanel } from '@/components/drummer/BandRoomPanel';
 import { SettingsPanel } from '@/components/drummer/SettingsPanel';
 import { AICoachPanel } from '@/components/drummer/AICoachPanel';
@@ -19,7 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 const DrummerStudio = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState('transport');
+  const [activeTab, setActiveTab] = useState('audio');
   
   // Audio state
   const [bpm, setBpm] = useState(92);
@@ -61,13 +60,13 @@ const DrummerStudio = () => {
   };
 
   const renderContent = () => {
-    const TransportComponent = isMobile ? MobileTransportControls : TransportControls;
+    const AudioComponent = isMobile ? MobileTransportControls : AudioPanel;
     const MetronomeComponent = isMobile ? MobileMetronomePanel : MetronomePanel;
     
     switch (activeTab) {
-      case 'transport':
+      case 'audio':
         return (
-          <TransportComponent
+          <AudioComponent
             bpm={bpm}
             setBpm={setBpm}
             metronomeVolume={metronomeVolume}
@@ -90,8 +89,6 @@ const DrummerStudio = () => {
             setMetronomeVolume={setMetronomeVolume}
           />
         );
-      case 'recording':
-        return <RecordingPanel />;
       case 'aicoach':
         return <AICoachPanel bpm={bpm} timeSignature={timeSig} />;
       case 'libraries':
@@ -116,14 +113,16 @@ const DrummerStudio = () => {
           />
         );
       default:
-        return <TransportControls
-          bpm={bpm}
-          setBpm={setBpm}
-          metronomeVolume={metronomeVolume}
-          setMetronomeVolume={setMetronomeVolume}
-          metronomeEnabled={metronomeEnabled}
-          setMetronomeEnabled={setMetronomeEnabled}
-        />;
+        return (
+          <AudioComponent
+            bpm={bpm}
+            setBpm={setBpm}
+            metronomeVolume={metronomeVolume}
+            setMetronomeVolume={setMetronomeVolume}
+            metronomeEnabled={metronomeEnabled}
+            setMetronomeEnabled={setMetronomeEnabled}
+          />
+        );
     }
   };
 
