@@ -196,42 +196,6 @@ export const Libraries = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-foreground">Audio Library</h2>
-        <Badge variant="secondary" className="text-sm">
-          {filteredFiles.length} files
-        </Badge>
-      </div>
-
-      {/* Upload Area */}
-      <Card className="bg-gradient-card border-border">
-        <CardContent className="p-6">
-          <div
-            {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-              isDragActive 
-                ? 'border-primary bg-primary/5' 
-                : 'border-border hover:border-primary/50'
-            }`}
-          >
-            <input {...getInputProps()} />
-            <Upload className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium">Upload Audio Files</h3>
-              <p className="text-muted-foreground">
-                {isDragActive
-                  ? "Drop your audio files here..."
-                  : "Drag & drop audio files here, or click to browse"
-                }
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Supports MP3, WAV, M4A, AAC, FLAC (Max 50MB each)
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Search and Filter */}
       <Card className="bg-gradient-card border-border">
         <CardContent className="p-4">
@@ -268,6 +232,42 @@ export const Libraries = () => {
               >
                 Uploads
               </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-foreground">Audio Library</h2>
+        <Badge variant="secondary" className="text-sm">
+          {filteredFiles.length} files
+        </Badge>
+      </div>
+
+      {/* Upload Area */}
+      <Card className="bg-gradient-card border-border">
+        <CardContent className="p-6">
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+              isDragActive 
+                ? 'border-primary bg-primary/5' 
+                : 'border-border hover:border-primary/50'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <Upload className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Upload Audio Files</h3>
+              <p className="text-muted-foreground">
+                {isDragActive
+                  ? "Drop your audio files here..."
+                  : "Drag & drop audio files here, or click to browse"
+                }
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Supports MP3, WAV, M4A, AAC, FLAC (Max 50MB each)
+              </p>
             </div>
           </div>
         </CardContent>
