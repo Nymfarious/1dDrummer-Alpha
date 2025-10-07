@@ -361,6 +361,29 @@ export const TransportControls = ({
                 className="w-full"
               />
             </div>
+
+            {/* Metronome toggle */}
+            <div className="flex items-center gap-2 pt-1">
+              <Checkbox
+                id="metronome-toggle"
+                checked={metronomeOn}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    if (metronomeEnabled) {
+                      startMetronome();
+                      setMetronomeOn(true);
+                    }
+                  } else {
+                    stopMetronome();
+                    setMetronomeOn(false);
+                  }
+                }}
+                disabled={!metronomeEnabled}
+              />
+              <Label htmlFor="metronome-toggle" className="flex items-center gap-1 cursor-pointer text-sm">
+                <Music size={14} />
+              </Label>
+            </div>
           </CardContent>
         </Card>
 
