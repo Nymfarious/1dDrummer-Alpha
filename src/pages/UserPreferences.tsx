@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
-const Profile2 = () => {
+const UserPreferences = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,10 +31,11 @@ const Profile2 = () => {
         .from('profiles')
         .select('full_name, city, solo_skill_level, avatar_url')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error loading profile:', error);
+        setLoading(false);
         return;
       }
 
@@ -131,7 +132,7 @@ const Profile2 = () => {
     <div className="max-w-2xl mx-auto space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Profile 2 - Simple Profile</CardTitle>
+          <CardTitle>User Preferences</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Name */}
@@ -210,4 +211,4 @@ const Profile2 = () => {
   );
 };
 
-export default Profile2;
+export default UserPreferences;
