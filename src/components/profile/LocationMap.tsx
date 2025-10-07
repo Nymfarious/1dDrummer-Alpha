@@ -6,7 +6,7 @@ interface LocationMapProps {
 }
 
 export const LocationMap = ({ city }: LocationMapProps) => {
-  const isLoaded = useGoogleMaps();
+  const { isLoaded, hasError } = useGoogleMaps();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -50,6 +50,14 @@ export const LocationMap = ({ city }: LocationMapProps) => {
 
     loadMap();
   }, [city, isLoaded]);
+
+  if (hasError) {
+    return (
+      <div className="w-full h-64 rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center">
+        <p className="text-muted-foreground">Map unavailable - displaying city: {city}</p>
+      </div>
+    );
+  }
 
   if (!isLoaded) {
     return (
