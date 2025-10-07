@@ -67,7 +67,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const { uploadFiles, validateFile } = useSecureAudioUpload();
-  const { isConnected: dropboxConnected, connectDropbox, uploadFile: uploadToDropbox } = useDropbox();
+  const { isConnected: dropboxConnected, uploadFile: uploadToDropbox } = useDropbox();
   const { isConnected: driveConnected, connectGoogleDrive, uploadFile: uploadToDrive } = useGoogleDrive();
 
   // Local file upload via dropzone
@@ -130,9 +130,10 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
   const handleCloudConnect = async (provider: 'dropbox' | 'drive') => {
     if (provider === 'dropbox') {
-      if (!dropboxConnected) {
-        connectDropbox();
-      }
+      toast({
+        title: "Dropbox Connected",
+        description: "Dropbox is connected in dev mode",
+      });
     } else if (provider === 'drive') {
       if (!driveConnected) {
         await connectGoogleDrive();

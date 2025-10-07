@@ -306,20 +306,9 @@ export const SettingsPanel = ({
               <div className="flex-1">
                 <p className="font-medium">Dropbox</p>
                 <p className="text-sm text-muted-foreground">
-                  {dropbox.isConnected ? "✓ Connected" : "Not connected"}
+                  {dropbox.isConnected ? "✓ Connected (Dev Mode)" : "Not connected"}
                 </p>
               </div>
-              {dropbox.isConnected ? (
-                <Button onClick={dropbox.disconnect} variant="outline" size="sm">
-                  <CloudOff size={16} />
-                  Disconnect
-                </Button>
-              ) : (
-                <Button onClick={dropbox.connectDropbox} size="sm">
-                  <CloudUpload size={16} />
-                  Connect
-                </Button>
-              )}
             </div>
 
             <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
