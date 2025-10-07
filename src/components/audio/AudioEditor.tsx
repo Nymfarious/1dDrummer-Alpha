@@ -387,23 +387,128 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
     // For now, just show the concept
   };
 
-  const saveEditedTrack = async (trackId: string) => {
+  const saveEditedTrack = async (trackId: string, destination: 'library' | 'dropbox' = 'library') => {
     const track = tracks.find(t => t.id === trackId);
     if (!track?.waveform) return;
 
-    const fileName = `edited-${track.name}-${Date.now()}.mp3`;
+    const fileName = `edited-${track.name}-${Date.now()}.wav`;
     
     toast({
-      title: "Saving track",
-      description: "Exporting edited audio..."
+      title: "Exporting track",
+      description: "Preparing audio file..."
     });
 
-    // Placeholder for actual export functionality
-    // Would use Web Audio API to export the edited buffer
-    toast({
-      title: "Feature in development",
-      description: "Audio export coming soon",
-    });
+    try {
+      // Export the audio buffer to WAV format
+      const audioBuffer = track.waveform.getDecodedData();
+      if (!audioBuffer) {
+        throw new Error("No audio data available");
+      }
+
+      // Convert AudioBuffer to WAV blob
+      const wavBlob = await audioBufferToWav(audioBuffer);
+
+      if (destination === 'dropbox') {
+        // Save to Dropbox
+        if (!dropboxConnected) {
+          toast({
+            title: "Not Connected",
+            description: "Please connect to Dropbox first",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const result = await uploadToDropbox(wavBlob, fileName, 'edited-tracks');
+        if (result) {
+          toast({
+            title: "Saved to Dropbox",
+            description: `${fileName} saved successfully`,
+          });
+        }
+      } else {
+        // Save to library (Supabase storage)
+        if (!user) {
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to save to library",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Convert blob to File for upload
+        const file = new File([wavBlob], fileName, { type: 'audio/wav' });
+        await uploadFiles([file]);
+        
+        toast({
+          title: "Saved to Library",
+          description: `${fileName} saved successfully`,
+        });
+      }
+    } catch (error) {
+      console.error('Error saving track:', error);
+      toast({
+        title: "Save Failed",
+        description: "Could not export audio file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Helper function to convert AudioBuffer to WAV
+  const audioBufferToWav = async (audioBuffer: AudioBuffer): Promise<Blob> => {
+    const numberOfChannels = audioBuffer.numberOfChannels;
+    const sampleRate = audioBuffer.sampleRate;
+    const format = 1; // PCM
+    const bitDepth = 16;
+
+    const bytesPerSample = bitDepth / 8;
+    const blockAlign = numberOfChannels * bytesPerSample;
+
+    const data = new Float32Array(audioBuffer.length * numberOfChannels);
+    for (let channel = 0; channel < numberOfChannels; channel++) {
+      const channelData = audioBuffer.getChannelData(channel);
+      for (let i = 0; i < audioBuffer.length; i++) {
+        data[i * numberOfChannels + channel] = channelData[i];
+      }
+    }
+
+    const dataLength = data.length * bytesPerSample;
+    const buffer = new ArrayBuffer(44 + dataLength);
+    const view = new DataView(buffer);
+
+    // WAV header
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + dataLength, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true); // fmt chunk size
+    view.setUint16(20, format, true);
+    view.setUint16(22, numberOfChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * blockAlign, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitDepth, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataLength, true);
+
+    // Write audio data
+    const volume = 0.8;
+    let offset = 44;
+    for (let i = 0; i < data.length; i++) {
+      const sample = Math.max(-1, Math.min(1, data[i]));
+      view.setInt16(offset, sample * volume * 0x7fff, true);
+      offset += 2;
+    }
+
+    return new Blob([buffer], { type: 'audio/wav' });
   };
 
   const updateZoom = (trackId: string, newZoom: number) => {
@@ -690,12 +795,26 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => saveEditedTrack(track.id)}
+                    onClick={() => saveEditedTrack(track.id, 'library')}
                     className="gap-1"
+                    title="Save to your library"
                   >
                     <Save size={14} />
-                    Save Copy
+                    Save to Library
                   </Button>
+
+                  {dropboxConnected && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => saveEditedTrack(track.id, 'dropbox')}
+                      className="gap-1"
+                      title="Save to Dropbox"
+                    >
+                      <Cloud size={14} />
+                      Save to Dropbox
+                    </Button>
+                  )}
 
                   <div className="flex items-center gap-2 ml-auto">
                     <Volume2 size={14} />

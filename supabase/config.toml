@@ -1,1 +1,7 @@
 project_id = "fbpmdmmmastkznaggevx"
+
+[functions.dropbox-proxy]
+verify_jwt = false
+
+[functions.practice-coach]
+verify_jwt = false

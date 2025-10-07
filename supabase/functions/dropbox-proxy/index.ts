@@ -6,14 +6,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const DROPBOX_ACCESS_TOKEN = Deno.env.get('DROPBOX_DEV_TOKEN');
-
 serve(async (req) => {
+  console.log('Dropbox proxy function called');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const DROPBOX_ACCESS_TOKEN = Deno.env.get('DROPBOX_DEV_TOKEN');
+    
+    console.log('Checking Dropbox token:', DROPBOX_ACCESS_TOKEN ? 'Token exists' : 'Token missing');
+    
+    if (!DROPBOX_ACCESS_TOKEN) {
+      console.error('DROPBOX_DEV_TOKEN environment variable is not set');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Dropbox integration not configured. Please add DROPBOX_DEV_TOKEN secret in Supabase.' 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
