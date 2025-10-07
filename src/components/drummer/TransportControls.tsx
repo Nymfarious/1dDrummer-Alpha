@@ -336,20 +336,10 @@ export const TransportControls = ({
                 <RotateCw size={18} />
               </Button>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Audio Progress & Volume */}
-        <Card className="bg-gradient-card border-border card-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-accent">
-              <Volume2 size={20} />
-              Audio Control
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            {/* Audio Control - moved from separate card */}
             {currentAudioFile && (
-              <div className="space-y-2">
+              <div className="space-y-2 pt-2 border-t border-border">
                 <Label>Progress: {formatTime(currentTime)} / {formatTime(duration)}</Label>
                 <Slider
                   value={[duration > 0 ? (currentTime / duration) * 100 : 0]}
@@ -361,7 +351,7 @@ export const TransportControls = ({
               </div>
             )}
             
-            <div className="space-y-2">
+            <div className="space-y-2 pt-2 border-t border-border">
               <Label>Audio Volume: {audioVolume}%</Label>
               <Slider
                 value={[audioVolume]}
