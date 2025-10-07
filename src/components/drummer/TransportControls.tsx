@@ -437,7 +437,7 @@ export const TransportControls = ({
                   disabled={!metronomeEnabled}
                 />
                 <Label htmlFor="metronome-toggle" className="flex items-center gap-1 cursor-pointer text-sm">
-                  <MetronomeIcon size={20} />
+                  <MetronomeIcon size={40} />
                 </Label>
               </div>
               
