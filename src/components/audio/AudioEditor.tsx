@@ -1215,11 +1215,119 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           ))}
         </div>
 
+        {/* Empty Session Placeholder - Always visible when no tracks */}
         {tracks.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="mb-2">No tracks loaded</p>
-            <p className="text-sm">Select a file from your library and click "Add Track" to start editing</p>
-          </div>
+          <Card className="bg-background border-border">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-1">
+                  <h4 className="font-medium text-muted-foreground">Session</h4>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled
+                  className="opacity-50"
+                >
+                  <Trash2 size={14} />
+                </Button>
+              </div>
+
+              {/* Empty Waveform Timeline */}
+              <div className="w-full h-24 bg-secondary/50 rounded-md relative overflow-hidden border border-border">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-full h-0.5 bg-primary/30" />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs text-muted-foreground/50 bg-background/80 px-3 py-1 rounded-full">
+                    Load audio to begin editing
+                  </span>
+                </div>
+              </div>
+
+              {/* Track Controls */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  title="Play/Pause"
+                >
+                  <Play size={14} />
+                </Button>
+                
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  title="Stop and Reset"
+                >
+                  <Square size={14} />
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  className="gap-1"
+                >
+                  <Scissors size={14} />
+                  Select Region
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  className="gap-1"
+                >
+                  Trim Start
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  className="gap-1"
+                >
+                  Trim End
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  className="gap-1"
+                  title="Save to your library"
+                >
+                  <Save size={14} />
+                  Save to Library
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  className="gap-1"
+                  title="Save to Dropbox"
+                >
+                  <Cloud size={14} />
+                  Save to Cloud
+                </Button>
+
+                <div className="flex items-center gap-2 ml-auto opacity-50">
+                  <Volume2 size={14} />
+                  <Slider
+                    value={[50]}
+                    disabled
+                    max={100}
+                    step={1}
+                    className="w-24"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Dropbox Save Dialog */}
