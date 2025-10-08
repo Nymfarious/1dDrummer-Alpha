@@ -189,14 +189,41 @@ export const RecordingPanel = () => {
     }
   };
 
-  const acceptRecording = () => {
+  const acceptRecording = async () => {
     if (currentRecording) {
-      setRecordings(prev => [...prev, { ...currentRecording, accepted: true }]);
-      setCurrentRecording(null);
-      toast({
-        title: "Recording Saved",
-        description: "Recording added to your library. You can now upload it to cloud.",
-      });
+      try {
+        // Add to local recordings first
+        setRecordings(prev => [...prev, { ...currentRecording, accepted: true }]);
+        
+        // Upload to Supabase storage with category 'recording'
+        const file = new File([currentRecording.blob], `${currentRecording.name}.webm`, {
+          type: 'audio/webm'
+        });
+        
+        const uploadedFile = await uploadToSupabase(file, 'recording');
+        
+        if (uploadedFile) {
+          toast({
+            title: "Recording Saved",
+            description: "Recording saved to your Audio Library",
+          });
+        } else {
+          toast({
+            title: "Recording Saved Locally",
+            description: "Recording saved but cloud sync failed",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error uploading recording:', error);
+        toast({
+          title: "Recording Saved Locally",
+          description: "Recording saved but cloud sync failed",
+          variant: "destructive",
+        });
+      } finally {
+        setCurrentRecording(null);
+      }
     }
   };
 

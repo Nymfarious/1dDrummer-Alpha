@@ -30,16 +30,21 @@ interface Recording {
   duration: string;
   date: string;
   size: string;
-  type: 'recording' | 'upload';
+  type: 'recording' | 'imported' | 'upload';
 }
 
 export const Libraries = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { userFiles, getFileUrl, uploadFiles, validateFile } = useSecureAudioUpload();
+  const { userFiles, getFileUrl, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
+  
+  // Load files on mount
+  useEffect(() => {
+    loadUserFiles();
+  }, []);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'recording' | 'upload'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'recording' | 'imported' | 'upload'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   
@@ -49,7 +54,7 @@ export const Libraries = () => {
     duration: file.durationSeconds ? `${Math.floor(file.durationSeconds / 60)}:${(file.durationSeconds % 60).toString().padStart(2, '0')}` : '0:00',
     date: file.createdAt,
     size: file.fileSize ? `${(file.fileSize / 1024 / 1024).toFixed(1)} MB` : '0 MB',
-    type: (file.file_category === 'recording' ? 'recording' : 'upload') as 'recording' | 'upload'
+    type: file.file_category as 'recording' | 'imported' | 'upload'
   }))
     .filter(file => 
       file.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -124,7 +129,7 @@ export const Libraries = () => {
       });
       
       // Reload files
-      window.location.reload();
+      await loadUserFiles();
     } catch (error) {
       toast({
         title: "Delete Failed",
@@ -170,6 +175,7 @@ export const Libraries = () => {
 
     try {
       await uploadFiles(acceptedFiles);
+      await loadUserFiles();
       toast({
         title: "Upload Successful",
         description: `${acceptedFiles.length} file(s) uploaded successfully`,
@@ -192,6 +198,7 @@ export const Libraries = () => {
   });
 
   const recordingFiles = filteredFiles.filter(file => file.type === 'recording');
+  const importedFiles = filteredFiles.filter(file => file.type === 'imported');
   const uploadedFiles = filteredFiles.filter(file => file.type === 'upload');
 
   return (
@@ -224,6 +231,13 @@ export const Libraries = () => {
                 size="sm"
               >
                 Recordings
+              </Button>
+              <Button
+                onClick={() => setFilterType('imported')}
+                variant={filterType === 'imported' ? 'default' : 'outline'}
+                size="sm"
+              >
+                Imported
               </Button>
               <Button
                 onClick={() => setFilterType('upload')}
@@ -284,7 +298,10 @@ export const Libraries = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Your Recording Placeholder ({recordingFiles.length})</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Your Recordings</h3>
+                <Badge variant="secondary">{recordingFiles.length}</Badge>
+              </div>
               {recordingFiles.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Music size={48} className="mx-auto mb-4 opacity-50" />
@@ -292,34 +309,39 @@ export const Libraries = () => {
                   <p className="text-sm">Record audio to add them to your library</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
                   {recordingFiles.map((file) => (
-                    <div key={file.id} className="p-3 bg-secondary rounded-lg border border-border space-y-2">
+                    <div key={file.id} className="p-4 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {file.duration} • {formatDate(file.date)}
-                          </p>
+                          <p className="font-medium truncate">{file.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                            <Clock size={12} />
+                            {file.duration}
+                            <span>•</span>
+                            <Calendar size={12} />
+                            {formatDate(file.date)}
+                          </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant={playingId === file.id ? "outline" : "ghost"}
-                          onClick={() => handlePlay(file)}
-                        >
-                          {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
-                        </Button>
+                        <Badge variant="outline" className="shrink-0">Recording</Badge>
                       </div>
                       
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant={playingId === file.id ? "audio-active" : "audio"}
+                          onClick={() => handlePlay(file)}
                           className="flex-1"
+                        >
+                          {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
+                          {playingId === file.id ? 'Pause' : 'Play'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           title="Download"
                         >
                           <Download size={14} />
-                          Download
                         </Button>
                         <Button
                           size="sm"
@@ -333,6 +355,88 @@ export const Libraries = () => {
                   ))}
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Imported Audio Section */}
+      {(filterType === 'all' || filterType === 'imported') && importedFiles.length > 0 && (
+        <Card className="bg-gradient-card border-border card-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                <File size={20} />
+                Imported from Multi-track Editor
+              </div>
+              <Badge variant="secondary">{importedFiles.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {importedFiles.map((file) => (
+                <Card key={file.id} className="bg-card border-border hover:border-primary/50 transition-colors">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base truncate">{file.name}</CardTitle>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                          <Clock size={12} />
+                          {file.duration}
+                          <span>•</span>
+                          <Calendar size={12} />
+                          {formatDate(file.date)}
+                        </div>
+                      </div>
+                      <Badge variant="default" className="shrink-0">Imported</Badge>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-3">
+                    <div className="text-sm text-muted-foreground">
+                      Size: {file.size}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handlePlay(file)}
+                        variant={playingId === file.id ? "audio-active" : "audio"}
+                        size="sm"
+                        className="flex-1"
+                      >
+                        {playingId === file.id ? (
+                          <>
+                            <Square size={16} />
+                            Stop
+                          </>
+                        ) : (
+                          <>
+                            <Play size={16} />
+                            Play
+                          </>
+                        )}
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title="Download"
+                      >
+                        <Download size={16} />
+                      </Button>
+                      
+                      <Button
+                        onClick={() => handleDelete(file.id)}
+                        variant="destructive"
+                        size="sm"
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </CardContent>
         </Card>

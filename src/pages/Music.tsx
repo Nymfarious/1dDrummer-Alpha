@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useDropzone } from 'react-dropzone';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MusicFile {
   id: string;
@@ -32,17 +33,73 @@ export const Music = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [musicFiles, setMusicFiles] = useState<MusicFile[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  // Load files from Supabase on mount
+  useEffect(() => {
+    if (user) {
+      loadMusicFiles();
+    }
+  }, [user]);
+
+  const loadMusicFiles = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: files, error } = await supabase.storage
+        .from('music-library')
+        .list(user.id, {
+          limit: 100,
+          offset: 0,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+
+      if (error) throw error;
+
+      const musicFilesList: MusicFile[] = files.map(file => ({
+        id: file.id,
+        name: file.name,
+        date: file.created_at,
+        size: `${(file.metadata.size / 1024 / 1024).toFixed(1)} MB`,
+        type: file.metadata.mimetype?.startsWith('image/') ? 'image' : 'pdf',
+        url: `${supabase.storage.from('music-library').getPublicUrl(`${user.id}/${file.name}`).data.publicUrl}`
+      }));
+
+      setMusicFiles(musicFilesList);
+    } catch (error) {
+      console.error('Error loading music files:', error);
+    }
+  };
 
   const filteredFiles = musicFiles.filter(file => 
     file.name.toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const handleDelete = (fileId: string) => {
-    setMusicFiles(prev => prev.filter(f => f.id !== fileId));
-    toast({
-      title: "File Deleted",
-      description: "Music file removed from library",
-    });
+  const handleDelete = async (fileId: string) => {
+    if (!user) return;
+    
+    const file = musicFiles.find(f => f.id === fileId);
+    if (!file) return;
+
+    try {
+      const { error } = await supabase.storage
+        .from('music-library')
+        .remove([`${user.id}/${file.name}`]);
+
+      if (error) throw error;
+
+      await loadMusicFiles();
+      toast({
+        title: "File Deleted",
+        description: "Music file removed from library",
+      });
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: "Could not delete the file",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -65,22 +122,38 @@ export const Music = () => {
       return;
     }
 
-    // Process uploaded files
-    const newFiles: MusicFile[] = acceptedFiles.map(file => ({
-      id: `${Date.now()}-${Math.random()}`,
-      name: file.name,
-      date: new Date().toISOString(),
-      size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
-      type: file.type.startsWith('image/') ? 'image' : 'pdf',
-      url: URL.createObjectURL(file)
-    }));
+    setUploading(true);
 
-    setMusicFiles(prev => [...newFiles, ...prev]);
-    
-    toast({
-      title: "Upload Successful",
-      description: `${acceptedFiles.length} file(s) uploaded successfully`,
-    });
+    try {
+      for (const file of acceptedFiles) {
+        const filePath = `${user.id}/${Date.now()}-${file.name}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('music-library')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) throw uploadError;
+      }
+
+      await loadMusicFiles();
+      
+      toast({
+        title: "Upload Successful",
+        description: `${acceptedFiles.length} file(s) uploaded successfully`,
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
   }, [user, toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -110,14 +183,18 @@ export const Music = () => {
               isDragActive 
                 ? 'border-primary bg-primary/5' 
                 : 'border-border hover:border-primary/50'
-            }`}
+            } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
           >
-            <input {...getInputProps()} />
+            <input {...getInputProps()} disabled={uploading} />
             <Upload className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
             <div className="space-y-2">
-              <h3 className="text-lg font-medium">Upload Music Files</h3>
+              <h3 className="text-lg font-medium">
+                {uploading ? 'Uploading...' : 'Upload Music Files'}
+              </h3>
               <p className="text-muted-foreground">
-                {isDragActive
+                {uploading
+                  ? "Please wait while files are being uploaded..."
+                  : isDragActive
                   ? "Drop your files here..."
                   : "Drag & drop PDFs or images here, or click to browse"
                 }
