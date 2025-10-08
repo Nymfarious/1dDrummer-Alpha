@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt, referenceImages } = await req.json();
 
     if (!prompt) {
       return new Response(
@@ -29,6 +29,27 @@ Deno.serve(async (req) => {
     }
 
     console.log('Generating avatar with prompt:', prompt);
+    console.log('Reference images provided:', referenceImages?.length || 0);
+
+    // Build content array with text and optional reference images
+    const content: any[] = [
+      {
+        type: 'text',
+        text: prompt
+      }
+    ];
+
+    // Add reference images if provided
+    if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
+      referenceImages.forEach((imageUrl: string) => {
+        content.push({
+          type: 'image_url',
+          image_url: {
+            url: imageUrl
+          }
+        });
+      });
+    }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -41,7 +62,7 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'user',
-            content: prompt
+            content: content
           }
         ],
         modalities: ['image', 'text']

@@ -4,11 +4,31 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DevSettingsProvider, useDevSettings } from '@/contexts/DevSettingsContext';
+import { useAIAvatar } from '@/contexts/AIAvatarContext';
 import { DevTools } from '@/components/DevTools';
 import { ButterflyToggle } from '@/components/ButterflyToggle';
+import { AIAvatarGenerator } from '@/components/profile/AIAvatarGenerator';
 import Index from "../pages/Index";
 import Auth from "../pages/Auth";
 import NotFound from "../pages/NotFound";
+
+const GlobalAIAvatar = () => {
+  const { isOpen, isDocked, setIsOpen, setIsDocked } = useAIAvatar();
+
+  if (!isOpen || isDocked) return null;
+
+  return (
+    <AIAvatarGenerator
+      open={isOpen}
+      onClose={() => setIsOpen(false)}
+      onSave={() => {
+        // The actual save to profile happens in UserProfile component
+      }}
+      docked={false}
+      onDockToggle={() => setIsDocked(!isDocked)}
+    />
+  );
+};
 
 const AppContent = () => {
   const { user, loading } = useAuth();
@@ -39,6 +59,7 @@ const AppContent = () => {
     <>
       <Toaster />
       <Sonner />
+      <GlobalAIAvatar />
       <BrowserRouter>
         <Routes>
           <Route 

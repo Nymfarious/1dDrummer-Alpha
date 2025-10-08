@@ -7,6 +7,7 @@ import { MapPin, ExternalLink, Pencil, Save } from 'lucide-react';
 import bearAvatar from '@/assets/bear-avatar.png';
 import { AvatarEditorDialog } from '@/components/profile/AvatarEditorDialog';
 import { AIAvatarGenerator } from '@/components/profile/AIAvatarGenerator';
+import { useAIAvatar } from '@/contexts/AIAvatarContext';
 import { LocationMap } from '@/components/profile/LocationMap';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 const UserProfile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isOpen: aiGeneratorOpen, isDocked: aiGeneratorDocked, setIsOpen: setAIGeneratorOpen, setIsDocked: setAIGeneratorDocked, generatedImage } = useAIAvatar();
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
@@ -27,8 +29,6 @@ const UserProfile = () => {
     linkedin: ''
   });
   const [editorOpen, setEditorOpen] = useState(false);
-  const [aiGeneratorOpen, setAIGeneratorOpen] = useState(false);
-  const [aiGeneratorDocked, setAIGeneratorDocked] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -104,6 +104,39 @@ const UserProfile = () => {
 
   const handleLinkChange = (platform: keyof typeof links, value: string) => {
     setLinks(prev => ({ ...prev, [platform]: value }));
+  };
+
+  // Auto-save generated image when it changes
+  useEffect(() => {
+    if (generatedImage) {
+      handleAvatarSave(generatedImage);
+    }
+  }, [generatedImage]);
+
+  const handleAvatarSave = async (url: string) => {
+    setAvatarUrl(url);
+    
+    // Save to database
+    if (user) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: url })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error saving avatar:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save avatar",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Avatar updated successfully",
+        });
+      }
+    }
   };
 
   return (
@@ -295,43 +328,34 @@ const UserProfile = () => {
 
       {/* AI Avatar Generator - Docked */}
       {aiGeneratorDocked && (
-        <AIAvatarGenerator
-          open={aiGeneratorOpen}
-          onClose={() => setAIGeneratorOpen(false)}
-          onSave={(url) => {
-            setAvatarUrl(url);
-            setAIGeneratorOpen(false);
-          }}
-          docked={true}
-          onDockToggle={() => setAIGeneratorDocked(false)}
-        />
+        <Card className="mt-6">
+          <div className="p-6">
+            <h3 className="text-xl font-semibold mb-4">AI Avatar Generator</h3>
+            <AIAvatarGenerator
+              open={true}
+              onClose={() => {
+                setAIGeneratorOpen(false);
+                setAIGeneratorDocked(false);
+              }}
+              onSave={handleAvatarSave}
+              docked={true}
+              onDockToggle={() => setAIGeneratorDocked(false)}
+            />
+          </div>
+        </Card>
       )}
 
       {/* Dialogs */}
       <AvatarEditorDialog
         open={editorOpen}
         onOpenChange={setEditorOpen}
-        onAvatarSelected={(url) => setAvatarUrl(url)}
+        onAvatarSelected={handleAvatarSave}
         onOpenAIGenerator={() => {
           setEditorOpen(false);
           setAIGeneratorOpen(true);
           setAIGeneratorDocked(false);
         }}
       />
-
-      {/* AI Avatar Generator - Floating */}
-      {!aiGeneratorDocked && (
-        <AIAvatarGenerator
-          open={aiGeneratorOpen}
-          onClose={() => setAIGeneratorOpen(false)}
-          onSave={(url) => {
-            setAvatarUrl(url);
-            setAIGeneratorOpen(false);
-          }}
-          docked={false}
-          onDockToggle={() => setAIGeneratorDocked(true)}
-        />
-      )}
     </div>
   );
 };

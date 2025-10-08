@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Maximize2, Minimize2, X, Save, Loader2, Mic, Send, Upload, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, Maximize2, Minimize2, X, Save, Loader2, Mic, Send, Upload, GripVertical, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,6 +35,7 @@ export const AIAvatarGenerator = ({
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [size, setSize] = useState({ width: 700, height: 800 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isDragEnabled, setIsDragEnabled] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const dragRef = useRef<HTMLDivElement>(null);
   
@@ -57,11 +58,18 @@ export const AIAvatarGenerator = ({
   const [includeBanner, setIncludeBanner] = useState(false);
 
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging && isDragEnabled) {
       const handleMouseMove = (e: MouseEvent) => {
+        const newX = e.clientX - dragStart.x;
+        const newY = e.clientY - dragStart.y;
+        
+        // Prevent window from going off-screen
+        const maxX = window.innerWidth - size.width;
+        const maxY = window.innerHeight - size.height;
+        
         setPosition({
-          x: e.clientX - dragStart.x,
-          y: e.clientY - dragStart.y,
+          x: Math.max(0, Math.min(newX, maxX)),
+          y: Math.max(0, Math.min(newY, maxY)),
         });
       };
 
@@ -77,14 +85,17 @@ export const AIAvatarGenerator = ({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragStart]);
+  }, [isDragging, isDragEnabled, dragStart, size]);
+
+  const handleDragButtonClick = () => {
+    setIsDragEnabled(!isDragEnabled);
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (dragRef.current && !docked) {
-      const rect = dragRef.current.getBoundingClientRect();
+    if (isDragEnabled && !docked) {
       setDragStart({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: e.clientX - position.x,
+        y: e.clientY - position.y,
       });
       setIsDragging(true);
     }
@@ -105,8 +116,8 @@ export const AIAvatarGenerator = ({
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await transcribeAudio(audioBlob);
         stream.getTracks().forEach(track => track.stop());
+        await transcribeAudio(audioBlob);
       };
 
       mediaRecorder.start();
@@ -130,26 +141,42 @@ export const AIAvatarGenerator = ({
 
   const transcribeAudio = async (audioBlob: Blob) => {
     try {
+      toast({
+        title: "Transcribing...",
+        description: "Processing your voice input",
+      });
+
       const reader = new FileReader();
       reader.readAsDataURL(audioBlob);
       reader.onloadend = async () => {
         const base64Audio = reader.result?.toString().split(',')[1];
         
+        if (!base64Audio) {
+          throw new Error('Failed to process audio');
+        }
+
         const { data, error } = await supabase.functions.invoke('transcribe-audio', {
           body: { audio: base64Audio },
         });
 
         if (error) throw error;
 
-        if (data.text) {
-          setPrompt(prev => prev + (prev ? ' ' : '') + data.text);
+        if (data?.text) {
+          setPrompt(prev => {
+            const newPrompt = prev + (prev ? ' ' : '') + data.text;
+            return newPrompt;
+          });
+          toast({
+            title: "Transcription Complete",
+            description: "Your voice has been converted to text",
+          });
         }
       };
     } catch (error) {
       console.error('Transcription error:', error);
       toast({
         title: "Transcription Failed",
-        description: "Failed to transcribe audio",
+        description: "Failed to transcribe audio. Please try again.",
         variant: "destructive",
       });
     }
@@ -226,10 +253,15 @@ export const AIAvatarGenerator = ({
                        styleLevel[0] < 65 ? 'balanced artistic' : 
                        'serious and artistic';
 
-      const fullPrompt = `Create a smooth, pixelated 3D avatar of ${finalPrompt} in a ${styleText} style. The avatar should be circular and suitable for a profile picture.`;
+      // Emphasize Scottish pipe band drummer context
+      const contextualPrompt = `IMPORTANT: Create a Scottish Highland pipe band drummer avatar. ${finalPrompt}`;
+      const fullPrompt = `${contextualPrompt} Style: ${styleText}. The avatar should be circular, high quality, and suitable for a profile picture. Focus on accurate Scottish pipe band details including tartan, drum, and traditional uniform elements.`;
 
       const { data, error } = await supabase.functions.invoke('generate-avatar', {
-        body: { prompt: fullPrompt },
+        body: { 
+          prompt: fullPrompt,
+          referenceImages: referenceImages.length > 0 ? referenceImages : undefined
+        },
       });
 
       if (error) throw error;
@@ -251,6 +283,28 @@ export const AIAvatarGenerator = ({
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleRefineWithPrevious = async () => {
+    if (!generatedImage) {
+      toast({
+        title: "No Previous Image",
+        description: "Generate an avatar first to refine it",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Add the previous generation as a reference image
+    setReferenceImages(prev => {
+      if (prev.includes(generatedImage)) return prev;
+      return [...prev, generatedImage].slice(-3); // Keep max 3
+    });
+
+    toast({
+      title: "Previous Image Added",
+      description: "The previous generation has been added as a reference. Adjust your prompt and regenerate.",
+    });
   };
 
   const handleSave = () => {
@@ -275,6 +329,17 @@ export const AIAvatarGenerator = ({
           </h3>
         </div>
         <div className="flex items-center gap-2">
+          {!docked && (
+            <Button
+              variant={isDragEnabled ? "default" : "ghost"}
+              size="icon"
+              onClick={handleDragButtonClick}
+              title={isDragEnabled ? "Drag mode active - click to disable" : "Enable drag mode"}
+              className="rounded-full"
+            >
+              <GripVertical className="w-4 h-4" />
+            </Button>
+          )}
           {onDockToggle && (
             <Button
               variant="ghost"
@@ -504,10 +569,16 @@ export const AIAvatarGenerator = ({
                 className="w-full h-auto rounded-lg"
               />
             </div>
-            <Button onClick={handleSave} className="w-full shadow-lg" size="lg" variant="default">
-              <Save className="w-5 h-5 mr-2" />
-              Use This Avatar
-            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={handleRefineWithPrevious} variant="outline" size="lg" className="shadow-lg">
+                <RefreshCw className="w-5 h-5 mr-2" />
+                Refine This
+              </Button>
+              <Button onClick={handleSave} className="shadow-lg" size="lg" variant="default">
+                <Save className="w-5 h-5 mr-2" />
+                Use Avatar
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -533,12 +604,11 @@ export const AIAvatarGenerator = ({
         minHeight: size.height,
         maxHeight: '90vh',
         overflowY: 'auto',
+        cursor: isDragEnabled ? 'move' : 'default',
       }}
+      onMouseDown={handleMouseDown}
     >
-      <div
-        className="cursor-move border-b border-primary/10 p-2 bg-gradient-to-r from-primary/5 to-accent/5"
-        onMouseDown={handleMouseDown}
-      >
+      <div className="border-b border-primary/10 p-2 bg-gradient-to-r from-primary/5 to-accent/5">
         <div className="w-12 h-1.5 bg-gradient-to-r from-primary to-accent rounded-full mx-auto" />
       </div>
       {content}
