@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Maximize2, Minimize2, X, Save, Loader2, Mic, Send, Upload, GripVertical, RefreshCw } from 'lucide-react';
+import { Sparkles, Maximize2, Minimize2, X, Save, Loader2, Mic, Send, Upload, GripVertical, RefreshCw, Shuffle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,8 +32,8 @@ export const AIAvatarGenerator = ({
   const [styleLevel, setStyleLevel] = useState([50]);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [position, setPosition] = useState({ x: 100, y: 100 });
-  const [size, setSize] = useState({ width: 700, height: 800 });
+  const [position, setPosition] = useState({ x: 100, y: 50 });
+  const [size, setSize] = useState({ width: 650, height: 650 });
   const [isDragging, setIsDragging] = useState(false);
   const [isDragEnabled, setIsDragEnabled] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -210,7 +210,12 @@ export const AIAvatarGenerator = ({
       presetPrompt += `${gender} `;
     }
     
-    presetPrompt += 'Scottish pipe band drummer, ';
+    // Apply style level to description
+    const styleText = styleLevel[0] < 35 ? 'cute and cartoony' : 
+                     styleLevel[0] < 65 ? 'balanced artistic' : 
+                     'serious and photorealistic';
+    
+    presetPrompt += `Scottish pipe band drummer in ${styleText} style, `;
     
     if (noJacket) {
       presetPrompt += 'wearing white short-sleeved button-down collared shirt with blue tie, ';
@@ -233,6 +238,23 @@ export const AIAvatarGenerator = ({
     presetPrompt += `Grade ${grade} quality`;
     
     return presetPrompt;
+  };
+
+  const randomizeSettings = () => {
+    setGender(['male', 'female', 'ask'][Math.floor(Math.random() * 3)]);
+    setGrade(String(Math.floor(Math.random() * 5) + 1));
+    setNoJacket(Math.random() > 0.5);
+    setKiltColor(['green', 'blue'][Math.floor(Math.random() * 2)]);
+    setDrumColor(['white', 'colored'][Math.floor(Math.random() * 2)]);
+    setGripStyle(['traditional', 'matched'][Math.floor(Math.random() * 2)]);
+    setIncludePipes(Math.random() > 0.5);
+    setIncludeBanner(Math.random() > 0.5);
+    setStyleLevel([Math.floor(Math.random() * 101)]);
+    
+    toast({
+      title: "Settings Randomized",
+      description: "Avatar preset options have been randomized",
+    });
   };
 
   const handleGenerate = async () => {
@@ -320,11 +342,11 @@ export const AIAvatarGenerator = ({
   if (!open) return null;
 
   const content = (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="space-y-3 p-4">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
-          <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <Sparkles className="w-4 h-4 text-primary" />
+          <h3 className="text-base font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             AI Avatar Generator
           </h3>
         </div>
@@ -356,27 +378,46 @@ export const AIAvatarGenerator = ({
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
+        {/* Style Slider - Moved to top */}
+        <div className="space-y-2 p-3 rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border">
+          <Label className="text-sm font-semibold">
+            Style: {styleLevel[0] < 35 ? 'Cute & Cartoony' : styleLevel[0] < 65 ? 'Balanced' : 'Serious & Photorealistic'}
+          </Label>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">Cute</span>
+            <Slider
+              value={styleLevel}
+              onValueChange={setStyleLevel}
+              min={0}
+              max={100}
+              step={1}
+              className="flex-1"
+            />
+            <span className="text-xs text-muted-foreground">Serious</span>
+          </div>
+        </div>
+
         {/* Prompt Area with Voice Input */}
-        <div className="space-y-3">
-          <Label htmlFor="prompt" className="text-base font-semibold">Describe Your Avatar</Label>
+        <div className="space-y-2">
+          <Label htmlFor="prompt" className="text-sm font-semibold">Describe Your Avatar</Label>
           <div className="relative">
             <Textarea
               id="prompt"
-              placeholder="Describe the avatar you want to create... or use the preset options below"
+              placeholder="Describe the avatar you want to create... or use presets below"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="min-h-[120px] resize-none pr-24 bg-gradient-to-br from-card via-card to-muted/20 border-2 focus:border-primary transition-all"
+              className="min-h-[80px] resize-none pr-24 bg-gradient-to-br from-card via-card to-muted/20 border-2 focus:border-primary transition-all text-sm"
             />
-            <div className="absolute bottom-3 right-3 flex gap-2">
+            <div className="absolute bottom-2 right-2 flex gap-2">
               <Button
                 type="button"
                 size="icon"
                 variant={isRecording ? "destructive" : "secondary"}
                 onClick={isRecording ? stopRecording : startRecording}
-                className="rounded-full shadow-lg"
+                className="rounded-full shadow-lg h-8 w-8"
               >
-                <Mic className={`w-4 h-4 ${isRecording ? 'animate-pulse' : ''}`} />
+                <Mic className={`w-3 h-3 ${isRecording ? 'animate-pulse' : ''}`} />
               </Button>
               <Button
                 type="button"
@@ -384,29 +425,29 @@ export const AIAvatarGenerator = ({
                 variant="default"
                 onClick={handleGenerate}
                 disabled={generating}
-                className="rounded-full shadow-lg"
+                className="rounded-full shadow-lg h-8 w-8"
               >
                 {generating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3 h-3" />
                 )}
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Reference Images Upload */}
-        <div className="space-y-3">
-          <Label className="text-base font-semibold">Reference Images (Optional - Up to 3)</Label>
-          <div className="grid grid-cols-3 gap-3">
+        {/* Reference Images Upload - Compact */}
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold">Reference Images (Up to 3)</Label>
+          <div className="grid grid-cols-4 gap-2">
             {referenceImages.map((img, idx) => (
-              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border-2 border-primary/50">
-                <img src={img} alt={`Reference ${idx + 1}`} className="w-full h-full object-cover" />
+              <div key={idx} className="relative aspect-square rounded-md overflow-hidden border-2 border-primary/50">
+                <img src={img} alt={`Ref ${idx + 1}`} className="w-full h-full object-cover" />
                 <Button
                   size="icon"
                   variant="destructive"
-                  className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                  className="absolute top-0.5 right-0.5 h-5 w-5 rounded-full"
                   onClick={() => removeImage(idx)}
                 >
                   <X className="w-3 h-3" />
@@ -414,9 +455,9 @@ export const AIAvatarGenerator = ({
               </div>
             ))}
             {referenceImages.length < 3 && (
-              <label className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/50 hover:border-primary cursor-pointer flex flex-col items-center justify-center gap-2 bg-muted/20 hover:bg-muted/40 transition-all">
-                <Upload className="w-6 h-6 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Upload</span>
+              <label className="aspect-square rounded-md border-2 border-dashed border-muted-foreground/50 hover:border-primary cursor-pointer flex flex-col items-center justify-center gap-1 bg-muted/20 hover:bg-muted/40 transition-all">
+                <Upload className="w-4 h-4 text-muted-foreground" />
+                <span className="text-[10px] text-muted-foreground">Upload</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -429,29 +470,40 @@ export const AIAvatarGenerator = ({
           </div>
         </div>
 
-        {/* Preset Options */}
-        <div className="space-y-4 p-4 rounded-lg bg-gradient-to-br from-muted/30 to-muted/10 border">
-          <h4 className="font-semibold text-sm text-primary">Preset Options (Scottish Pipe Band Drummer)</h4>
+        {/* Preset Options - Compact */}
+        <div className="space-y-3 p-3 rounded-lg bg-gradient-to-br from-muted/30 to-muted/10 border">
+          <div className="flex items-center justify-between">
+            <h4 className="font-semibold text-xs text-primary">Presets (Scottish Pipe Band)</h4>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={randomizeSettings}
+              className="h-7 text-xs"
+            >
+              <Shuffle className="w-3 h-3 mr-1" />
+              Randomize
+            </Button>
+          </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm">Gender</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Gender</Label>
               <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="male">Male</SelectItem>
                   <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="ask">Let AI Decide</SelectItem>
+                  <SelectItem value="ask">AI Decide</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm">Grade (1 is Best)</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Grade</Label>
               <Select value={grade} onValueChange={setGrade}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -464,23 +516,23 @@ export const AIAvatarGenerator = ({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm">Kilt Color</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Kilt</Label>
               <Select value={kiltColor} onValueChange={setKiltColor}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="green">Green Tartan</SelectItem>
-                  <SelectItem value="blue">Blue Tartan</SelectItem>
+                  <SelectItem value="green">Green</SelectItem>
+                  <SelectItem value="blue">Blue</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm">Drum Color</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Drum</Label>
               <Select value={drumColor} onValueChange={setDrumColor}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -490,93 +542,77 @@ export const AIAvatarGenerator = ({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm">Grip Style</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Grip</Label>
               <Select value={gripStyle} onValueChange={setGripStyle}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="traditional">Traditional Grip</SelectItem>
-                  <SelectItem value="matched">Matched Grip</SelectItem>
+                  <SelectItem value="traditional">Traditional</SelectItem>
+                  <SelectItem value="matched">Matched</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="flex items-center space-x-2">
+          <div className="grid grid-cols-3 gap-2 pt-1">
+            <div className="flex items-center space-x-1.5">
               <Checkbox
                 id="noJacket"
                 checked={noJacket}
                 onCheckedChange={(checked) => setNoJacket(checked as boolean)}
+                className="h-3 w-3"
               />
-              <label htmlFor="noJacket" className="text-sm cursor-pointer">
-                No Jacket (Shirt & Tie)
+              <label htmlFor="noJacket" className="text-xs cursor-pointer">
+                Shirt & Tie
               </label>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5">
               <Checkbox
                 id="pipes"
                 checked={includePipes}
                 onCheckedChange={(checked) => setIncludePipes(checked as boolean)}
+                className="h-3 w-3"
               />
-              <label htmlFor="pipes" className="text-sm cursor-pointer">
-                Include Bagpipes
+              <label htmlFor="pipes" className="text-xs cursor-pointer">
+                Pipes
               </label>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5">
               <Checkbox
                 id="banner"
                 checked={includeBanner}
                 onCheckedChange={(checked) => setIncludeBanner(checked as boolean)}
+                className="h-3 w-3"
               />
-              <label htmlFor="banner" className="text-sm cursor-pointer">
-                Include Banner
+              <label htmlFor="banner" className="text-xs cursor-pointer">
+                Banner
               </label>
             </div>
           </div>
         </div>
 
-        {/* Style Slider */}
-        <div className="space-y-3 p-4 rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border">
-          <Label className="text-base font-semibold">
-            Style: {styleLevel[0] < 35 ? 'Cute & Cartoony' : styleLevel[0] < 65 ? 'Balanced' : 'Art & Serious'}
-          </Label>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-muted-foreground font-medium">Cute</span>
-            <Slider
-              value={styleLevel}
-              onValueChange={setStyleLevel}
-              min={0}
-              max={100}
-              step={1}
-              className="flex-1"
-            />
-            <span className="text-xs text-muted-foreground font-medium">Serious</span>
-          </div>
-        </div>
-
-        {/* Generated Image Preview */}
+        {/* Generated Image Preview - Compact */}
         {generatedImage && (
-          <div className="space-y-4 animate-in fade-in-50">
-            <div className="border-2 border-primary/30 rounded-lg p-4 bg-gradient-to-br from-card to-muted/20 shadow-lg">
+          <div className="space-y-2 animate-in fade-in-50">
+            <div className="border-2 border-primary/30 rounded-lg p-2 bg-gradient-to-br from-card to-muted/20 shadow-lg">
               <img
                 src={generatedImage}
                 alt="Generated avatar"
                 className="w-full h-auto rounded-lg"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={handleRefineWithPrevious} variant="outline" size="lg" className="shadow-lg">
-                <RefreshCw className="w-5 h-5 mr-2" />
-                Refine This
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={handleRefineWithPrevious} variant="outline" size="sm" className="shadow-lg text-xs h-8">
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Refine
               </Button>
-              <Button onClick={handleSave} className="shadow-lg" size="lg" variant="default">
-                <Save className="w-5 h-5 mr-2" />
-                Use Avatar
+              <Button onClick={handleSave} className="shadow-lg" size="sm" variant="default">
+                <Save className="w-3 h-3 mr-1" />
+                Save Avatar
               </Button>
             </div>
           </div>
@@ -601,8 +637,8 @@ export const AIAvatarGenerator = ({
         left: position.x,
         top: position.y,
         width: size.width,
-        minHeight: size.height,
-        maxHeight: '90vh',
+        height: size.height,
+        maxHeight: '85vh',
         overflowY: 'auto',
         cursor: isDragEnabled ? 'move' : 'default',
       }}
