@@ -22,7 +22,8 @@ import {
   LayoutGrid,
   List,
   Cloud,
-  HardDrive
+  HardDrive,
+  Pencil
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
@@ -49,13 +50,16 @@ interface Recording {
 export const Libraries = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { userFiles, getFileUrl, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
+  const { userFiles, getFileUrl, uploadFiles, validateFile, loadUserFiles, updateFileName } = useSecureAudioUpload();
   const dropbox = useDropbox();
   const googleDrive = useGoogleDrive();
   const [maxLibraryFiles, setMaxLibraryFiles] = useState(10);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showDropboxPicker, setShowDropboxPicker] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [renamingFile, setRenamingFile] = useState<Recording | null>(null);
+  const [newFileName, setNewFileName] = useState('');
   
   // Load files on mount
   useEffect(() => {
@@ -256,6 +260,46 @@ export const Libraries = () => {
         description: "Could not import file from Dropbox",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleRenameClick = (file: Recording) => {
+    setRenamingFile(file);
+    setNewFileName(file.name);
+    setShowRenameDialog(true);
+  };
+
+  const handleRenameSubmit = async () => {
+    if (!renamingFile || !newFileName.trim()) return;
+
+    try {
+      const audioFile = userFiles.find(f => f.id === renamingFile.id);
+      if (audioFile) {
+        const success = await updateFileName(audioFile.id, newFileName.trim());
+        if (success) {
+          await loadUserFiles();
+          toast({
+            title: "File Renamed",
+            description: `Renamed to "${newFileName.trim()}"`,
+          });
+        } else {
+          toast({
+            title: "Rename Failed",
+            description: "Could not rename file",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Rename Failed",
+        description: "Could not rename file",
+        variant: "destructive",
+      });
+    } finally {
+      setShowRenameDialog(false);
+      setRenamingFile(null);
+      setNewFileName('');
     }
   };
 
@@ -495,6 +539,14 @@ export const Libraries = () => {
                           {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
                           {playingId === file.id ? 'Pause' : 'Play'}
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRenameClick(file)}
+                          title="Rename"
+                        >
+                          <Pencil size={14} />
+                        </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -563,6 +615,15 @@ export const Libraries = () => {
                           className="h-8 w-8 p-0"
                         >
                           {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRenameClick(file)}
+                          className="h-8 w-8 p-0"
+                          title="Rename"
+                        >
+                          <Pencil size={14} />
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -681,6 +742,15 @@ export const Libraries = () => {
                       )}
                     </Button>
                     
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRenameClick(file)}
+                      title="Rename"
+                    >
+                      <Pencil size={16} />
+                    </Button>
+                    
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -742,6 +812,15 @@ export const Libraries = () => {
                         className="h-8 w-8 p-0"
                       >
                         {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRenameClick(file)}
+                        className="h-8 w-8 p-0"
+                        title="Rename"
+                      >
+                        <Pencil size={14} />
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -876,6 +955,35 @@ export const Libraries = () => {
         onOpenChange={setShowDropboxPicker}
         onFileSelect={handleDropboxFileSelect}
       />
+
+      {/* Rename File Dialog */}
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename File</DialogTitle>
+            <DialogDescription>
+              Enter a new name for this file
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newFileName}
+              onChange={(e) => setNewFileName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleRenameSubmit()}
+              placeholder="File name"
+              className="w-full"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRenameSubmit} disabled={!newFileName.trim()}>
+              Rename
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
