@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DevSettingsProvider, useDevSettings } from '@/contexts/DevSettingsContext';
 import { DevTools } from '@/components/DevTools';
 import { ButterflyToggle } from '@/components/ButterflyToggle';
@@ -11,7 +11,7 @@ import Auth from "../pages/Auth";
 import NotFound from "../pages/NotFound";
 
 const AppContent = () => {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
   const [devToolsOpen, setDevToolsOpen] = useState(false);
   const { settings } = useDevSettings();
 
@@ -41,7 +41,10 @@ const AppContent = () => {
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route 
+            path="/" 
+            element={user ? <Index /> : <Navigate to="/auth" replace />} 
+          />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
