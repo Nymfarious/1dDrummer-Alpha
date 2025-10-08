@@ -78,24 +78,14 @@ class AccountLockoutManager {
   async isAccountLocked(email: string, config?: Partial<LockoutConfig>): Promise<{ locked: boolean; lockoutInfo?: AccountLockout; remainingTime?: number }> {
     try {
       const mergedConfig = { ...this.defaultConfig, ...config };
-      const clientIP = await this.getClientIP();
       
-      let query: any = supabase
+      const { data, error } = await supabase
         .from('account_lockouts')
         .select('*')
+        .eq('email', email)
         .gte('failed_attempts', mergedConfig.maxAttempts)
-        .not('locked_until', 'is', null);
-
-      // Add filters based on config
-      if (mergedConfig.trackByEmail) {
-        query = query.eq('email', email);
-      }
-      
-      if (mergedConfig.trackByIP && clientIP) {
-        query = query.eq('ip_address', clientIP);
-      }
-
-      const { data, error } = await query.single();
+        .not('locked_until', 'is', null)
+        .single();
 
       if (error) {
         // No lockout found
@@ -212,7 +202,6 @@ class AccountLockoutManager {
           .insert({
             user_id: userId,
             email,
-            ip_address: clientIP,
             failed_attempts: newAttempts,
             created_at: now.toISOString(),
             updated_at: now.toISOString()
