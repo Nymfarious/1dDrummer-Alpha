@@ -50,7 +50,12 @@ serve(async (req) => {
     switch (action) {
       case 'upload': {
         const fileBytes = Uint8Array.from(atob(fileData), c => c.charCodeAt(0));
-        const uploadPath = `/Apps/dDrummer/${path || 'uploads'}/${fileName}`;
+        // Handle both full paths and relative paths
+        const uploadPath = path.startsWith('/') 
+          ? `${path}/${fileName}`.replace('//', '/')
+          : `/Apps/dDrummer/${path || 'uploads'}/${fileName}`;
+        
+        console.log('Upload path:', uploadPath);
         
         const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
           method: 'POST',

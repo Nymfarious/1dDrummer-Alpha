@@ -21,7 +21,9 @@ import {
   Download,
   Upload as UploadIcon,
   Cloud,
-  FileAudio
+  FileAudio,
+  Edit2,
+  Check
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,11 +73,19 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [saveTrackId, setSaveTrackId] = useState<string>('');
   const [dropboxSavePath, setDropboxSavePath] = useState('/Apps/dDrummer/edited-tracks');
   const [dropboxSaveFileName, setDropboxSaveFileName] = useState('');
+  const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
+  const [editingTrackName, setEditingTrackName] = useState('');
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const loopEnabledRef = useRef(loopEnabled);
 
   const { uploadFiles, validateFile } = useSecureAudioUpload();
   const { isConnected: dropboxConnected, uploadFile: uploadToDropbox } = useDropbox();
   const { isConnected: driveConnected, connectGoogleDrive, uploadFile: uploadToDrive } = useGoogleDrive();
+
+  // Keep loop ref in sync with state
+  useEffect(() => {
+    loopEnabledRef.current = loopEnabled;
+  }, [loopEnabled]);
 
   // Local file upload via dropzone
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -195,8 +205,8 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       ));
 
       wavesurfer.on('finish', () => {
-        if (loopEnabled) {
-          wavesurfer.play();
+        if (loopEnabledRef.current) {
+          setTimeout(() => wavesurfer.play(), 0);
         } else {
           setTracks(prev => prev.map(t => 
             t.id === trackId ? { ...t, isPlaying: false } : t
@@ -290,8 +300,8 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       ));
 
       wavesurfer.on('finish', () => {
-        if (loopEnabled) {
-          wavesurfer.play();
+        if (loopEnabledRef.current) {
+          setTimeout(() => wavesurfer.play(), 0);
         } else {
           setTracks(prev => prev.map(t => 
             t.id === trackId ? { ...t, isPlaying: false } : t
@@ -350,18 +360,22 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const addRegionToTrack = (trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
     if (track?.regions && track.waveform) {
+      // Clear existing regions first
+      const existingRegions = track.regions.getRegions();
+      existingRegions.forEach(region => region.remove());
+      
       const duration = track.waveform.getDuration();
       track.regions.addRegion({
         start: duration * 0.3,
         end: duration * 0.7,
-        color: 'hsla(var(--accent), 0.3)',
+        color: 'rgba(255, 165, 0, 0.3)',
         drag: true,
         resize: true
       });
       
       toast({
         title: "Region added",
-        description: "Drag and resize to select the area to cut or loop"
+        description: "Drag and resize to select the area to trim"
       });
     }
   };
@@ -449,8 +463,8 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
         });
 
         wavesurfer.on('finish', () => {
-          if (loopEnabled) {
-            wavesurfer.play();
+          if (loopEnabledRef.current) {
+            setTimeout(() => wavesurfer.play(), 0);
           } else {
             setTracks(prev => prev.map(t => 
               t.id === trackId ? { ...t, isPlaying: false } : t
@@ -648,6 +662,21 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
         t.id === trackId ? { ...t, volume } : t
       ));
     }
+  };
+
+  const startRenameTrack = (trackId: string, currentName: string) => {
+    setEditingTrackId(trackId);
+    setEditingTrackName(currentName);
+  };
+
+  const confirmRenameTrack = () => {
+    if (editingTrackId && editingTrackName.trim()) {
+      setTracks(prev => prev.map(t => 
+        t.id === editingTrackId ? { ...t, name: editingTrackName.trim() } : t
+      ));
+    }
+    setEditingTrackId(null);
+    setEditingTrackName('');
   };
 
   useEffect(() => {
@@ -867,7 +896,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
             disabled={tracks.length === 0}
           >
             <Repeat size={14} />
-            Loop {loopEnabled && '✓'}
+            Loop
           </Button>
 
           {tracks.length === 0 && (
@@ -882,8 +911,39 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           {tracks.map(track => (
             <Card key={track.id} className="bg-background border-border">
               <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">{track.name}</h4>
+                <div className="flex items-center justify-between gap-2">
+                  {editingTrackId === track.id ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <Input
+                        value={editingTrackName}
+                        onChange={(e) => setEditingTrackName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') confirmRenameTrack();
+                          if (e.key === 'Escape') setEditingTrackId(null);
+                        }}
+                        className="h-8"
+                        autoFocus
+                      />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={confirmRenameTrack}
+                      >
+                        <Check size={14} />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-1">
+                      <h4 className="font-medium">{track.name}</h4>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => startRenameTrack(track.id, track.name)}
+                      >
+                        <Edit2 size={12} />
+                      </Button>
+                    </div>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"
