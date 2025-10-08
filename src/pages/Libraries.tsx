@@ -16,7 +16,8 @@ import {
   Volume2,
   Upload,
   File,
-  Square
+  Square,
+  ArrowDownToLine
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
@@ -366,7 +367,7 @@ export const Libraries = () => {
                           variant="outline"
                           title="Download"
                         >
-                          <Download size={14} />
+                          <ArrowDownToLine size={14} />
                         </Button>
                         <Button
                           size="sm"
@@ -454,7 +455,7 @@ export const Libraries = () => {
                       size="sm"
                       title="Download"
                     >
-                      <Download size={16} />
+                      <ArrowDownToLine size={16} />
                     </Button>
                     
                     <Button

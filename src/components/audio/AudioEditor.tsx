@@ -72,6 +72,8 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [showCloudPicker, setShowCloudPicker] = useState(false);
   const [showDropboxPicker, setShowDropboxPicker] = useState(false);
   const [showDropboxSaveDialog, setShowDropboxSaveDialog] = useState(false);
+  const [showLibraryPicker, setShowLibraryPicker] = useState(false);
+  const [selectedLibraryFiles, setSelectedLibraryFiles] = useState<string[]>([]);
   const [uploadSource, setUploadSource] = useState<'library' | 'local' | 'cloud'>('library');
   const [saveTrackId, setSaveTrackId] = useState<string>('');
   const [dropboxSavePath, setDropboxSavePath] = useState('/Apps/dDrummer/edited-tracks');
@@ -265,6 +267,64 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
     // Load the audio after track is added
     setTimeout(() => loadAudioForTrack(trackId, file), 100);
+  };
+
+  const loadSelectedLibraryFiles = async () => {
+    if (selectedLibraryFiles.length === 0) {
+      toast({
+        title: "No files selected",
+        description: "Please select at least one file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    for (const fileId of selectedLibraryFiles) {
+      const file = userFiles.find(f => f.id === fileId);
+      if (!file) continue;
+
+      const trackId = `track-${Date.now()}-${fileId}`;
+      const trackName = file.originalName;
+
+      setTracks(prev => [...prev, {
+        id: trackId,
+        name: trackName,
+        fileId: fileId,
+        waveform: null,
+        regions: null,
+        audioBuffer: null,
+        isPlaying: false,
+        volume: 1
+      }]);
+
+      // Load the audio after track is added
+      setTimeout(() => loadAudioForTrack(trackId, file), 100);
+    }
+
+    setSelectedLibraryFiles([]);
+    setShowLibraryPicker(false);
+    
+    toast({
+      title: "Tracks loaded",
+      description: `${selectedLibraryFiles.length} file(s) added to editor`,
+    });
+  };
+
+  const toggleLibraryFileSelection = (fileId: string) => {
+    setSelectedLibraryFiles(prev => {
+      if (prev.includes(fileId)) {
+        return prev.filter(id => id !== fileId);
+      } else if (prev.length < 3) {
+        return [...prev, fileId];
+      } else {
+        toast({
+          title: "Maximum reached",
+          description: "You can only select up to 3 files at once",
+          variant: "destructive"
+        });
+        return prev;
+      }
+    });
   };
 
   const loadAudioForTrack = async (trackId: string, file: any) => {
@@ -803,14 +863,17 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           
           <div className="flex items-center gap-2 mb-2">
             <FileAudio size={16} className="text-muted-foreground" />
-            <span className="text-sm font-medium">Select Audio Source</span>
+            <span className="text-sm font-medium">Select Audio File Source</span>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               variant={uploadSource === 'library' ? 'default' : 'outline'}
-              onClick={() => setUploadSource('library')}
+              onClick={() => {
+                setUploadSource('library');
+                setShowLibraryPicker(true);
+              }}
               className="gap-2"
             >
               <FileAudio size={14} />
@@ -837,36 +900,93 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
               From Cloud
             </Button>
           </div>
-
-          {uploadSource === 'library' && (
-            <div className="flex flex-col sm:flex-row gap-3 mt-2">
-              <select
-                value={selectedFileId}
-                onChange={(e) => setSelectedFileId(e.target.value)}
-                className="flex-1 px-3 py-2 bg-background border border-border rounded-md text-sm"
-              >
-                <option value="">Select from library...</option>
-                {userFiles.map(file => (
-                  <option key={file.id} value={file.id}>
-                    {file.originalName}
-                  </option>
-                ))}
-              </select>
-              
-              <Input
-                placeholder="Track name (optional)"
-                value={newTrackName}
-                onChange={(e) => setNewTrackName(e.target.value)}
-                className="flex-1"
-              />
-              
-              <Button onClick={addTrack} className="gap-2">
-                <Plus size={16} />
-                Add Track
-              </Button>
-            </div>
-          )}
         </div>
+
+        {/* Library Picker Dialog */}
+        <Dialog open={showLibraryPicker} onOpenChange={setShowLibraryPicker}>
+          <DialogContent className="bg-gradient-to-br from-background via-background to-primary/5 border-primary/20 max-w-2xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Select Files from Library
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Choose up to 3 audio files to load into the editor
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-3 py-4 max-h-[50vh] overflow-y-auto">
+              {userFiles.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileAudio size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No files in your library</p>
+                  <p className="text-sm">Upload or record audio files first</p>
+                </div>
+              ) : (
+                userFiles.map((file) => (
+                  <div
+                    key={file.id}
+                    onClick={() => toggleLibraryFileSelection(file.id)}
+                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      selectedLibraryFiles.includes(file.id)
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50 bg-card'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        selectedLibraryFiles.includes(file.id)
+                          ? 'border-primary bg-primary'
+                          : 'border-border'
+                      }`}>
+                        {selectedLibraryFiles.includes(file.id) && (
+                          <Check size={14} className="text-primary-foreground" />
+                        )}
+                      </div>
+                      <FileAudio size={20} className="text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{file.originalName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {file.fileSize ? `${(file.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Unknown size'}
+                          {file.durationSeconds && ` • ${Math.floor(file.durationSeconds / 60)}:${(file.durationSeconds % 60).toString().padStart(2, '0')}`}
+                        </p>
+                      </div>
+                      {selectedLibraryFiles.includes(file.id) && (
+                        <Badge variant="default" className="shrink-0">
+                          {selectedLibraryFiles.indexOf(file.id) + 1}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <DialogFooter>
+              <div className="flex items-center justify-between w-full">
+                <span className="text-sm text-muted-foreground">
+                  {selectedLibraryFiles.length} of 3 files selected
+                </span>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setSelectedLibraryFiles([]);
+                      setShowLibraryPicker(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={loadSelectedLibraryFiles}
+                    disabled={selectedLibraryFiles.length === 0}
+                  >
+                    Load {selectedLibraryFiles.length} Track{selectedLibraryFiles.length !== 1 ? 's' : ''}
+                  </Button>
+                </div>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Cloud Picker Dialog */}
         <Dialog open={showCloudPicker} onOpenChange={setShowCloudPicker}>
