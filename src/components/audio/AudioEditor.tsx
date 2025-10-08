@@ -902,92 +902,6 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           </div>
         </div>
 
-        {/* Library Picker Dialog */}
-        <Dialog open={showLibraryPicker} onOpenChange={setShowLibraryPicker}>
-          <DialogContent className="bg-gradient-to-br from-background via-background to-primary/5 border-primary/20 max-w-2xl max-h-[80vh]">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Select Files from Library
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Choose up to 3 audio files to load into the editor
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-3 py-4 max-h-[50vh] overflow-y-auto">
-              {userFiles.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileAudio size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>No files in your library</p>
-                  <p className="text-sm">Upload or record audio files first</p>
-                </div>
-              ) : (
-                userFiles.map((file) => (
-                  <div
-                    key={file.id}
-                    onClick={() => toggleLibraryFileSelection(file.id)}
-                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                      selectedLibraryFiles.includes(file.id)
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/50 bg-card'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                        selectedLibraryFiles.includes(file.id)
-                          ? 'border-primary bg-primary'
-                          : 'border-border'
-                      }`}>
-                        {selectedLibraryFiles.includes(file.id) && (
-                          <Check size={14} className="text-primary-foreground" />
-                        )}
-                      </div>
-                      <FileAudio size={20} className="text-muted-foreground" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{file.originalName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {file.fileSize ? `${(file.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Unknown size'}
-                          {file.durationSeconds && ` • ${Math.floor(file.durationSeconds / 60)}:${(file.durationSeconds % 60).toString().padStart(2, '0')}`}
-                        </p>
-                      </div>
-                      {selectedLibraryFiles.includes(file.id) && (
-                        <Badge variant="default" className="shrink-0">
-                          {selectedLibraryFiles.indexOf(file.id) + 1}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <DialogFooter>
-              <div className="flex items-center justify-between w-full">
-                <span className="text-sm text-muted-foreground">
-                  {selectedLibraryFiles.length} of 3 files selected
-                </span>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setSelectedLibraryFiles([]);
-                      setShowLibraryPicker(false);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={loadSelectedLibraryFiles}
-                    disabled={selectedLibraryFiles.length === 0}
-                  >
-                    Load {selectedLibraryFiles.length} Track{selectedLibraryFiles.length !== 1 ? 's' : ''}
-                  </Button>
-                </div>
-              </div>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
         {/* Cloud Picker Dialog */}
         <Dialog open={showCloudPicker} onOpenChange={setShowCloudPicker}>
           <DialogContent className="bg-gradient-to-br from-background via-background to-accent/5 border-primary/20">
@@ -1339,18 +1253,8 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
         {tracks.length === 0 && (
           <Card className="bg-background border-border">
             <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 flex-1">
-                  <h4 className="font-medium text-muted-foreground">Session</h4>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled
-                  className="opacity-50"
-                >
-                  <Trash2 size={14} />
-                </Button>
+              <div className="flex items-center gap-2 flex-1">
+                <h3 className="text-xl font-semibold text-foreground">Session</h3>
               </div>
 
               {/* Empty Waveform Timeline */}
@@ -1488,6 +1392,98 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
               <Button onClick={confirmDropboxSave}>
                 Save to Dropbox
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Library Picker Dialog */}
+        <Dialog open={showLibraryPicker} onOpenChange={setShowLibraryPicker}>
+          <DialogContent className="bg-gradient-to-br from-background via-background to-primary/5 border-primary/20 max-w-2xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Select Files from Library
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Choose up to 3 audio files to load into the editor
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-3 py-4 max-h-[50vh] overflow-y-auto">
+              {userFiles.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileAudio size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No files in your library</p>
+                  <p className="text-sm">Upload or record audio files first</p>
+                </div>
+              ) : (
+                userFiles.map((file) => {
+                  const fileName = file.originalName || file.name || 'Unknown file';
+                  const fileSize = file.fileSize || file.size || 0;
+                  const fileDuration = file.durationSeconds || file.duration;
+                  
+                  return (
+                    <div
+                      key={file.id}
+                      onClick={() => toggleLibraryFileSelection(file.id)}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        selectedLibraryFiles.includes(file.id)
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/50 bg-card'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                          selectedLibraryFiles.includes(file.id)
+                            ? 'border-primary bg-primary'
+                            : 'border-border'
+                        }`}>
+                          {selectedLibraryFiles.includes(file.id) && (
+                            <Check size={14} className="text-primary-foreground" />
+                          )}
+                        </div>
+                        <FileAudio size={20} className="text-muted-foreground" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{fileName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {fileSize ? `${(fileSize / 1024 / 1024).toFixed(2)} MB` : 'Unknown size'}
+                            {fileDuration && ` • ${Math.floor(fileDuration / 60)}:${(fileDuration % 60).toString().padStart(2, '0')}`}
+                          </p>
+                        </div>
+                        {selectedLibraryFiles.includes(file.id) && (
+                          <Badge variant="default" className="shrink-0">
+                            {selectedLibraryFiles.indexOf(file.id) + 1}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <DialogFooter>
+              <div className="flex items-center justify-between w-full">
+                <span className="text-sm text-muted-foreground">
+                  {selectedLibraryFiles.length} of 3 files selected
+                </span>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setSelectedLibraryFiles([]);
+                      setShowLibraryPicker(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={loadSelectedLibraryFiles}
+                    disabled={selectedLibraryFiles.length === 0}
+                  >
+                    Load {selectedLibraryFiles.length} Track{selectedLibraryFiles.length !== 1 ? 's' : ''}
+                  </Button>
+                </div>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>

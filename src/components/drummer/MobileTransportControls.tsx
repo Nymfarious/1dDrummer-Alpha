@@ -468,7 +468,7 @@ export const MobileTransportControls = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-accent text-lg">
             <FolderOpen size={18} />
-            Audio Library ({userFiles.length})
+            Your Files ({userFiles.length})
           </CardTitle>
         </CardHeader>
         <CardContent>

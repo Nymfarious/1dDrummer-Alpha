@@ -522,7 +522,7 @@ export const TransportControls = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-accent">
               <Shield size={20} />
-              Audio Library
+              Your Audio Files
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
