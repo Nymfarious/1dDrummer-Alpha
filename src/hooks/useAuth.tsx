@@ -19,6 +19,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any; requires2FA?: boolean; userId?: string }>;
   verify2FA: (code: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -316,6 +318,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     window.location.href = '/auth';
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      });
+      
+      if (error) {
+        await securityLogger.logAuthFailure(email, 'password_reset_failed');
+        return { error: sanitizeError(error) };
+      }
+      
+      return { error: null };
+    } catch (error) {
+      await securityLogger.logAuthFailure(email, 'password_reset_error');
+      logError(error, 'resetPassword');
+      return { error: sanitizeError(error) };
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      
+      if (error) {
+        return { error: sanitizeError(error) };
+      }
+      
+      return { error: null };
+    } catch (error) {
+      logError(error, 'updatePassword');
+      return { error: sanitizeError(error) };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -327,6 +365,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       signIn,
       verify2FA,
       signOut,
+      resetPassword,
+      updatePassword,
     }}>
       {children}
     </AuthContext.Provider>
