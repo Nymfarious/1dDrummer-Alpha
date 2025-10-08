@@ -392,29 +392,9 @@ export const Libraries = () => {
 
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-foreground">Audio Library</h2>
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1 bg-muted p-1 rounded-lg">
-            <Button
-              variant={viewMode === 'cards' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('cards')}
-              className="h-8 px-3"
-            >
-              <LayoutGrid size={16} />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="h-8 px-3"
-            >
-              <List size={16} />
-            </Button>
-          </div>
-          <Badge variant="secondary" className="text-sm">
-            {filteredFiles.length} files
-          </Badge>
-        </div>
+        <Badge variant="secondary" className="text-sm">
+          {filteredFiles.length} files
+        </Badge>
       </div>
 
       {/* Upload Area - Compact */}
@@ -451,10 +431,33 @@ export const Libraries = () => {
       {(filterType === 'all' || filterType === 'recording') && (
         <Card className="bg-gradient-card border-border card-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Music size={20} />
-              Your dDrummer Recordings
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Music size={20} />
+                Your dDrummer Recordings
+              </CardTitle>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1 bg-muted p-1 rounded-lg">
+                  <Button
+                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('cards')}
+                    className="h-8 px-3"
+                  >
+                    <LayoutGrid size={16} />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="h-8 px-3"
+                  >
+                    <List size={16} />
+                  </Button>
+                </div>
+                <Badge variant="secondary">{recordingFiles.length}</Badge>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -608,23 +611,30 @@ export const Libraries = () => {
       )}
 
 
-      {/* Uploaded Files Grid */}
+      {/* Uploaded Audio Files Section */}
       {(filterType === 'all' || filterType === 'upload') && uploadedFiles.length > 0 && (
-        <>
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold">Uploaded Audio Files</h3>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-sm">
-                Showing {uploadedFiles.length} of {filteredFiles.filter(file => file.type === 'upload').length}
-              </Badge>
-              {filteredFiles.filter(file => file.type === 'upload').length > maxLibraryFiles && (
-                <span className="text-xs text-muted-foreground">
-                  (Adjust limit in Settings)
-                </span>
-              )}
+        <Card className="bg-gradient-card border-border card-shadow">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Upload size={20} />
+                Uploaded Audio Files
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-sm">
+                  Showing {uploadedFiles.length} of {filteredFiles.filter(file => file.type === 'upload').length}
+                </Badge>
+                {filteredFiles.filter(file => file.type === 'upload').length > maxLibraryFiles && (
+                  <span className="text-xs text-muted-foreground">
+                    (Adjust limit in Settings)
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          </CardHeader>
+          <CardContent>
+            {viewMode === 'cards' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {uploadedFiles.map((file) => (
               <Card key={file.id} className="bg-gradient-card border-border hover:border-primary/50 transition-colors">
                 <CardHeader className="pb-3">
@@ -708,7 +718,74 @@ export const Libraries = () => {
               </Card>
             ))}
           </div>
-        </>
+            ) : (
+              // List view for uploaded files
+              <div className="space-y-2">
+                <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
+                  <div className="col-span-4">Name</div>
+                  <div className="col-span-2">Duration</div>
+                  <div className="col-span-2">Created</div>
+                  <div className="col-span-2">Size</div>
+                  <div className="col-span-2 text-right">Actions</div>
+                </div>
+                {uploadedFiles.map((file) => (
+                  <div key={file.id} className="grid grid-cols-12 gap-4 px-4 py-3 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors items-center">
+                    <div className="col-span-4 truncate font-medium">{file.name}</div>
+                    <div className="col-span-2 text-sm text-muted-foreground">{file.duration}</div>
+                    <div className="col-span-2 text-sm text-muted-foreground">{formatDate(file.date)}</div>
+                    <div className="col-span-2 text-sm text-muted-foreground">{file.size}</div>
+                    <div className="col-span-2 flex justify-end gap-1">
+                      <Button
+                        size="sm"
+                        variant={playingId === file.id ? "audio-active" : "ghost"}
+                        onClick={() => handlePlay(file)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <ArrowDownToLine size={14} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => handleDownload(file, 'wav')}>
+                            Download as WAV
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload(file, 'webm')}>
+                            Download as WebM
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload(file, 'mp3')}>
+                            Download as MP3
+                          </DropdownMenuItem>
+                          <DropdownMenuItem disabled className="border-t mt-1 pt-1">
+                            <Cloud size={14} className="mr-2" />
+                            Upload to Cloud
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleCloudUpload(file, 'dropbox')} disabled={!dropbox.isConnected}>
+                            Upload to Dropbox
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleCloudUpload(file, 'google-drive')} disabled={!googleDrive.isConnected}>
+                            Upload to Google Drive
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(file.id)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Empty State */}
