@@ -1,21 +1,106 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { MapPin, ExternalLink } from 'lucide-react';
+import { MapPin, ExternalLink, Pencil, Save } from 'lucide-react';
 import bearAvatar from '@/assets/bear-avatar.png';
+import { AvatarEditorDialog } from '@/components/profile/AvatarEditorDialog';
+import { AIAvatarGenerator } from '@/components/profile/AIAvatarGenerator';
+import { LocationMap } from '@/components/profile/LocationMap';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const UserProfile = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
+  const [bio, setBio] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string>(bearAvatar);
   const [links, setLinks] = useState({
     facebook: '',
     x: '',
     sharedDrive: '',
     linkedin: ''
   });
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [aiGeneratorOpen, setAIGeneratorOpen] = useState(false);
+  const [aiGeneratorDocked, setAIGeneratorDocked] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const loadProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      if (data) {
+        setName(data.full_name || '');
+        setCity(data.location?.split(', ')[0] || '');
+        setState(data.location?.split(', ')[1] || '');
+        setBio(data.bio || '');
+        setAvatarUrl(data.avatar_url || bearAvatar);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const location = city && state ? `${city}, ${state}` : city || '';
+      
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          full_name: name,
+          location: location,
+          bio: bio,
+          avatar_url: avatarUrl,
+        });
+
+      if (error) {
+        toast({
+          title: "Save Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Profile Saved",
+          description: "Your profile has been updated successfully!",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save profile",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLinkChange = (platform: keyof typeof links, value: string) => {
     setLinks(prev => ({ ...prev, [platform]: value }));
@@ -23,18 +108,29 @@ const UserProfile = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Card with Avatar */}
-      <Card className="relative overflow-hidden" style={{ height: '384px' }}>
+      <h1 className="text-4xl font-bold text-foreground">User Profile</h1>
+
+      {/* Avatar Card */}
+      <Card className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-primary opacity-10" />
-        <div className="relative h-full flex flex-col items-center justify-center p-8">
-          <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary shadow-elegant mb-4">
-            <img 
-              src={bearAvatar} 
-              alt="Bear Avatar" 
-              className="w-full h-full object-cover"
-            />
+        <div className="relative flex flex-col items-center p-8">
+          <div className="relative group">
+            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary shadow-elegant">
+              <img 
+                src={avatarUrl} 
+                alt="User Avatar" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="absolute bottom-0 right-0 rounded-full shadow-lg"
+              onClick={() => setEditorOpen(true)}
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">User Profile</h2>
         </div>
       </Card>
 
@@ -49,7 +145,7 @@ const UserProfile = () => {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
+              placeholder="e.g., Buddy Rich"
             />
           </div>
 
@@ -60,7 +156,7 @@ const UserProfile = () => {
                 id="city"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                placeholder="Enter city"
+                placeholder="e.g., Nashville"
               />
             </div>
             <div>
@@ -69,17 +165,35 @@ const UserProfile = () => {
                 id="state"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                placeholder="Enter state"
+                placeholder="e.g., Tennessee"
               />
             </div>
           </div>
 
-          <Button variant="outline" disabled className="w-full">
-            <MapPin className="mr-2 h-4 w-4" />
-            X Marks the Spot
+          <div>
+            <Label htmlFor="bio">Bio</Label>
+            <Input
+              id="bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="e.g., Drummer and music enthusiast"
+            />
+          </div>
+
+          <Button onClick={saveProfile} disabled={loading} className="w-full">
+            <Save className="mr-2 h-4 w-4" />
+            {loading ? 'Saving...' : 'Save Profile'}
           </Button>
         </div>
       </Card>
+
+      {/* Location Map */}
+      {(city || state) && (
+        <Card className="p-6">
+          <h3 className="text-xl font-semibold mb-4">Location</h3>
+          <LocationMap city={city} state={state} />
+        </Card>
+      )}
 
       {/* Check it Out Section */}
       <Card className="p-6">
@@ -174,6 +288,46 @@ const UserProfile = () => {
           </div>
         </div>
       </Card>
+
+      {/* AI Avatar Generator - Docked */}
+      {aiGeneratorDocked && (
+        <AIAvatarGenerator
+          open={aiGeneratorOpen}
+          onClose={() => setAIGeneratorOpen(false)}
+          onSave={(url) => {
+            setAvatarUrl(url);
+            setAIGeneratorOpen(false);
+          }}
+          docked={true}
+          onDockToggle={() => setAIGeneratorDocked(false)}
+        />
+      )}
+
+      {/* Dialogs */}
+      <AvatarEditorDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        onAvatarSelected={(url) => setAvatarUrl(url)}
+        onOpenAIGenerator={() => {
+          setEditorOpen(false);
+          setAIGeneratorOpen(true);
+          setAIGeneratorDocked(false);
+        }}
+      />
+
+      {/* AI Avatar Generator - Floating */}
+      {!aiGeneratorDocked && (
+        <AIAvatarGenerator
+          open={aiGeneratorOpen}
+          onClose={() => setAIGeneratorOpen(false)}
+          onSave={(url) => {
+            setAvatarUrl(url);
+            setAIGeneratorOpen(false);
+          }}
+          docked={false}
+          onDockToggle={() => setAIGeneratorDocked(true)}
+        />
+      )}
     </div>
   );
 };

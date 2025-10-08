@@ -2,3 +2,6 @@ project_id = "fbpmdmmmastkznaggevx"
 
 [functions.practice-coach]
 verify_jwt = false
+
+[functions.generate-avatar]
+verify_jwt = true

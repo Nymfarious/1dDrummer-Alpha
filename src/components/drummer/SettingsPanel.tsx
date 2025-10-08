@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDropbox } from '@/hooks/useDropbox';
 import { useGoogleDrive } from '@/hooks/useGoogleDrive';
+import { SoundMapperButton } from './SoundMapperButton';
 
 interface SettingsPanelProps {
   bpm: number;
@@ -366,6 +367,27 @@ export const SettingsPanel = ({
             <p className="text-sm text-muted-foreground">
               <strong>Note:</strong> To use Dropbox/Google Drive, you'll need to set up API keys. Visit the Settings panel for configuration instructions.
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sound Mapper Section */}
+      <Card className="bg-gradient-card border-border card-shadow">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-accent">
+            <Settings size={20} />
+            Advanced Features
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+            <div className="flex-1">
+              <p className="font-medium">Sound Mapper</p>
+              <p className="text-sm text-muted-foreground">
+                Map custom sounds to different metronome patterns
+              </p>
+            </div>
+            <SoundMapperButton />
           </div>
         </CardContent>
       </Card>
