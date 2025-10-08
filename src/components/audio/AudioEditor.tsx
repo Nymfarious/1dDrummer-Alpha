@@ -956,25 +956,17 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           <h3 className="text-sm font-semibold text-foreground">Master Playback Controls</h3>
           
           {/* Transport Controls */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Button
               size="sm"
               variant={allPlaying ? "default" : "outline"}
-              onClick={playAllTracks}
+              onClick={() => allPlaying ? pauseAllTracks() : playAllTracks()}
               disabled={tracks.length === 0}
-              title="Play All"
+              title={allPlaying ? "Pause All" : "Play All"}
+              className="gap-1"
             >
-              <Play size={14} />
-            </Button>
-            
-            <Button
-              size="sm"
-              variant={!allPlaying && tracks.some(t => t.isPlaying) ? "default" : "outline"}
-              onClick={pauseAllTracks}
-              disabled={tracks.length === 0}
-              title="Pause All"
-            >
-              <Pause size={14} />
+              {allPlaying ? <Pause size={14} /> : <Play size={14} />}
+              <span className="text-xs">{allPlaying ? "Pause" : "Play"}</span>
             </Button>
             
             <Button
