@@ -37,6 +37,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 
 interface AudioTrack {
@@ -65,7 +66,11 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [newTrackName, setNewTrackName] = useState('');
   const [showCloudPicker, setShowCloudPicker] = useState(false);
   const [showDropboxPicker, setShowDropboxPicker] = useState(false);
+  const [showDropboxSaveDialog, setShowDropboxSaveDialog] = useState(false);
   const [uploadSource, setUploadSource] = useState<'library' | 'local' | 'cloud'>('library');
+  const [saveTrackId, setSaveTrackId] = useState<string>('');
+  const [dropboxSavePath, setDropboxSavePath] = useState('/Apps/dDrummer/edited-tracks');
+  const [dropboxSaveFileName, setDropboxSaveFileName] = useState('');
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const { uploadFiles, validateFile } = useSecureAudioUpload();
@@ -363,7 +368,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
   const trimTrack = async (trackId: string, trimStart: boolean) => {
     const track = tracks.find(t => t.id === trackId);
-    if (!track?.regions || !track.audioBuffer) return;
+    if (!track?.regions || !track.audioBuffer || !track.waveform) return;
 
     const regions = track.regions.getRegions();
     if (regions.length === 0) {
@@ -376,20 +381,156 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
     }
 
     const region = regions[0];
-    const sampleRate = track.audioBuffer.sampleRate;
+    const audioBuffer = track.audioBuffer;
+    const sampleRate = audioBuffer.sampleRate;
+    const numberOfChannels = audioBuffer.numberOfChannels;
     
     toast({
       title: "Trimming audio",
       description: `Trimming ${trimStart ? 'start' : 'end'} of track...`
     });
+
+    try {
+      // Calculate the samples to keep
+      const startSample = trimStart ? Math.floor(region.start * sampleRate) : 0;
+      const endSample = trimStart ? audioBuffer.length : Math.floor(region.end * sampleRate);
+      const newLength = endSample - startSample;
+
+      // Create new audio buffer
+      const audioContext = new AudioContext();
+      const newBuffer = audioContext.createBuffer(numberOfChannels, newLength, sampleRate);
+
+      // Copy the selected region to the new buffer
+      for (let channel = 0; channel < numberOfChannels; channel++) {
+        const oldData = audioBuffer.getChannelData(channel);
+        const newData = newBuffer.getChannelData(channel);
+        for (let i = 0; i < newLength; i++) {
+          newData[i] = oldData[startSample + i];
+        }
+      }
+
+      // Convert to blob and reload
+      const wavBlob = await audioBufferToWav(newBuffer);
+      const url = URL.createObjectURL(wavBlob);
+
+      // Destroy old waveform
+      track.waveform.destroy();
+
+      // Reload with trimmed audio
+      setTimeout(() => {
+        const container = trackRefs.current[trackId];
+        if (!container) return;
+
+        const wavesurfer = WaveSurfer.create({
+          container,
+          waveColor: 'hsl(var(--primary))',
+          progressColor: 'hsl(var(--primary-foreground))',
+          cursorColor: 'hsl(var(--accent))',
+          barWidth: 2,
+          barGap: 1,
+          height: 80,
+          normalize: true,
+          backend: 'WebAudio'
+        });
+
+        const regions = wavesurfer.registerPlugin(RegionsPlugin.create());
+
+        wavesurfer.load(url).then(() => {
+          setTracks(prev => prev.map(t => 
+            t.id === trackId 
+              ? { ...t, waveform: wavesurfer, regions, audioBuffer: newBuffer }
+              : t
+          ));
+
+          toast({
+            title: "Trim complete",
+            description: "Audio has been trimmed successfully"
+          });
+        });
+
+        wavesurfer.on('finish', () => {
+          if (loopEnabled) {
+            wavesurfer.play();
+          } else {
+            setTracks(prev => prev.map(t => 
+              t.id === trackId ? { ...t, isPlaying: false } : t
+            ));
+          }
+        });
+      }, 100);
+    } catch (error) {
+      console.error('Error trimming audio:', error);
+      toast({
+        title: "Trim failed",
+        description: "Could not trim audio",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const openDropboxSaveDialog = (trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
     
-    // This is a placeholder - actual audio processing would need Web Audio API
-    // For now, just show the concept
+    setSaveTrackId(trackId);
+    setDropboxSaveFileName(`edited-${track.name}-${Date.now()}.wav`);
+    setShowDropboxSaveDialog(true);
+  };
+
+  const confirmDropboxSave = async () => {
+    if (!saveTrackId || !dropboxSaveFileName) return;
+    
+    const track = tracks.find(t => t.id === saveTrackId);
+    if (!track?.waveform) return;
+
+    toast({
+      title: "Exporting track",
+      description: "Preparing audio file..."
+    });
+
+    try {
+      const audioBuffer = track.waveform.getDecodedData();
+      if (!audioBuffer) {
+        throw new Error("No audio data available");
+      }
+
+      const wavBlob = await audioBufferToWav(audioBuffer);
+      const fullPath = `${dropboxSavePath}/${dropboxSaveFileName}`.replace('//', '/');
+      
+      const result = await uploadToDropbox(wavBlob, dropboxSaveFileName, dropboxSavePath);
+      if (result) {
+        toast({
+          title: "Saved to Dropbox",
+          description: `${dropboxSaveFileName} saved successfully`,
+        });
+        setShowDropboxSaveDialog(false);
+      }
+    } catch (error) {
+      console.error('Error saving to Dropbox:', error);
+      toast({
+        title: "Save Failed",
+        description: "Could not save to Dropbox",
+        variant: "destructive",
+      });
+    }
   };
 
   const saveEditedTrack = async (trackId: string, destination: 'library' | 'dropbox' = 'library') => {
     const track = tracks.find(t => t.id === trackId);
     if (!track?.waveform) return;
+
+    if (destination === 'dropbox') {
+      if (!dropboxConnected) {
+        toast({
+          title: "Not Connected",
+          description: "Please connect to Dropbox first",
+          variant: "destructive",
+        });
+        return;
+      }
+      openDropboxSaveDialog(trackId);
+      return;
+    }
 
     const fileName = `edited-${track.name}-${Date.now()}.wav`;
     
@@ -408,26 +549,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       // Convert AudioBuffer to WAV blob
       const wavBlob = await audioBufferToWav(audioBuffer);
 
-      if (destination === 'dropbox') {
-        // Save to Dropbox
-        if (!dropboxConnected) {
-          toast({
-            title: "Not Connected",
-            description: "Please connect to Dropbox first",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const result = await uploadToDropbox(wavBlob, fileName, 'edited-tracks');
-        if (result) {
-          toast({
-            title: "Saved to Dropbox",
-            description: `${fileName} saved successfully`,
-          });
-        }
-      } else {
-        // Save to library (Supabase storage)
+      if (destination === 'library') {
         if (!user) {
           toast({
             title: "Authentication Required",
@@ -714,39 +836,46 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           onFileSelect={handleDropboxFileSelect}
         />
 
-        {/* Global Controls */}
-        {tracks.length > 0 && (
-          <div className="flex flex-wrap items-center gap-4 p-4 bg-secondary rounded-lg border border-border">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Zoom:</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setZoom(Math.max(1, zoom - 10))}
-              >
-                <ZoomOut size={14} />
-              </Button>
-              <span className="text-sm min-w-[3rem] text-center">{zoom}x</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setZoom(zoom + 10)}
-              >
-                <ZoomIn size={14} />
-              </Button>
-            </div>
-
+        {/* Global Controls - Always Visible */}
+        <div className="flex flex-wrap items-center gap-4 p-4 bg-secondary rounded-lg border border-border">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Zoom:</span>
             <Button
               size="sm"
-              variant={loopEnabled ? "default" : "outline"}
-              onClick={() => setLoopEnabled(!loopEnabled)}
-              className="gap-2"
+              variant="outline"
+              onClick={() => setZoom(Math.max(1, zoom - 10))}
+              disabled={tracks.length === 0}
             >
-              <Repeat size={14} />
-              Loop
+              <ZoomOut size={14} />
+            </Button>
+            <span className="text-sm min-w-[3rem] text-center">{zoom}x</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setZoom(zoom + 10)}
+              disabled={tracks.length === 0}
+            >
+              <ZoomIn size={14} />
             </Button>
           </div>
-        )}
+
+          <Button
+            size="sm"
+            variant={loopEnabled ? "default" : "outline"}
+            onClick={() => setLoopEnabled(!loopEnabled)}
+            className="gap-2"
+            disabled={tracks.length === 0}
+          >
+            <Repeat size={14} />
+            Loop {loopEnabled && '✓'}
+          </Button>
+
+          {tracks.length === 0 && (
+            <span className="text-xs text-muted-foreground ml-auto">
+              Timeline controls will activate when you add a track
+            </span>
+          )}
+        </div>
 
         {/* Tracks */}
         <div className="space-y-4">
@@ -831,7 +960,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => saveEditedTrack(track.id, 'dropbox')}
+                      onClick={() => openDropboxSaveDialog(track.id)}
                       className="gap-1"
                       title="Save to Dropbox"
                     >
@@ -862,6 +991,48 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
             <p className="text-sm">Select a file from your library and click "Add Track" to start editing</p>
           </div>
         )}
+
+        {/* Dropbox Save Dialog */}
+        <Dialog open={showDropboxSaveDialog} onOpenChange={setShowDropboxSaveDialog}>
+          <DialogContent className="bg-gradient-to-br from-background via-background to-primary/5 border-primary/20">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">Save to Dropbox</DialogTitle>
+              <DialogDescription>
+                Choose where to save your edited audio file
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Folder Path</label>
+                <Input
+                  value={dropboxSavePath}
+                  onChange={(e) => setDropboxSavePath(e.target.value)}
+                  placeholder="/Apps/dDrummer/edited-tracks"
+                  className="font-mono"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">File Name</label>
+                <Input
+                  value={dropboxSaveFileName}
+                  onChange={(e) => setDropboxSaveFileName(e.target.value)}
+                  placeholder="my-track.wav"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDropboxSaveDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={confirmDropboxSave}>
+                Save to Dropbox
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDropbox } from '@/hooks/useDropbox';
-import { Loader2, FileAudio, Folder } from 'lucide-react';
+import { Loader2, FileAudio, Folder, FolderOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface DropboxFilePickerProps {
@@ -25,12 +26,14 @@ export const DropboxFilePicker = ({ open, onOpenChange, onFileSelect }: DropboxF
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState('/Apps/dDrummer');
+  const [pathInput, setPathInput] = useState('/Apps/dDrummer');
   const { listFiles, downloadFile } = useDropbox();
   const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
       loadFiles(currentPath);
+      setPathInput(currentPath);
     }
   }, [open, currentPath]);
 
@@ -101,6 +104,14 @@ export const DropboxFilePicker = ({ open, onOpenChange, onFileSelect }: DropboxF
     }
   };
 
+  const handlePathSubmit = () => {
+    let newPath = pathInput.trim();
+    if (!newPath.startsWith('/')) {
+      newPath = '/' + newPath;
+    }
+    setCurrentPath(newPath);
+  };
+
   const canGoBack = currentPath !== '/Apps/dDrummer';
 
   return (
@@ -116,23 +127,39 @@ export const DropboxFilePicker = ({ open, onOpenChange, onFileSelect }: DropboxF
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-card/50 border border-primary/10">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Folder className="h-4 w-4 text-primary flex-shrink-0" />
-              <p className="text-sm text-muted-foreground font-mono truncate">
-                {currentPath}
-              </p>
+          <div className="space-y-3 p-3 rounded-lg bg-card/50 border border-primary/10">
+            <div className="flex items-center gap-2">
+              <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="text-sm font-medium">Current Path</span>
             </div>
-            {canGoBack && (
+            
+            <div className="flex items-center gap-2">
+              <Input
+                value={pathInput}
+                onChange={(e) => setPathInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handlePathSubmit()}
+                placeholder="/Apps/dDrummer"
+                className="flex-1 font-mono text-sm"
+              />
               <Button 
-                onClick={handleGoBack} 
+                onClick={handlePathSubmit}
                 variant="outline" 
                 size="sm"
                 className="border-primary/20 hover:border-primary/40 hover:bg-primary/10"
               >
-                ← Back
+                Go
               </Button>
-            )}
+              {canGoBack && (
+                <Button 
+                  onClick={handleGoBack} 
+                  variant="outline" 
+                  size="sm"
+                  className="border-primary/20 hover:border-primary/40 hover:bg-primary/10"
+                >
+                  ← Back
+                </Button>
+              )}
+            </div>
           </div>
 
           {loading ? (
