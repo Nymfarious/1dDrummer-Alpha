@@ -17,13 +17,16 @@ import {
   Upload,
   File,
   Square,
-  ArrowDownToLine
+  ArrowDownToLine,
+  ChevronDown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { useAuth } from '@/hooks/useAuth';
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/integrations/supabase/client';
+import { downloadAudio } from '@/lib/audioDownload';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Recording {
   id: string;
@@ -113,37 +116,62 @@ export const Libraries = () => {
     
     setPlayingId(file.id);
     
-    // For uploaded files, get the URL and play
-    if (file.type === 'upload') {
-      try {
-        const url = await getFileUrl(userFiles.find(f => f.id === file.id));
-        if (url) {
-          const audio = new Audio(url);
-          setCurrentAudio(audio);
-          audio.play();
-          audio.onended = () => {
-            setPlayingId(null);
-            setCurrentAudio(null);
-          };
-        }
-      } catch (error) {
-        toast({
-          title: "Playback Error",
-          description: "Could not play this file",
-          variant: "destructive",
-        });
-        setPlayingId(null);
+    try {
+      // Get the actual file from userFiles
+      const audioFile = userFiles.find(f => f.id === file.id);
+      if (!audioFile) {
+        throw new Error('File not found');
       }
-    } else {
-      // For recordings, simulate playback
+
+      // Get signed URL for playback (works for both recordings and uploads)
+      const url = await getFileUrl(audioFile);
+      if (url) {
+        const audio = new Audio(url);
+        setCurrentAudio(audio);
+        audio.play();
+        audio.onended = () => {
+          setPlayingId(null);
+          setCurrentAudio(null);
+        };
+      } else {
+        throw new Error('Could not get file URL');
+      }
+    } catch (error) {
+      console.error('Playback error:', error);
       toast({
-        title: "Playing Recording",
-        description: `Playing ${file.name}`,
+        title: "Playback Error",
+        description: "Could not play this file",
+        variant: "destructive",
       });
+      setPlayingId(null);
+    }
+  };
+
+  const handleDownload = async (file: Recording, format: 'wav' | 'webm' | 'mp3') => {
+    try {
+      const audioFile = userFiles.find(f => f.id === file.id);
+      if (!audioFile) {
+        throw new Error('File not found');
+      }
+
+      const url = await getFileUrl(audioFile);
+      if (!url) {
+        throw new Error('Could not get file URL');
+      }
+
+      await downloadAudio(url, file.name, format);
       
-      setTimeout(() => {
-        setPlayingId(null);
-      }, 3000);
+      toast({
+        title: "Download Started",
+        description: `Downloading ${file.name} as ${format.toUpperCase()}`,
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download Failed",
+        description: "Could not download the file",
+        variant: "destructive",
+      });
     }
   };
 
@@ -313,13 +341,13 @@ export const Libraries = () => {
         </CardContent>
       </Card>
 
-      {/* Recording Studio Section */}
+      {/* Your Drummer Recordings Section */}
       {(filterType === 'all' || filterType === 'recording') && (
         <Card className="bg-gradient-card border-border card-shadow">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Music size={20} />
-              Recording Studio
+              Your Drummer Recordings
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -362,13 +390,29 @@ export const Libraries = () => {
                           {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
                           {playingId === file.id ? 'Pause' : 'Play'}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          title="Download"
-                        >
-                          <ArrowDownToLine size={14} />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              title="Download"
+                            >
+                              <ArrowDownToLine size={14} />
+                              <ChevronDown size={12} className="ml-1" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleDownload(file, 'wav')}>
+                              Download as WAV
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload(file, 'webm')}>
+                              Download as WebM
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload(file, 'mp3')}>
+                              Download as MP3
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <Button
                           size="sm"
                           variant="destructive"
@@ -450,13 +494,29 @@ export const Libraries = () => {
                       )}
                     </Button>
                     
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      title="Download"
-                    >
-                      <ArrowDownToLine size={16} />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          title="Download"
+                        >
+                          <ArrowDownToLine size={16} />
+                          <ChevronDown size={12} className="ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleDownload(file, 'wav')}>
+                          Download as WAV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(file, 'webm')}>
+                          Download as WebM
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(file, 'mp3')}>
+                          Download as MP3
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     
                     <Button
                       onClick={() => handleDelete(file.id)}
