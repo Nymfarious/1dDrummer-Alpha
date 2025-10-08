@@ -633,52 +633,76 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
         {/* Cloud Picker Dialog */}
         <Dialog open={showCloudPicker} onOpenChange={setShowCloudPicker}>
-          <DialogContent className="bg-background">
+          <DialogContent className="bg-gradient-to-br from-background via-background to-accent/5 border-primary/20">
             <DialogHeader>
-              <DialogTitle>Select Cloud Storage</DialogTitle>
-              <DialogDescription>
-                Choose a cloud storage provider to import audio files
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Select Cloud Storage
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Choose a cloud storage provider to import your audio files
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-3 py-4">
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-auto py-4"
+            <div className="space-y-4 py-6">
+              <button
+                className="w-full group relative overflow-hidden rounded-lg border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 bg-gradient-to-br from-card to-card/50 hover:shadow-[0_0_20px_rgba(var(--primary),0.2)] p-6"
                 onClick={() => {
                   handleCloudConnect('dropbox');
                   setShowCloudPicker(false);
                 }}
               >
-                <div className="flex items-center gap-3">
-                  <Cloud size={20} />
-                  <div className="text-left">
-                    <div className="font-medium">Dropbox</div>
-                    <div className="text-xs text-muted-foreground">
-                      {dropboxConnected ? 'Connected' : 'Connect to import'}
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                    <Cloud size={24} className="text-primary" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">
+                      Dropbox
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {dropboxConnected ? (
+                        <span className="text-primary">✓ Connected - Browse your files</span>
+                      ) : (
+                        'Connect to browse and import audio'
+                      )}
                     </div>
                   </div>
+                  <div className="text-muted-foreground group-hover:text-primary transition-colors">
+                    →
+                  </div>
                 </div>
-              </Button>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+              </button>
 
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-auto py-4"
+              <button
+                className="w-full group relative overflow-hidden rounded-lg border-2 border-accent/20 hover:border-accent/40 transition-all duration-300 bg-gradient-to-br from-card to-card/50 hover:shadow-[0_0_20px_rgba(var(--accent),0.2)] p-6"
                 onClick={() => {
                   handleCloudConnect('drive');
                   setShowCloudPicker(false);
                 }}
               >
-                <div className="flex items-center gap-3">
-                  <Cloud size={20} />
-                  <div className="text-left">
-                    <div className="font-medium">Google Drive</div>
-                    <div className="text-xs text-muted-foreground">
-                      {driveConnected ? 'Connected' : 'Connect to import'}
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                    <Cloud size={24} className="text-accent" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-lg text-foreground group-hover:text-accent transition-colors">
+                      Google Drive
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {driveConnected ? (
+                        <span className="text-accent">✓ Connected - Browse your files</span>
+                      ) : (
+                        'Connect to browse and import audio'
+                      )}
                     </div>
                   </div>
+                  <div className="text-muted-foreground group-hover:text-accent transition-colors">
+                    →
+                  </div>
                 </div>
-              </Button>
+                <div className="absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/5 to-accent/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+              </button>
             </div>
           </DialogContent>
         </Dialog>
