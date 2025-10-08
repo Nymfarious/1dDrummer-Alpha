@@ -83,7 +83,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const loopEnabledRef = useRef(loopEnabled);
 
-  const { uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
+  const { uploadFile, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
   const { isConnected: dropboxConnected, uploadFile: uploadToDropbox } = useDropbox();
   const { isConnected: driveConnected, connectGoogleDrive, uploadFile: uploadToDrive } = useGoogleDrive();
 
@@ -578,23 +578,29 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           return;
         }
 
-        // Convert blob to File for upload
+        // Convert blob to File for upload with 'imported' category
         const file = new File([wavBlob], fileName, { type: 'audio/wav' });
-        await uploadFiles([file]);
         
-        // Reload user files to show the new file
-        await loadUserFiles();
+        // Upload file using the secure upload hook
+        const uploadedFile = await uploadFile(file, 'imported');
         
-        toast({
-          title: "Saved to Library",
-          description: `${fileName} saved successfully. Check the Libraries page!`,
-        });
+        if (uploadedFile) {
+          // Reload user files to show the new file
+          await loadUserFiles();
+          
+          toast({
+            title: "Saved to Library",
+            description: `${fileName} saved successfully. Navigate to Libraries to see it!`,
+          });
+        } else {
+          throw new Error("Upload failed");
+        }
       }
     } catch (error) {
       console.error('Error saving track:', error);
       toast({
         title: "Save Failed",
-        description: "Could not export audio file",
+        description: error instanceof Error ? error.message : "Could not export audio file",
         variant: "destructive",
       });
     }
@@ -739,7 +745,12 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       if (track.waveform) {
         const currentTime = track.waveform.getCurrentTime();
         const duration = track.waveform.getDuration();
-        track.waveform.seekTo(Math.min(duration, currentTime + 30) / duration);
+        // If track is less than 30s or skip would go past end, go to end
+        if (duration < 30 || currentTime + 30 >= duration) {
+          track.waveform.seekTo(1); // Seek to 100% (end)
+        } else {
+          track.waveform.seekTo((currentTime + 30) / duration);
+        }
       }
     });
   };
