@@ -231,6 +231,7 @@ export type Database = {
           default_bpm: number | null
           default_time_signature: string | null
           id: string
+          max_library_files: number | null
           metronome_enabled: boolean | null
           metronome_sound: string | null
           metronome_volume: number | null
@@ -243,6 +244,7 @@ export type Database = {
           default_bpm?: number | null
           default_time_signature?: string | null
           id?: string
+          max_library_files?: number | null
           metronome_enabled?: boolean | null
           metronome_sound?: string | null
           metronome_volume?: number | null
@@ -255,6 +257,7 @@ export type Database = {
           default_bpm?: number | null
           default_time_signature?: string | null
           id?: string
+          max_library_files?: number | null
           metronome_enabled?: boolean | null
           metronome_sound?: string | null
           metronome_volume?: number | null

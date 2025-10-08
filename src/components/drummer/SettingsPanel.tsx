@@ -31,6 +31,7 @@ interface UserSettings {
   color_theme: string;
   metronome_sound: string;
   metronome_volume: number;
+  max_library_files: number;
 }
 
 export const SettingsPanel = ({
@@ -55,7 +56,8 @@ export const SettingsPanel = ({
     default_time_signature: '4/4',
     color_theme: 'teal',
     metronome_sound: 'standard',
-    metronome_volume: 70
+    metronome_volume: 70,
+    max_library_files: 10
   });
   
   const [loading, setLoading] = useState(false);
@@ -86,7 +88,8 @@ export const SettingsPanel = ({
           default_time_signature: data.default_time_signature,
           color_theme: data.color_theme,
           metronome_sound: data.metronome_sound,
-          metronome_volume: data.metronome_volume
+          metronome_volume: data.metronome_volume,
+          max_library_files: data.max_library_files || 10
         });
       }
     } catch (error) {
@@ -265,6 +268,26 @@ export const SettingsPanel = ({
               <Label htmlFor="metronome-enabled" className="text-sm cursor-pointer">
                 Enable Metronome
               </Label>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <Label>Max Library Files to Display</Label>
+              <Select 
+                value={String(settings.max_library_files)} 
+                onValueChange={(value) => setSettings(prev => ({ ...prev, max_library_files: Number(value) }))}
+              >
+                <SelectTrigger className="bg-input border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3">3 files</SelectItem>
+                  <SelectItem value="5">5 files</SelectItem>
+                  <SelectItem value="10">10 files</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Controls how many uploaded files are shown in the Audio Library
+              </p>
             </div>
           </CardContent>
         </Card>

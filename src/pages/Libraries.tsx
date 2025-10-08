@@ -38,11 +38,35 @@ export const Libraries = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { userFiles, getFileUrl, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
+  const [maxLibraryFiles, setMaxLibraryFiles] = useState(10);
   
   // Load files on mount
   useEffect(() => {
     loadUserFiles();
   }, []);
+
+  // Load user settings
+  useEffect(() => {
+    if (user) {
+      loadMaxLibraryFiles();
+    }
+  }, [user]);
+
+  const loadMaxLibraryFiles = async () => {
+    try {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('max_library_files')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      if (data?.max_library_files) {
+        setMaxLibraryFiles(data.max_library_files);
+      }
+    } catch (error) {
+      console.error('Error loading max library files setting:', error);
+    }
+  };
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'recording' | 'upload'>('all');
@@ -207,7 +231,7 @@ export const Libraries = () => {
   });
 
   const recordingFiles = filteredFiles.filter(file => file.type === 'recording');
-  const uploadedFiles = filteredFiles.filter(file => file.type === 'upload');
+  const uploadedFiles = filteredFiles.filter(file => file.type === 'upload').slice(0, maxLibraryFiles);
 
   return (
     <div className="space-y-6">
@@ -367,9 +391,16 @@ export const Libraries = () => {
         <>
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-semibold">Uploaded Audio Files</h3>
-            <Badge variant="secondary" className="text-sm">
-              {uploadedFiles.length} files
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-sm">
+                Showing {uploadedFiles.length} of {filteredFiles.filter(file => file.type === 'upload').length}
+              </Badge>
+              {filteredFiles.filter(file => file.type === 'upload').length > maxLibraryFiles && (
+                <span className="text-xs text-muted-foreground">
+                  (Adjust limit in Settings)
+                </span>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {uploadedFiles.map((file) => (
