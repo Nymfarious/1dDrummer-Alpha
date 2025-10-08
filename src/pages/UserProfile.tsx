@@ -113,9 +113,9 @@ const UserProfile = () => {
       {/* Avatar Card */}
       <Card className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-primary opacity-10" />
-        <div className="relative flex flex-col items-center p-8">
+        <div className="relative flex items-center p-8 gap-8">
           <div className="relative group">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary shadow-elegant">
+            <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-primary shadow-elegant">
               <img 
                 src={avatarUrl} 
                 alt="User Avatar" 
@@ -125,11 +125,15 @@ const UserProfile = () => {
             <Button
               size="icon"
               variant="secondary"
-              className="absolute bottom-0 right-0 rounded-full shadow-lg"
+              className="absolute bottom-2 right-2 rounded-full shadow-lg"
               onClick={() => setEditorOpen(true)}
             >
               <Pencil className="w-4 h-4" />
             </Button>
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-foreground mb-2">{name || 'Your Name'}</h2>
+            <p className="text-muted-foreground">{bio || 'Add a bio to tell others about yourself'}</p>
           </div>
         </div>
       </Card>
