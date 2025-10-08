@@ -12,13 +12,15 @@ export const ALLOWED_AUDIO_TYPES = [
   'audio/wav',      // .wav
   'audio/mp4',      // .m4a
   'audio/x-m4a',    // .m4a (alternative)
-  'audio/mp3'       // .mp3 (alternative)
+  'audio/mp3',      // .mp3 (alternative)
+  'audio/webm'      // .webm (browser recordings)
 ] as const;
 
 export const ALLOWED_EXTENSIONS = [
   'mp3',
   'wav',
-  'm4a'
+  'm4a',
+  'webm'
 ] as const;
 
 export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
@@ -36,13 +38,13 @@ export const validateAudioFile = (file: File): FileValidationResult => {
 
   // Check MIME type
   if (!ALLOWED_AUDIO_TYPES.includes(file.type as any)) {
-    errors.push(`Invalid file type: ${file.type}. Allowed types: MP3, WAV, M4A`);
+    errors.push(`Invalid file type: ${file.type}. Allowed types: MP3, WAV, M4A, WebM`);
   }
 
   // Check file extension
   const extension = file.name.split('.').pop()?.toLowerCase();
   if (!extension || !ALLOWED_EXTENSIONS.includes(extension as any)) {
-    errors.push(`Invalid file extension: .${extension}. Allowed extensions: .mp3, .wav, .m4a`);
+    errors.push(`Invalid file extension: .${extension}. Allowed extensions: .mp3, .wav, .m4a, .webm`);
   }
 
   // Validate file name for security (prevent directory traversal)

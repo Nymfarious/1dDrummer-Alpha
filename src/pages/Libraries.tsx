@@ -30,7 +30,8 @@ interface Recording {
   duration: string;
   date: string;
   size: string;
-  type: 'recording' | 'imported' | 'upload';
+  type: 'recording' | 'upload';
+  source?: 'dropbox' | 'local' | 'recording';
 }
 
 export const Libraries = () => {
@@ -44,18 +45,26 @@ export const Libraries = () => {
   }, []);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'recording' | 'imported' | 'upload'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'recording' | 'upload'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   
-  const filteredFiles = userFiles.map(file => ({
-    id: file.id,
-    name: file.originalName,
-    duration: file.durationSeconds ? `${Math.floor(file.durationSeconds / 60)}:${(file.durationSeconds % 60).toString().padStart(2, '0')}` : '0:00',
-    date: file.createdAt,
-    size: file.fileSize ? `${(file.fileSize / 1024 / 1024).toFixed(1)} MB` : '0 MB',
-    type: file.file_category as 'recording' | 'imported' | 'upload'
-  }))
+  const filteredFiles = userFiles.map(file => {
+    // Determine type and source based on file_category
+    const isRecording = file.file_category === 'recording';
+    const type: 'recording' | 'upload' = isRecording ? 'recording' : 'upload';
+    const source: 'dropbox' | 'local' | 'recording' = isRecording ? 'recording' : (file.originalName.includes('dropbox') ? 'dropbox' : 'local');
+    
+    return {
+      id: file.id,
+      name: file.originalName,
+      duration: file.durationSeconds ? `${Math.floor(file.durationSeconds / 60)}:${(file.durationSeconds % 60).toString().padStart(2, '0')}` : '0:00',
+      date: file.createdAt,
+      size: file.fileSize ? `${(file.fileSize / 1024 / 1024).toFixed(1)} MB` : '0 MB',
+      type,
+      source
+    };
+  })
     .filter(file => 
       file.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (filterType === 'all' || file.type === filterType)
@@ -198,7 +207,6 @@ export const Libraries = () => {
   });
 
   const recordingFiles = filteredFiles.filter(file => file.type === 'recording');
-  const importedFiles = filteredFiles.filter(file => file.type === 'imported');
   const uploadedFiles = filteredFiles.filter(file => file.type === 'upload');
 
   return (
@@ -233,18 +241,11 @@ export const Libraries = () => {
                 Recordings
               </Button>
               <Button
-                onClick={() => setFilterType('imported')}
-                variant={filterType === 'imported' ? 'default' : 'outline'}
-                size="sm"
-              >
-                Imported
-              </Button>
-              <Button
                 onClick={() => setFilterType('upload')}
                 variant={filterType === 'upload' ? 'default' : 'outline'}
                 size="sm"
               >
-                Uploads
+                Uploaded
               </Button>
             </div>
           </div>
@@ -360,87 +361,6 @@ export const Libraries = () => {
         </Card>
       )}
 
-      {/* Imported Audio Section */}
-      {(filterType === 'all' || filterType === 'imported') && importedFiles.length > 0 && (
-        <Card className="bg-gradient-card border-border card-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 justify-between">
-              <div className="flex items-center gap-2">
-                <File size={20} />
-                Imported from Multi-track Editor
-              </div>
-              <Badge variant="secondary">{importedFiles.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {importedFiles.map((file) => (
-                <Card key={file.id} className="bg-card border-border hover:border-primary/50 transition-colors">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base truncate">{file.name}</CardTitle>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                          <Clock size={12} />
-                          {file.duration}
-                          <span>•</span>
-                          <Calendar size={12} />
-                          {formatDate(file.date)}
-                        </div>
-                      </div>
-                      <Badge variant="default" className="shrink-0">Imported</Badge>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-3">
-                    <div className="text-sm text-muted-foreground">
-                      Size: {file.size}
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handlePlay(file)}
-                        variant={playingId === file.id ? "audio-active" : "audio"}
-                        size="sm"
-                        className="flex-1"
-                      >
-                        {playingId === file.id ? (
-                          <>
-                            <Square size={16} />
-                            Stop
-                          </>
-                        ) : (
-                          <>
-                            <Play size={16} />
-                            Play
-                          </>
-                        )}
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        title="Download"
-                      >
-                        <Download size={16} />
-                      </Button>
-                      
-                      <Button
-                        onClick={() => handleDelete(file.id)}
-                        variant="destructive"
-                        size="sm"
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Uploaded Files Grid */}
       {(filterType === 'all' || filterType === 'upload') && uploadedFiles.length > 0 && (

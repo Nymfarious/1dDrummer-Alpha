@@ -455,7 +455,7 @@ export const RecordingPanel = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-accent">
                   <Download size={20} />
-                  Your Recording Placeholder ({recordings.length})
+                  Your Recordings ({recordings.length})
                 </CardTitle>
                 <Button
                   variant="outline"
