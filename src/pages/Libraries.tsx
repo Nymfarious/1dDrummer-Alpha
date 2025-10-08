@@ -393,6 +393,14 @@ export const Libraries = () => {
 
   return (
     <div className="space-y-6">
+      {/* Audio Library Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-foreground">Audio Library</h2>
+        <Badge variant="secondary" className="text-sm">
+          {filteredFiles.length} files
+        </Badge>
+      </div>
+
       {/* Search and Filter */}
       <Card className="bg-gradient-card border-border">
         <CardContent className="p-4">
@@ -434,13 +442,6 @@ export const Libraries = () => {
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-foreground">Audio Library</h2>
-        <Badge variant="secondary" className="text-sm">
-          {filteredFiles.length} files
-        </Badge>
-      </div>
-
       {/* Upload Area - Compact */}
       <Card className="bg-gradient-card border-border">
         <CardContent className="p-4">
@@ -470,6 +471,201 @@ export const Libraries = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Uploaded Audio Files Section */}
+      {(filterType === 'all' || filterType === 'upload') && uploadedFiles.length > 0 && (
+        <Card className="bg-gradient-card border-border card-shadow">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Upload size={20} />
+                Uploaded Audio Files
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-sm">
+                  Showing {uploadedFiles.length} of {filteredFiles.filter(file => file.type === 'upload').length}
+                </Badge>
+                {filteredFiles.filter(file => file.type === 'upload').length > maxLibraryFiles && (
+                  <span className="text-xs text-muted-foreground">
+                    (Adjust limit in Settings)
+                  </span>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {viewMode === 'cards' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {uploadedFiles.map((file) => (
+                  <Card key={file.id} className="bg-gradient-card border-border hover:border-primary/50 transition-colors">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg truncate">{file.name}</CardTitle>
+                          <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Clock size={14} />
+                              {file.duration}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar size={14} />
+                              {formatDate(file.date)}
+                            </span>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">Uploaded</Badge>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-3">
+                      <div className="text-sm text-muted-foreground">
+                        Size: {file.size}
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handlePlay(file)}
+                          variant={playingId === file.id ? "audio-active" : "audio"}
+                          size="sm"
+                          className="flex-1"
+                        >
+                          {playingId === file.id ? (
+                            <>
+                              <Square size={16} />
+                              Stop
+                            </>
+                          ) : (
+                            <>
+                              <Play size={16} />
+                              Play
+                            </>
+                          )}
+                        </Button>
+                        
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRenameClick(file)}
+                          title="Rename"
+                        >
+                          <Pencil size={16} />
+                        </Button>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Download"
+                            >
+                              <ArrowDownToLine size={16} />
+                              <ChevronDown size={12} className="ml-1" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleDownload(file, 'wav')}>
+                              Download as WAV
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload(file, 'webm')}>
+                              Download as WebM
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload(file, 'mp3')}>
+                              Download as MP3
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        
+                        <Button
+                          onClick={() => handleDelete(file.id)}
+                          variant="destructive"
+                          size="sm"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              // List view for uploaded files
+              <div className="space-y-2">
+                <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
+                  <div className="col-span-4">Name</div>
+                  <div className="col-span-2">Duration</div>
+                  <div className="col-span-2">Created</div>
+                  <div className="col-span-2">Size</div>
+                  <div className="col-span-2 text-right">Actions</div>
+                </div>
+                {uploadedFiles.map((file) => (
+                  <div key={file.id} className="grid grid-cols-12 gap-4 px-4 py-3 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors items-center">
+                    <div className="col-span-4 truncate font-medium">{file.name}</div>
+                    <div className="col-span-2 text-sm text-muted-foreground">{file.duration}</div>
+                    <div className="col-span-2 text-sm text-muted-foreground">{formatDate(file.date)}</div>
+                    <div className="col-span-2 text-sm text-muted-foreground">{file.size}</div>
+                    <div className="col-span-2 flex justify-end gap-1">
+                      <Button
+                        size="sm"
+                        variant={playingId === file.id ? "audio-active" : "ghost"}
+                        onClick={() => handlePlay(file)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRenameClick(file)}
+                        className="h-8 w-8 p-0"
+                        title="Rename"
+                      >
+                        <Pencil size={14} />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <ArrowDownToLine size={14} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => handleDownload(file, 'wav')}>
+                            Download as WAV
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload(file, 'webm')}>
+                            Download as WebM
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload(file, 'mp3')}>
+                            Download as MP3
+                          </DropdownMenuItem>
+                          <DropdownMenuItem disabled className="border-t mt-1 pt-1">
+                            <Cloud size={14} className="mr-2" />
+                            Upload to Cloud
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleCloudUpload(file, 'dropbox')} disabled={!dropbox.isConnected}>
+                            Upload to Dropbox
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleCloudUpload(file, 'google-drive')} disabled={!googleDrive.isConnected}>
+                            Upload to Google Drive
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(file.id)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Your dDrummer Recordings Section */}
       {(filterType === 'all' || filterType === 'recording') && (
@@ -671,201 +867,6 @@ export const Libraries = () => {
         </Card>
       )}
 
-
-      {/* Uploaded Audio Files Section */}
-      {(filterType === 'all' || filterType === 'upload') && uploadedFiles.length > 0 && (
-        <Card className="bg-gradient-card border-border card-shadow">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Upload size={20} />
-                Uploaded Audio Files
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-sm">
-                  Showing {uploadedFiles.length} of {filteredFiles.filter(file => file.type === 'upload').length}
-                </Badge>
-                {filteredFiles.filter(file => file.type === 'upload').length > maxLibraryFiles && (
-                  <span className="text-xs text-muted-foreground">
-                    (Adjust limit in Settings)
-                  </span>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {viewMode === 'cards' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {uploadedFiles.map((file) => (
-              <Card key={file.id} className="bg-gradient-card border-border hover:border-primary/50 transition-colors">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg truncate">{file.name}</CardTitle>
-                      <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock size={14} />
-                          {file.duration}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar size={14} />
-                          {formatDate(file.date)}
-                        </span>
-                      </div>
-                    </div>
-                    <Badge variant="secondary">Uploaded</Badge>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-3">
-                  <div className="text-sm text-muted-foreground">
-                    Size: {file.size}
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handlePlay(file)}
-                      variant={playingId === file.id ? "audio-active" : "audio"}
-                      size="sm"
-                      className="flex-1"
-                    >
-                      {playingId === file.id ? (
-                        <>
-                          <Square size={16} />
-                          Stop
-                        </>
-                      ) : (
-                        <>
-                          <Play size={16} />
-                          Play
-                        </>
-                      )}
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRenameClick(file)}
-                      title="Rename"
-                    >
-                      <Pencil size={16} />
-                    </Button>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          title="Download"
-                        >
-                          <ArrowDownToLine size={16} />
-                          <ChevronDown size={12} className="ml-1" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleDownload(file, 'wav')}>
-                          Download as WAV
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDownload(file, 'webm')}>
-                          Download as WebM
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDownload(file, 'mp3')}>
-                          Download as MP3
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    
-                    <Button
-                      onClick={() => handleDelete(file.id)}
-                      variant="destructive"
-                      size="sm"
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-            ) : (
-              // List view for uploaded files
-              <div className="space-y-2">
-                <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
-                  <div className="col-span-4">Name</div>
-                  <div className="col-span-2">Duration</div>
-                  <div className="col-span-2">Created</div>
-                  <div className="col-span-2">Size</div>
-                  <div className="col-span-2 text-right">Actions</div>
-                </div>
-                {uploadedFiles.map((file) => (
-                  <div key={file.id} className="grid grid-cols-12 gap-4 px-4 py-3 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors items-center">
-                    <div className="col-span-4 truncate font-medium">{file.name}</div>
-                    <div className="col-span-2 text-sm text-muted-foreground">{file.duration}</div>
-                    <div className="col-span-2 text-sm text-muted-foreground">{formatDate(file.date)}</div>
-                    <div className="col-span-2 text-sm text-muted-foreground">{file.size}</div>
-                    <div className="col-span-2 flex justify-end gap-1">
-                      <Button
-                        size="sm"
-                        variant={playingId === file.id ? "audio-active" : "ghost"}
-                        onClick={() => handlePlay(file)}
-                        className="h-8 w-8 p-0"
-                      >
-                        {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleRenameClick(file)}
-                        className="h-8 w-8 p-0"
-                        title="Rename"
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                            <ArrowDownToLine size={14} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => handleDownload(file, 'wav')}>
-                            Download as WAV
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDownload(file, 'webm')}>
-                            Download as WebM
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDownload(file, 'mp3')}>
-                            Download as MP3
-                          </DropdownMenuItem>
-                          <DropdownMenuItem disabled className="border-t mt-1 pt-1">
-                            <Cloud size={14} className="mr-2" />
-                            Upload to Cloud
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleCloudUpload(file, 'dropbox')} disabled={!dropbox.isConnected}>
-                            Upload to Dropbox
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleCloudUpload(file, 'google-drive')} disabled={!googleDrive.isConnected}>
-                            Upload to Google Drive
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(file.id)}
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Empty State */}
       {filteredFiles.length === 0 && (
