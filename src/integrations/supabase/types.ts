@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      avatar_collection: {
+        Row: {
+          avatar_url: string
+          created_at: string
+          id: string
+          is_current: boolean | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url: string
+          created_at?: string
+          id?: string
+          is_current?: boolean | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string
+          created_at?: string
+          id?: string
+          is_current?: boolean | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       device_sessions: {
         Row: {
           created_at: string

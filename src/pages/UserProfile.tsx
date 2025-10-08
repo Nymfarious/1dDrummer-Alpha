@@ -3,10 +3,11 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { MapPin, ExternalLink, Pencil, Save } from 'lucide-react';
+import { MapPin, ExternalLink, Pencil, Save, Images } from 'lucide-react';
 import bearAvatar from '@/assets/bear-avatar.png';
 import { AvatarEditorDialog } from '@/components/profile/AvatarEditorDialog';
 import { AIAvatarGenerator } from '@/components/profile/AIAvatarGenerator';
+import { AvatarCollectionDialog } from '@/components/profile/AvatarCollectionDialog';
 import { useAIAvatar } from '@/contexts/AIAvatarContext';
 import { LocationMap } from '@/components/profile/LocationMap';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,6 +30,7 @@ const UserProfile = () => {
     linkedin: ''
   });
   const [editorOpen, setEditorOpen] = useState(false);
+  const [collectionOpen, setCollectionOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -109,33 +111,56 @@ const UserProfile = () => {
   // Auto-save generated image when it changes
   useEffect(() => {
     if (generatedImage) {
-      handleAvatarSave(generatedImage);
+      handleAvatarSave(generatedImage, 'ai_generated');
     }
   }, [generatedImage]);
 
-  const handleAvatarSave = async (url: string) => {
+  const handleAvatarSave = async (url: string, source: 'upload' | 'ai_generated' | 'preset' = 'upload') => {
     setAvatarUrl(url);
     
-    // Save to database
+    // Save to database and collection
     if (user) {
-      const { error } = await supabase
+      // Update profile
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({ avatar_url: url })
         .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error saving avatar:', error);
+      if (profileError) {
+        console.error('Error saving avatar:', profileError);
         toast({
           title: "Error",
           description: "Failed to save avatar",
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Success",
-          description: "Avatar updated successfully",
-        });
+        return;
       }
+
+      // Add to collection
+      const { error: collectionError } = await supabase
+        .from('avatar_collection')
+        .insert({
+          user_id: user.id,
+          avatar_url: url,
+          source: source,
+          is_current: true,
+        });
+
+      // Update previous avatars to not be current
+      await supabase
+        .from('avatar_collection')
+        .update({ is_current: false })
+        .eq('user_id', user.id)
+        .neq('avatar_url', url);
+
+      if (collectionError) {
+        console.error('Error adding to collection:', collectionError);
+      }
+
+      toast({
+        title: "Success",
+        description: "Avatar updated and saved to collection",
+      });
     }
   };
 
@@ -155,14 +180,26 @@ const UserProfile = () => {
                 className="w-full h-full object-cover"
               />
             </div>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="absolute bottom-2 right-2 rounded-full shadow-lg"
-              onClick={() => setEditorOpen(true)}
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
+            <div className="absolute bottom-2 right-2 flex gap-2">
+              <Button
+                size="icon"
+                variant="secondary"
+                className="rounded-full shadow-lg"
+                onClick={() => setCollectionOpen(true)}
+                title="Browse Avatar Collection"
+              >
+                <Images className="w-4 h-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="secondary"
+                className="rounded-full shadow-lg"
+                onClick={() => setEditorOpen(true)}
+                title="Edit Avatar"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-foreground mb-2">{name || 'Your Name'}</h2>
@@ -349,12 +386,19 @@ const UserProfile = () => {
       <AvatarEditorDialog
         open={editorOpen}
         onOpenChange={setEditorOpen}
-        onAvatarSelected={handleAvatarSave}
+        onAvatarSelected={(url) => handleAvatarSave(url, 'upload')}
         onOpenAIGenerator={() => {
           setEditorOpen(false);
           setAIGeneratorOpen(true);
           setAIGeneratorDocked(false);
         }}
+      />
+
+      <AvatarCollectionDialog
+        open={collectionOpen}
+        onOpenChange={setCollectionOpen}
+        onSelectAvatar={(url) => handleAvatarSave(url, 'upload')}
+        currentAvatarUrl={avatarUrl}
       />
     </div>
   );
