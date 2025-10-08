@@ -174,9 +174,9 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
     try {
       const wavesurfer = WaveSurfer.create({
         container,
-        waveColor: 'hsl(var(--primary))',
-        progressColor: 'hsl(var(--primary-foreground))',
-        cursorColor: 'hsl(var(--accent))',
+        waveColor: '#4a9eff',
+        progressColor: '#1e40af',
+        cursorColor: '#ff6b35',
         barWidth: 2,
         barGap: 1,
         height: 80,
@@ -269,9 +269,9 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
       const wavesurfer = WaveSurfer.create({
         container,
-        waveColor: 'hsl(var(--primary))',
-        progressColor: 'hsl(var(--primary-foreground))',
-        cursorColor: 'hsl(var(--accent))',
+        waveColor: '#4a9eff',
+        progressColor: '#1e40af',
+        cursorColor: '#ff6b35',
         barWidth: 2,
         barGap: 1,
         height: 80,
