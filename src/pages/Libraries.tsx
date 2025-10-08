@@ -18,7 +18,11 @@ import {
   File,
   Square,
   ArrowDownToLine,
-  ChevronDown
+  ChevronDown,
+  LayoutGrid,
+  List,
+  Cloud,
+  HardDrive
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
@@ -27,6 +31,10 @@ import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/integrations/supabase/client';
 import { downloadAudio } from '@/lib/audioDownload';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useDropbox } from '@/hooks/useDropbox';
+import { useGoogleDrive } from '@/hooks/useGoogleDrive';
+import { DropboxFilePicker } from '@/components/audio/DropboxFilePicker';
 
 interface Recording {
   id: string;
@@ -42,7 +50,12 @@ export const Libraries = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { userFiles, getFileUrl, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
+  const dropbox = useDropbox();
+  const googleDrive = useGoogleDrive();
   const [maxLibraryFiles, setMaxLibraryFiles] = useState(10);
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showDropboxPicker, setShowDropboxPicker] = useState(false);
   
   // Load files on mount
   useEffect(() => {
@@ -175,6 +188,77 @@ export const Libraries = () => {
     }
   };
 
+  const handleCloudUpload = async (file: Recording, service: 'dropbox' | 'google-drive') => {
+    try {
+      const audioFile = userFiles.find(f => f.id === file.id);
+      if (!audioFile) {
+        throw new Error('File not found');
+      }
+
+      const url = await getFileUrl(audioFile);
+      if (!url) {
+        throw new Error('Could not get file URL');
+      }
+
+      // Fetch the file as blob
+      const response = await fetch(url);
+      const blob = await response.blob();
+
+      if (service === 'dropbox') {
+        await dropbox.uploadFile(blob, file.name, 'music-library');
+      } else {
+        await googleDrive.uploadFile(blob, file.name);
+      }
+    } catch (error) {
+      console.error('Cloud upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: `Could not upload to ${service === 'dropbox' ? 'Dropbox' : 'Google Drive'}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUploadSourceClick = () => {
+    setShowUploadDialog(true);
+  };
+
+  const handleLocalUpload = () => {
+    setShowUploadDialog(false);
+    // Trigger file input click
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) fileInput.click();
+  };
+
+  const handleCloudImport = (service: 'dropbox' | 'google-drive') => {
+    setShowUploadDialog(false);
+    if (service === 'dropbox') {
+      setShowDropboxPicker(true);
+    } else {
+      toast({
+        title: "Coming Soon",
+        description: "Google Drive import will be available soon",
+      });
+    }
+  };
+
+  const handleDropboxFileSelect = async (blob: Blob, fileName: string) => {
+    try {
+      // Create file from blob
+      const fileOptions = { type: blob.type || 'audio/mpeg' };
+      const file = new window.File([blob], fileName, fileOptions);
+      await uploadFiles([file]);
+      await loadUserFiles();
+      setShowDropboxPicker(false);
+    } catch (error) {
+      toast({
+        title: "Import Failed",
+        description: "Could not import file from Dropbox",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDelete = async (fileId: string) => {
     const file = userFiles.find(f => f.id === fileId);
     if (!file) return;
@@ -256,7 +340,8 @@ export const Libraries = () => {
     accept: {
       'audio/*': ['.mp3', '.wav', '.m4a', '.aac', '.flac']
     },
-    multiple: true
+    multiple: true,
+    noClick: true // Disable default click behavior
   });
 
   const recordingFiles = filteredFiles.filter(file => file.type === 'recording');
@@ -307,62 +392,79 @@ export const Libraries = () => {
 
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-foreground">Audio Library</h2>
-        <Badge variant="secondary" className="text-sm">
-          {filteredFiles.length} files
-        </Badge>
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1 bg-muted p-1 rounded-lg">
+            <Button
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+              className="h-8 px-3"
+            >
+              <LayoutGrid size={16} />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="h-8 px-3"
+            >
+              <List size={16} />
+            </Button>
+          </div>
+          <Badge variant="secondary" className="text-sm">
+            {filteredFiles.length} files
+          </Badge>
+        </div>
       </div>
 
-      {/* Upload Area */}
+      {/* Upload Area - Compact */}
       <Card className="bg-gradient-card border-border">
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+            className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
               isDragActive 
                 ? 'border-primary bg-primary/5' 
-                : 'border-border hover:border-primary/50'
+                : 'border-border'
             }`}
           >
             <input {...getInputProps()} />
-            <Upload className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium">Upload Audio Files</h3>
-              <p className="text-muted-foreground">
-                {isDragActive
-                  ? "Drop your audio files here..."
-                  : "Drag & drop audio files here, or click to browse"
-                }
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Supports MP3, WAV, M4A, AAC, FLAC (Max 50MB each)
-              </p>
+            <div className="flex items-center justify-center gap-4">
+              <Upload className="h-6 w-6 text-muted-foreground" />
+              <div className="text-left flex-1">
+                <p className="text-sm font-medium">
+                  {isDragActive ? "Drop your audio files here..." : "Upload Audio Files"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  MP3, WAV, M4A, AAC, FLAC (Max 50MB)
+                </p>
+              </div>
+              <Button onClick={handleUploadSourceClick} variant="outline" size="sm">
+                Choose Source
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Your Drummer Recordings Section */}
+      {/* Your dDrummer Recordings Section */}
       {(filterType === 'all' || filterType === 'recording') && (
         <Card className="bg-gradient-card border-border card-shadow">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Music size={20} />
-              Your Drummer Recordings
+              Your dDrummer Recordings
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Your Recordings</h3>
-                <Badge variant="secondary">{recordingFiles.length}</Badge>
-              </div>
               {recordingFiles.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Music size={48} className="mx-auto mb-4 opacity-50" />
                   <p>No saved recordings yet</p>
                   <p className="text-sm">Record audio to add them to your library</p>
                 </div>
-              ) : (
+              ) : viewMode === 'cards' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
                   {recordingFiles.map((file) => (
                     <div key={file.id} className="p-4 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors space-y-3">
@@ -411,12 +513,87 @@ export const Libraries = () => {
                             <DropdownMenuItem onClick={() => handleDownload(file, 'mp3')}>
                               Download as MP3
                             </DropdownMenuItem>
+                            <DropdownMenuItem disabled className="border-t mt-1 pt-1">
+                              <Cloud size={14} className="mr-2" />
+                              Upload to Cloud
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleCloudUpload(file, 'dropbox')} disabled={!dropbox.isConnected}>
+                              Upload to Dropbox
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleCloudUpload(file, 'google-drive')} disabled={!googleDrive.isConnected}>
+                              Upload to Google Drive
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                         <Button
                           size="sm"
                           variant="destructive"
                           onClick={() => handleDelete(file.id)}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // List View
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
+                    <div className="col-span-4">Name</div>
+                    <div className="col-span-2">Duration</div>
+                    <div className="col-span-2">Created</div>
+                    <div className="col-span-2">Size</div>
+                    <div className="col-span-2 text-right">Actions</div>
+                  </div>
+                  {recordingFiles.map((file) => (
+                    <div key={file.id} className="grid grid-cols-12 gap-4 px-4 py-3 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors items-center">
+                      <div className="col-span-4 truncate font-medium">{file.name}</div>
+                      <div className="col-span-2 text-sm text-muted-foreground">{file.duration}</div>
+                      <div className="col-span-2 text-sm text-muted-foreground">{formatDate(file.date)}</div>
+                      <div className="col-span-2 text-sm text-muted-foreground">{file.size}</div>
+                      <div className="col-span-2 flex justify-end gap-1">
+                        <Button
+                          size="sm"
+                          variant={playingId === file.id ? "audio-active" : "ghost"}
+                          onClick={() => handlePlay(file)}
+                          className="h-8 w-8 p-0"
+                        >
+                          {playingId === file.id ? <Pause size={14} /> : <Play size={14} />}
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                              <ArrowDownToLine size={14} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleDownload(file, 'wav')}>
+                              Download as WAV
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload(file, 'webm')}>
+                              Download as WebM
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload(file, 'mp3')}>
+                              Download as MP3
+                            </DropdownMenuItem>
+                            <DropdownMenuItem disabled className="border-t mt-1 pt-1">
+                              <Cloud size={14} className="mr-2" />
+                              Upload to Cloud
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleCloudUpload(file, 'dropbox')} disabled={!dropbox.isConnected}>
+                              Upload to Dropbox
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleCloudUpload(file, 'google-drive')} disabled={!googleDrive.isConnected}>
+                              Upload to Google Drive
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDelete(file.id)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -562,6 +739,66 @@ export const Libraries = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Upload Source Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Choose Upload Source</DialogTitle>
+            <DialogDescription>
+              Select where you want to upload your audio files from
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-4">
+            <Button
+              onClick={handleLocalUpload}
+              variant="outline"
+              className="h-20 justify-start gap-4"
+            >
+              <HardDrive size={24} />
+              <div className="text-left">
+                <div className="font-medium">Local Device</div>
+                <div className="text-sm text-muted-foreground">Upload from your computer</div>
+              </div>
+            </Button>
+            <Button
+              onClick={() => handleCloudImport('dropbox')}
+              variant="outline"
+              className="h-20 justify-start gap-4"
+              disabled={!dropbox.isConnected}
+            >
+              <Cloud size={24} />
+              <div className="text-left">
+                <div className="font-medium">Dropbox</div>
+                <div className="text-sm text-muted-foreground">
+                  {dropbox.isConnected ? 'Import from Dropbox' : 'Not connected'}
+                </div>
+              </div>
+            </Button>
+            <Button
+              onClick={() => handleCloudImport('google-drive')}
+              variant="outline"
+              className="h-20 justify-start gap-4"
+              disabled={!googleDrive.isConnected}
+            >
+              <Cloud size={24} />
+              <div className="text-left">
+                <div className="font-medium">Google Drive</div>
+                <div className="text-sm text-muted-foreground">
+                  {googleDrive.isConnected ? 'Import from Google Drive' : 'Not connected'}
+                </div>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dropbox File Picker */}
+      <DropboxFilePicker 
+        open={showDropboxPicker}
+        onOpenChange={setShowDropboxPicker}
+        onFileSelect={handleDropboxFileSelect}
+      />
     </div>
   );
 };
