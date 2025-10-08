@@ -23,7 +23,10 @@ import {
   Cloud,
   FileAudio,
   Edit2,
-  Check
+  Check,
+  SkipBack,
+  RotateCcw,
+  RotateCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,10 +78,12 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [dropboxSaveFileName, setDropboxSaveFileName] = useState('');
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [editingTrackName, setEditingTrackName] = useState('');
+  const [masterVolume, setMasterVolume] = useState(80);
+  const [allPlaying, setAllPlaying] = useState(false);
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const loopEnabledRef = useRef(loopEnabled);
 
-  const { uploadFiles, validateFile } = useSecureAudioUpload();
+  const { uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
   const { isConnected: dropboxConnected, uploadFile: uploadToDropbox } = useDropbox();
   const { isConnected: driveConnected, connectGoogleDrive, uploadFile: uploadToDrive } = useGoogleDrive();
 
@@ -577,9 +582,12 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
         const file = new File([wavBlob], fileName, { type: 'audio/wav' });
         await uploadFiles([file]);
         
+        // Reload user files to show the new file
+        await loadUserFiles();
+        
         toast({
           title: "Saved to Library",
-          description: `${fileName} saved successfully`,
+          description: `${fileName} saved successfully. Check the Libraries page!`,
         });
       }
     } catch (error) {
@@ -677,6 +685,73 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
     }
     setEditingTrackId(null);
     setEditingTrackName('');
+  };
+
+  const playAllTracks = () => {
+    tracks.forEach(track => {
+      if (track.waveform && !track.isPlaying) {
+        track.waveform.play();
+      }
+    });
+    setTracks(prev => prev.map(t => ({ ...t, isPlaying: true })));
+    setAllPlaying(true);
+  };
+
+  const pauseAllTracks = () => {
+    tracks.forEach(track => {
+      if (track.waveform && track.isPlaying) {
+        track.waveform.pause();
+      }
+    });
+    setTracks(prev => prev.map(t => ({ ...t, isPlaying: false })));
+    setAllPlaying(false);
+  };
+
+  const stopAllTracks = () => {
+    tracks.forEach(track => {
+      if (track.waveform) {
+        track.waveform.stop();
+      }
+    });
+    setTracks(prev => prev.map(t => ({ ...t, isPlaying: false })));
+    setAllPlaying(false);
+  };
+
+  const rewindAllTracks = () => {
+    tracks.forEach(track => {
+      if (track.waveform) {
+        track.waveform.seekTo(0);
+      }
+    });
+  };
+
+  const skipAllBackward = () => {
+    tracks.forEach(track => {
+      if (track.waveform) {
+        const currentTime = track.waveform.getCurrentTime();
+        track.waveform.seekTo(Math.max(0, currentTime - 30) / track.waveform.getDuration());
+      }
+    });
+  };
+
+  const skipAllForward = () => {
+    tracks.forEach(track => {
+      if (track.waveform) {
+        const currentTime = track.waveform.getCurrentTime();
+        const duration = track.waveform.getDuration();
+        track.waveform.seekTo(Math.min(duration, currentTime + 30) / duration);
+      }
+    });
+  };
+
+  const updateMasterVolume = (volume: number) => {
+    setMasterVolume(volume);
+    tracks.forEach(track => {
+      if (track.waveform) {
+        track.waveform.setVolume(volume / 100);
+      }
+    });
+    setTracks(prev => prev.map(t => ({ ...t, volume: volume / 100 })));
   };
 
   useEffect(() => {
@@ -866,42 +941,132 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
         />
 
         {/* Global Controls - Always Visible */}
-        <div className="flex flex-wrap items-center gap-4 p-4 bg-secondary rounded-lg border border-border">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Zoom:</span>
+        <div className="space-y-4 p-4 bg-secondary rounded-lg border border-border">
+          <h3 className="text-sm font-semibold text-foreground">Master Playback Controls</h3>
+          
+          {/* Transport Controls */}
+          <div className="grid grid-cols-4 gap-2">
             <Button
               size="sm"
-              variant="outline"
-              onClick={() => setZoom(Math.max(1, zoom - 10))}
+              variant={allPlaying ? "default" : "outline"}
+              onClick={playAllTracks}
               disabled={tracks.length === 0}
+              title="Play All"
             >
-              <ZoomOut size={14} />
+              <Play size={14} />
             </Button>
-            <span className="text-sm min-w-[3rem] text-center">{zoom}x</span>
+            
+            <Button
+              size="sm"
+              variant={!allPlaying && tracks.some(t => t.isPlaying) ? "default" : "outline"}
+              onClick={pauseAllTracks}
+              disabled={tracks.length === 0}
+              title="Pause All"
+            >
+              <Pause size={14} />
+            </Button>
+            
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setZoom(zoom + 10)}
+              onClick={stopAllTracks}
               disabled={tracks.length === 0}
+              title="Stop All"
             >
-              <ZoomIn size={14} />
+              <Square size={14} />
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={rewindAllTracks}
+              disabled={tracks.length === 0}
+              title="Rewind All to Start"
+            >
+              <SkipBack size={14} />
             </Button>
           </div>
 
-          <Button
-            size="sm"
-            variant={loopEnabled ? "default" : "outline"}
-            onClick={() => setLoopEnabled(!loopEnabled)}
-            className="gap-2"
-            disabled={tracks.length === 0}
-          >
-            <Repeat size={14} />
-            Loop
-          </Button>
+          {/* Skip Controls */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={skipAllBackward}
+              disabled={tracks.length === 0}
+              className="gap-1"
+              title="Skip Backward 30s"
+            >
+              <RotateCcw size={14} />
+              <span className="text-xs">-30s</span>
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={skipAllForward}
+              disabled={tracks.length === 0}
+              className="gap-1"
+              title="Skip Forward 30s"
+            >
+              <RotateCw size={14} />
+              <span className="text-xs">+30s</span>
+            </Button>
+          </div>
+
+          {/* Master Volume */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Master Volume: {masterVolume}%</span>
+              <Volume2 size={14} />
+            </div>
+            <Slider
+              value={[masterVolume]}
+              onValueChange={(v) => updateMasterVolume(v[0])}
+              max={100}
+              step={1}
+              disabled={tracks.length === 0}
+            />
+          </div>
+
+          {/* Zoom and Loop */}
+          <div className="flex items-center gap-4 pt-2 border-t border-border">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Zoom:</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setZoom(Math.max(1, zoom - 10))}
+                disabled={tracks.length === 0}
+              >
+                <ZoomOut size={14} />
+              </Button>
+              <span className="text-sm min-w-[3rem] text-center">{zoom}x</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setZoom(zoom + 10)}
+                disabled={tracks.length === 0}
+              >
+                <ZoomIn size={14} />
+              </Button>
+            </div>
+
+            <Button
+              size="sm"
+              variant={loopEnabled ? "default" : "outline"}
+              onClick={() => setLoopEnabled(!loopEnabled)}
+              className="gap-2"
+              disabled={tracks.length === 0}
+            >
+              <Repeat size={14} />
+              Loop
+            </Button>
+          </div>
 
           {tracks.length === 0 && (
-            <span className="text-xs text-muted-foreground ml-auto">
-              Timeline controls will activate when you add a track
+            <span className="text-xs text-muted-foreground block text-center">
+              Add tracks to enable master controls
             </span>
           )}
         </div>
@@ -965,6 +1130,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                     size="sm"
                     variant={track.isPlaying ? "default" : "outline"}
                     onClick={() => togglePlayback(track.id)}
+                    title="Play/Pause"
                   >
                     {track.isPlaying ? <Pause size={14} /> : <Play size={14} />}
                   </Button>
@@ -973,6 +1139,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                     size="sm"
                     variant="outline"
                     onClick={() => stopTrack(track.id)}
+                    title="Stop and Reset"
                   >
                     <Square size={14} />
                   </Button>
