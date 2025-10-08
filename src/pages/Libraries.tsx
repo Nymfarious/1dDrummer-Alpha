@@ -469,6 +469,26 @@ export const Libraries = () => {
               </Button>
             </div>
           </div>
+          
+          {/* View Toggle Buttons */}
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant={viewMode === 'cards' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+            >
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Cards
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4 mr-2" />
+              List
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -481,16 +501,14 @@ export const Libraries = () => {
                 <Upload size={20} />
                 Uploaded Audio Files
               </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-sm">
-                  Showing {uploadedFiles.length} of {filteredFiles.filter(file => file.type === 'upload').length}
-                </Badge>
-                {filteredFiles.filter(file => file.type === 'upload').length > maxLibraryFiles && (
-                  <span className="text-xs text-muted-foreground">
-                    (Adjust limit in Settings)
-                  </span>
-                )}
-              </div>
+              <Badge variant="secondary" className="text-sm">
+                Showing {uploadedFiles.length} of {filteredFiles.filter(file => file.type === 'upload').length}
+              </Badge>
+              {filteredFiles.filter(file => file.type === 'upload').length > maxLibraryFiles && (
+                <span className="text-xs text-muted-foreground">
+                  (Adjust limit in Settings)
+                </span>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -591,20 +609,22 @@ export const Libraries = () => {
             ) : (
               // List view for uploaded files
               <div className="space-y-2">
-                <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
-                  <div className="col-span-4">Name</div>
-                  <div className="col-span-2">Duration</div>
-                  <div className="col-span-2">Created</div>
-                  <div className="col-span-2">Size</div>
-                  <div className="col-span-2 text-right">Actions</div>
+                <div className="grid grid-cols-[3fr_1fr_1.5fr_1.5fr_1fr_2fr] gap-4 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
+                  <div>Name</div>
+                  <div>Duration</div>
+                  <div>Created</div>
+                  <div>Last Modified</div>
+                  <div>Size</div>
+                  <div className="text-right">Actions</div>
                 </div>
                 {uploadedFiles.map((file) => (
-                  <div key={file.id} className="grid grid-cols-12 gap-4 px-4 py-3 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors items-center">
-                    <div className="col-span-4 truncate font-medium">{file.name}</div>
-                    <div className="col-span-2 text-sm text-muted-foreground">{file.duration}</div>
-                    <div className="col-span-2 text-sm text-muted-foreground">{formatDate(file.date)}</div>
-                    <div className="col-span-2 text-sm text-muted-foreground">{file.size}</div>
-                    <div className="col-span-2 flex justify-end gap-1">
+                  <div key={file.id} className="grid grid-cols-[3fr_1fr_1.5fr_1.5fr_1fr_2fr] gap-4 px-4 py-3 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors items-center">
+                    <div className="truncate font-medium">{file.name}</div>
+                    <div className="text-sm text-muted-foreground">{file.duration}</div>
+                    <div className="text-sm text-muted-foreground">{formatDate(file.date)}</div>
+                    <div className="text-sm text-muted-foreground">{formatDate(file.date)}</div>
+                    <div className="text-sm text-muted-foreground">{file.size}</div>
+                    <div className="flex justify-end gap-1">
                       <Button
                         size="sm"
                         variant={playingId === file.id ? "audio-active" : "ghost"}
@@ -676,27 +696,7 @@ export const Libraries = () => {
                 <Music size={20} />
                 Your dDrummer Recordings
               </CardTitle>
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1 bg-muted p-1 rounded-lg">
-                  <Button
-                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('cards')}
-                    className="h-8 px-3"
-                  >
-                    <LayoutGrid size={16} />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                    className="h-8 px-3"
-                  >
-                    <List size={16} />
-                  </Button>
-                </div>
-                <Badge variant="secondary">{recordingFiles.length}</Badge>
-              </div>
+              <Badge variant="secondary">{recordingFiles.length}</Badge>
             </div>
           </CardHeader>
           <CardContent>
@@ -790,20 +790,22 @@ export const Libraries = () => {
               ) : (
                 // List View
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                  <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
-                    <div className="col-span-4">Name</div>
-                    <div className="col-span-2">Duration</div>
-                    <div className="col-span-2">Created</div>
-                    <div className="col-span-2">Size</div>
-                    <div className="col-span-2 text-right">Actions</div>
+                  <div className="grid grid-cols-[3fr_1fr_1.5fr_1.5fr_1fr_2fr] gap-4 px-4 py-2 text-xs font-medium text-muted-foreground border-b">
+                    <div>Name</div>
+                    <div>Duration</div>
+                    <div>Created</div>
+                    <div>Last Modified</div>
+                    <div>Size</div>
+                    <div className="text-right">Actions</div>
                   </div>
                   {recordingFiles.map((file) => (
-                    <div key={file.id} className="grid grid-cols-12 gap-4 px-4 py-3 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors items-center">
-                      <div className="col-span-4 truncate font-medium">{file.name}</div>
-                      <div className="col-span-2 text-sm text-muted-foreground">{file.duration}</div>
-                      <div className="col-span-2 text-sm text-muted-foreground">{formatDate(file.date)}</div>
-                      <div className="col-span-2 text-sm text-muted-foreground">{file.size}</div>
-                      <div className="col-span-2 flex justify-end gap-1">
+                    <div key={file.id} className="grid grid-cols-[3fr_1fr_1.5fr_1.5fr_1fr_2fr] gap-4 px-4 py-3 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors items-center">
+                      <div className="truncate font-medium">{file.name}</div>
+                      <div className="text-sm text-muted-foreground">{file.duration}</div>
+                      <div className="text-sm text-muted-foreground">{formatDate(file.date)}</div>
+                      <div className="text-sm text-muted-foreground">{formatDate(file.date)}</div>
+                      <div className="text-sm text-muted-foreground">{file.size}</div>
+                      <div className="flex justify-end gap-1">
                         <Button
                           size="sm"
                           variant={playingId === file.id ? "audio-active" : "ghost"}

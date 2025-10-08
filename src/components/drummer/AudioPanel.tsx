@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { TransportControls } from './TransportControls';
 import { RecordingPanel } from './RecordingPanel';
 import { AudioEditor } from '@/components/audio/AudioEditor';
@@ -22,7 +23,12 @@ export const AudioPanel = ({
   setMetronomeEnabled,
   metronomeSound
 }: AudioPanelProps) => {
-  const { userFiles, getFileUrl } = useSecureAudioUpload();
+  const { userFiles, getFileUrl, loadUserFiles } = useSecureAudioUpload();
+
+  // Load audio files on mount
+  useEffect(() => {
+    loadUserFiles();
+  }, []);
 
   return (
     <div className="space-y-8">
