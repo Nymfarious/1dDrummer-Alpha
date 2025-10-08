@@ -11,6 +11,7 @@ import { useSecureAudioUpload } from '@/hooks/useSecureAudioUpload';
 import { useDropbox } from '@/hooks/useDropbox';
 import { useGoogleDrive } from '@/hooks/useGoogleDrive';
 import { DropboxFilePicker } from '@/components/audio/DropboxFilePicker';
+import { convertWebMToWAV } from '@/lib/audioConverter';
 
 interface Recording {
   id: string;
@@ -20,6 +21,7 @@ interface Recording {
   duration: number;
   timestamp: Date;
   accepted: boolean;
+  uploadedFileId?: string; // Track the database ID after upload
 }
 
 export const RecordingPanel = () => {
@@ -46,7 +48,7 @@ export const RecordingPanel = () => {
   const progressTimerRef = useRef<number | null>(null);
   
   const { toast } = useToast();
-  const { uploadFile: uploadToSupabase } = useSecureAudioUpload();
+  const { uploadFile: uploadToSupabase, updateFileName } = useSecureAudioUpload();
   const dropbox = useDropbox();
   const googleDrive = useGoogleDrive();
 
@@ -192,33 +194,53 @@ export const RecordingPanel = () => {
   const acceptRecording = async () => {
     if (currentRecording) {
       try {
-        // Add to local recordings first
-        setRecordings(prev => [...prev, { ...currentRecording, accepted: true }]);
-        
-        // Upload to Supabase storage with category 'recording'
-        const file = new File([currentRecording.blob], `${currentRecording.name}.webm`, {
-          type: 'audio/webm'
+        // Convert WebM to WAV for better compatibility and universal playback
+        toast({
+          title: "Processing Recording",
+          description: "Converting to WAV format...",
         });
         
+        const wavBlob = await convertWebMToWAV(currentRecording.blob);
+        
+        // Create WAV file
+        const file = new File(
+          [wavBlob], 
+          `${currentRecording.name}.wav`, 
+          { 
+            type: 'audio/wav'
+          }
+        );
+        
+        // Upload to Supabase
         const uploadedFile = await uploadToSupabase(file, 'recording');
         
         if (uploadedFile) {
+          // Add to local recordings with the uploaded file ID
+          const acceptedRecording = { 
+            ...currentRecording, 
+            accepted: true,
+            blob: wavBlob,
+            url: URL.createObjectURL(wavBlob),
+            uploadedFileId: uploadedFile.id
+          };
+          setRecordings(prev => [...prev, acceptedRecording]);
+          
           toast({
             title: "Recording Saved",
-            description: "Recording saved to your Audio Library",
+            description: "Recording converted to WAV and saved to your Audio Library",
           });
         } else {
           toast({
-            title: "Recording Saved Locally",
-            description: "Recording saved but cloud sync failed",
+            title: "Upload Failed",
+            description: "Could not save recording to library",
             variant: "destructive",
           });
         }
       } catch (error) {
-        console.error('Error uploading recording:', error);
+        console.error('Error processing recording:', error);
         toast({
-          title: "Recording Saved Locally",
-          description: "Recording saved but cloud sync failed",
+          title: "Processing Failed",
+          description: "Could not convert or upload recording",
           variant: "destructive",
         });
       } finally {
@@ -268,11 +290,27 @@ export const RecordingPanel = () => {
     setNewName(currentName);
   };
 
-  const renameRecording = () => {
+  const renameRecording = async () => {
     if (newName.trim()) {
+      const recording = recordings.find(r => r.id === renameDialog.recordingId);
+      
+      // Update local state
       setRecordings(prev => prev.map(r => 
         r.id === renameDialog.recordingId ? { ...r, name: newName.trim() } : r
       ));
+      
+      // Update database if recording was uploaded
+      if (recording?.uploadedFileId) {
+        const success = await updateFileName(recording.uploadedFileId, newName.trim());
+        if (!success) {
+          toast({
+            title: "Sync Warning",
+            description: "Name updated locally but cloud sync failed",
+            variant: "destructive",
+          });
+        }
+      }
+      
       setRenameDialog({ open: false, recordingId: '', currentName: '' });
       toast({
         title: "Recording Renamed",
@@ -282,15 +320,15 @@ export const RecordingPanel = () => {
   };
 
   const uploadToDropbox = async (recording: Recording) => {
-    await dropbox.uploadFile(recording.blob, `${recording.name}.webm`);
+    await dropbox.uploadFile(recording.blob, `${recording.name}.wav`);
   };
 
   const uploadToGoogleDrive = async (recording: Recording) => {
-    await googleDrive.uploadFile(recording.blob, `${recording.name}.webm`);
+    await googleDrive.uploadFile(recording.blob, `${recording.name}.wav`);
   };
 
   const uploadToSupabaseCloud = async (recording: Recording) => {
-    const file = new File([recording.blob], `${recording.name}.webm`, { type: 'audio/webm' });
+    const file = new File([recording.blob], `${recording.name}.wav`, { type: 'audio/wav' });
     await uploadToSupabase(file, 'recording');
   };
 
@@ -525,22 +563,11 @@ export const RecordingPanel = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="flex-1 relative"
-                          onClick={() => downloadRecording(recording, 'webm')}
-                        >
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-green-500"></span>
-                          <Download size={14} />
-                          Save WebM
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 relative"
+                          className="flex-1"
                           onClick={() => downloadRecording(recording, 'wav')}
                         >
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-green-500"></span>
                           <Download size={14} />
-                          Save WAV
+                          Download WAV
                         </Button>
                       </div>
                       

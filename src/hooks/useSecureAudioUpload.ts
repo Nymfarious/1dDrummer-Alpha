@@ -284,6 +284,30 @@ export const useSecureAudioUpload = () => {
   };
 
   /**
+   * Update file name in database
+   */
+  const updateFileName = async (fileId: string, newName: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('user_audio_files')
+        .update({ original_name: newName })
+        .eq('id', fileId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      // Reload user files to reflect changes
+      await loadUserFiles();
+      return true;
+    } catch (error) {
+      logError(error, 'updateFileName');
+      return false;
+    }
+  };
+
+  /**
    * Load user's audio files
    */
   const loadUserFiles = async (): Promise<void> => {
@@ -379,6 +403,7 @@ export const useSecureAudioUpload = () => {
     getFileUrl,
     loadUserFiles,
     deleteFile,
+    updateFileName,
     clearUploads
   };
 };
