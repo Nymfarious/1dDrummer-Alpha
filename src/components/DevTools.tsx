@@ -324,18 +324,36 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
             </button>
             
             {openSections.devOverrides && (
-              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="guest-audio" className="text-xs">Guest Audio Upload</Label>
-                  <Switch
-                    id="guest-audio"
-                    checked={settings.guestAudioUploadOverride}
-                    onCheckedChange={(checked) => updateSettings({ guestAudioUploadOverride: checked })}
-                  />
+              <div className="ml-6 space-y-3 p-2 border-l-2 border-primary/20">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="guest-audio" className="text-xs">Guest Audio Upload</Label>
+                    <Switch
+                      id="guest-audio"
+                      checked={settings.guestAudioUploadOverride}
+                      onCheckedChange={(checked) => updateSettings({ guestAudioUploadOverride: checked })}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Allow guests to upload audio files for testing without authentication
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Allow guests to upload audio files for testing without authentication
-                </p>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="block-signups" className="text-xs">Block Signups</Label>
+                    <Switch
+                      id="block-signups"
+                      checked={settings.blockSignups ?? true}
+                      onCheckedChange={(checked) => updateSettings({ blockSignups: checked })}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Prevent new users from creating accounts
+                  </p>
+                </div>
               </div>
             )}
           </div>
