@@ -95,11 +95,11 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [editingTrackName, setEditingTrackName] = useState('');
   const [masterVolume, setMasterVolume] = useState(80);
   const [recordingVolume, setRecordingVolume] = useState(80);
+  const [metronomeVolume, setMetronomeVolume] = useState(80);
   const [allPlaying, setAllPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingPaused, setRecordingPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [showRecordingStudio, setShowRecordingStudio] = useState(false);
   const [showLibraryFiles, setShowLibraryFiles] = useState(true);
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const loopEnabledRef = useRef(loopEnabled);
@@ -1308,56 +1308,21 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
         />
 
         {/* Master Audio Controls */}
-        <div className="space-y-3 p-3 bg-secondary rounded-lg border border-border">
-          <h3 className="text-sm font-semibold text-foreground">Master Audio Controls</h3>
-          
-          {/* Recording Studio - Nested Collapsible Section */}
-          <Collapsible open={showRecordingStudio} onOpenChange={setShowRecordingStudio}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full justify-between h-8">
-                <div className="flex items-center gap-2">
-                  <Mic size={12} />
-                  <span className="text-xs">Recording Studio</span>
-                </div>
-                {showRecordingStudio ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-2 space-y-2">
-              <div className="p-2 bg-background/50 rounded-md border border-border space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Record audio directly into your session. Recordings are automatically added as tracks and saved to your library.
-                </p>
-                {isRecording && (
-                  <div className="p-2 bg-destructive/10 rounded border border-destructive/20">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                      <Circle size={8} className="text-destructive animate-pulse" fill="currentColor" />
-                      <span className="text-xs font-medium">Recording: {formatTime(recordingTime)} / 3:00</span>
-                    </div>
-                    <Slider
-                      value={[recordingTime]}
-                      max={180}
-                      step={1}
-                      disabled
-                      className="w-full"
-                    />
-                  </div>
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+        <div className="space-y-2 p-2 bg-secondary rounded-lg border border-border">
+          <h3 className="text-xs font-semibold text-foreground">Master Audio Controls</h3>
           
           {/* Transport Controls */}
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-4 gap-1">
             <Button
               size="sm"
               variant={allPlaying ? "default" : "outline"}
               onClick={() => allPlaying ? pauseAllTracks() : playAllTracks()}
               disabled={tracks.length === 0}
               title="Play/Pause all selected tracks"
-              className="gap-1 h-8"
+              className="gap-1 h-7 text-xs"
             >
-              {allPlaying ? <Pause size={12} /> : <Play size={12} />}
-              <span className="text-xs">All</span>
+              {allPlaying ? <Pause size={10} /> : <Play size={10} />}
+              <span>All</span>
             </Button>
             
             {!isRecording ? (
@@ -1366,10 +1331,10 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                 variant="outline"
                 onClick={startRecording}
                 title="Start Recording"
-                className="gap-1 h-8"
+                className="gap-1 h-7 text-xs"
               >
-                <Circle size={12} />
-                <span className="text-xs">Rec</span>
+                <Circle size={10} />
+                <span>Rec</span>
               </Button>
             ) : (
               <div className="col-span-2 grid grid-cols-2 gap-1">
@@ -1378,18 +1343,19 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                   variant={recordingPaused ? "default" : "secondary"}
                   onClick={recordingPaused ? resumeRecording : pauseRecording}
                   title={recordingPaused ? "Resume Recording" : "Pause Recording"}
-                  className="h-8"
+                  className="h-7 text-xs gap-1"
                 >
-                  {recordingPaused ? <Play size={12} /> : <Pause size={12} />}
+                  {recordingPaused ? <Play size={10} /> : <Pause size={10} />}
+                  <span className="text-[10px]">{formatTime(recordingTime)}</span>
                 </Button>
                 <Button
                   size="sm"
                   variant="destructive"
                   onClick={stopRecording}
-                  title={`Stop Recording (${formatTime(recordingTime)})`}
-                  className="h-8"
+                  title="Stop Recording"
+                  className="h-7"
                 >
-                  <Square size={12} />
+                  <Square size={10} />
                 </Button>
               </div>
             )}
@@ -1401,9 +1367,9 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                 onClick={rewindAllTracks}
                 disabled={tracks.length === 0}
                 title="Rewind All to Start"
-                className="h-8"
+                className="h-7"
               >
-                <SkipBack size={12} />
+                <SkipBack size={10} />
               </Button>
             )}
             
@@ -1413,24 +1379,24 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
               onClick={() => setLoopEnabled(!loopEnabled)}
               disabled={tracks.length === 0}
               title="Toggle Loop"
-              className="h-8"
+              className="h-7"
             >
-              <Repeat size={12} />
+              <Repeat size={10} />
             </Button>
           </div>
 
           {/* Skip Controls */}
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 gap-1">
             <Button
               size="sm"
               variant="outline"
               onClick={skipAllBackward}
               disabled={tracks.length === 0}
-              className="gap-1 h-8"
+              className="gap-1 h-6 text-xs"
               title="Skip Backward 30s"
             >
-              <RotateCcw size={12} />
-              <span className="text-xs">-30s</span>
+              <RotateCcw size={10} />
+              <span>-30s</span>
             </Button>
             
             <Button
@@ -1438,19 +1404,19 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
               variant="outline"
               onClick={skipAllForward}
               disabled={tracks.length === 0}
-              className="gap-1 h-8"
+              className="gap-1 h-6 text-xs"
               title="Skip Forward 30s"
             >
-              <RotateCw size={12} />
-              <span className="text-xs">+30s</span>
+              <RotateCw size={10} />
+              <span>+30s</span>
             </Button>
           </div>
 
           {/* Master Volume */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Volume className="text-primary" size={14} />
-              <span className="text-xs font-medium flex-1">Master: {masterVolume}%</span>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <Volume className="text-primary" size={12} />
+              <span className="text-[10px] font-medium flex-1">Master: {masterVolume}%</span>
             </div>
             <Slider
               value={[masterVolume]}
@@ -1458,340 +1424,371 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
               max={100}
               step={1}
               disabled={tracks.length === 0}
+              className="h-1"
             />
           </div>
 
           {/* Recording Volume */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Mic className="text-destructive" size={14} />
-              <span className="text-xs font-medium flex-1">Recording: {recordingVolume}%</span>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <Mic className="text-destructive" size={12} />
+              <span className="text-[10px] font-medium flex-1">Recording: {recordingVolume}%</span>
             </div>
             <Slider
               value={[recordingVolume]}
               onValueChange={(v) => setRecordingVolume(v[0])}
               max={100}
               step={1}
+              className="h-1"
             />
           </div>
 
-          {/* Zoom Controls */}
-          <div className="flex items-center justify-center gap-2 pt-1 border-t border-border">
-            <span className="text-xs font-medium">Zoom:</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setZoom(Math.max(1, zoom - 10))}
-              disabled={tracks.length === 0}
-              className="h-7 w-7 p-0"
-            >
-              <ZoomOut size={12} />
-            </Button>
-            <span className="text-xs min-w-[2.5rem] text-center">{zoom}x</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setZoom(zoom + 10)}
-              disabled={tracks.length === 0}
-              className="h-7 w-7 p-0"
-            >
-              <ZoomIn size={12} />
-            </Button>
+          {/* Metronome Volume */}
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <Volume className="text-accent" size={12} />
+              <span className="text-[10px] font-medium flex-1">Metronome: {metronomeVolume}%</span>
+            </div>
+            <Slider
+              value={[metronomeVolume]}
+              onValueChange={(v) => setMetronomeVolume(v[0])}
+              max={100}
+              step={1}
+              className="h-1"
+            />
           </div>
 
           {tracks.length === 0 && (
-            <span className="text-xs text-muted-foreground block text-center">
+            <span className="text-[10px] text-muted-foreground block text-center pt-1">
               Add tracks to enable master controls
             </span>
           )}
         </div>
 
-        {/* Tracks */}
-        <div className="space-y-4">
-          {tracks.map(track => (
-            <Card key={track.id} className="bg-background border-border">
-              <CardContent className="p-4 space-y-3">
-                {/* Track Title - Persistent at top */}
-                <div className="pb-2 border-b border-border">
-                  {editingTrackId === track.id ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={editingTrackName}
-                        onChange={(e) => setEditingTrackName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') confirmRenameTrack();
-                          if (e.key === 'Escape') setEditingTrackId(null);
-                        }}
-                        className="h-8"
-                        autoFocus
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={confirmRenameTrack}
-                      >
-                        <Check size={14} />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-lg">{track.name}</h4>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => startRenameTrack(track.id, track.name)}
-                          title="Edit track name"
-                        >
-                          <Edit2 size={12} />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            removeTrack(track.id);
-                            toast({
-                              title: "Removed from Session",
-                              description: "Track removed from session (still in library)",
-                            });
+        {/* Session Workspace */}
+        <div className="space-y-3 p-3 bg-gradient-to-br from-secondary/80 to-secondary/40 rounded-lg border border-border">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground">Session Workspace</h3>
+            
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-medium text-muted-foreground">Zoom:</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setZoom(Math.max(1, zoom - 10))}
+                disabled={tracks.length === 0}
+                className="h-6 w-6 p-0"
+              >
+                <ZoomOut size={10} />
+              </Button>
+              <span className="text-[10px] min-w-[2rem] text-center">{zoom}x</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setZoom(zoom + 10)}
+                disabled={tracks.length === 0}
+                className="h-6 w-6 p-0"
+              >
+                <ZoomIn size={10} />
+              </Button>
+            </div>
+          </div>
+
+          {/* Tracks */}
+          <div className="space-y-3">
+            {tracks.map(track => (
+              <Card key={track.id} className="bg-background border-border">
+                <CardContent className="p-3 space-y-2">
+                  {/* Track Title - Persistent at top */}
+                  <div className="pb-2 border-b border-border">
+                    {editingTrackId === track.id ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editingTrackName}
+                          onChange={(e) => setEditingTrackName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') confirmRenameTrack();
+                            if (e.key === 'Escape') setEditingTrackId(null);
                           }}
-                          title="Remove from session (keeps in library)"
+                          className="h-7 text-sm"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={confirmRenameTrack}
+                          className="h-7 w-7 p-0"
                         >
-                          <X size={14} />
+                          <Check size={12} />
                         </Button>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Track Controls */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={track.selected}
-                      onCheckedChange={() => toggleTrackSelection(track.id)}
-                      className="h-5 w-5"
-                      title="Select for playback"
-                    />
-                    <Badge variant={track.type === 'midi' ? 'secondary' : 'outline'}>
-                      {track.type.toUpperCase()}
-                    </Badge>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">{track.name}</h4>
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => startRenameTrack(track.id, track.name)}
+                            title="Edit track name"
+                            className="h-6 w-6 p-0"
+                          >
+                            <Edit2 size={10} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              removeTrack(track.id);
+                              toast({
+                                title: "Removed from Session",
+                                description: "Track removed from session (still in library)",
+                              });
+                            }}
+                            title="Remove from session (keeps in library)"
+                            className="h-6 w-6 p-0"
+                          >
+                            <X size={12} />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => toggleTrackVisibility(track.id)}
-                    title={track.visible ? "Hide from timeline" : "Show in timeline"}
-                  >
-                    {track.visible ? <Eye size={14} /> : <EyeOff size={14} />}
-                  </Button>
-                </div>
 
-                {/* Waveform */}
-                {track.visible && (
+                  {/* Track Controls */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={track.selected}
+                        onCheckedChange={() => toggleTrackSelection(track.id)}
+                        className="h-4 w-4"
+                        title="Select for playback"
+                      />
+                      <Badge variant={track.type === 'midi' ? 'secondary' : 'outline'} className="text-[10px] h-5">
+                        {track.type.toUpperCase()}
+                      </Badge>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => toggleTrackVisibility(track.id)}
+                      title={track.visible ? "Hide from timeline" : "Show in timeline"}
+                      className="h-6 w-6 p-0"
+                    >
+                      {track.visible ? <Eye size={12} /> : <EyeOff size={12} />}
+                    </Button>
+                  </div>
+
+                  {/* Waveform - Always rendered, visibility controlled by CSS */}
                   <div 
                     ref={el => trackRefs.current[track.id] = el}
                     className="w-full bg-secondary/50 rounded-md"
+                    style={{ display: track.visible ? 'block' : 'none' }}
                   />
-                )}
-                {!track.visible && (
-                  <div className="w-full bg-secondary/50 rounded-md p-4 text-center text-muted-foreground text-sm">
-                    Timeline hidden (click eye icon to show)
-                  </div>
-                )}
+                  {!track.visible && (
+                    <div className="w-full bg-secondary/50 rounded-md p-3 text-center text-muted-foreground text-xs">
+                      Timeline hidden (click eye icon to show)
+                    </div>
+                  )}
 
-                {/* Track Controls */}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant={track.isPlaying ? "default" : "outline"}
-                    onClick={() => togglePlayback(track.id)}
-                    title="Play/Pause"
-                  >
-                    {track.isPlaying ? <Pause size={14} /> : <Play size={14} />}
-                  </Button>
-                  
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => stopTrack(track.id)}
-                    title="Stop and Reset"
-                  >
-                    <Square size={14} />
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => addRegionToTrack(track.id)}
-                    className="gap-1"
-                  >
-                    <Scissors size={14} />
-                    Select Region
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => trimTrack(track.id, true)}
-                    className="gap-1"
-                  >
-                    Trim Start
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => trimTrack(track.id, false)}
-                    className="gap-1"
-                  >
-                    Trim End
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => saveEditedTrack(track.id, 'library')}
-                    className="gap-1"
-                    title="Save to your library"
-                  >
-                    <Save size={14} />
-                    Save to Library
-                  </Button>
-
-                  {dropboxConnected && (
+                  {/* Track Controls */}
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button
+                      size="sm"
+                      variant={track.isPlaying ? "default" : "outline"}
+                      onClick={() => togglePlayback(track.id)}
+                      title="Play/Pause"
+                      className="h-6"
+                    >
+                      {track.isPlaying ? <Pause size={12} /> : <Play size={12} />}
+                    </Button>
+                    
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => openDropboxSaveDialog(track.id)}
-                      className="gap-1"
-                      title="Save to Dropbox"
+                      onClick={() => stopTrack(track.id)}
+                      title="Stop and Reset"
+                      className="h-6"
                     >
-                      <Cloud size={14} />
-                      Save to Dropbox
+                      <Square size={12} />
                     </Button>
-                  )}
 
-                  <div className="flex items-center gap-2 ml-auto">
-                    <Volume2 size={14} />
-                    <Slider
-                      value={[track.volume * 100]}
-                      onValueChange={(v) => updateVolume(track.id, v[0] / 100)}
-                      max={100}
-                      step={1}
-                      className="w-24"
-                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => addRegionToTrack(track.id)}
+                      className="gap-1 h-6 text-xs"
+                    >
+                      <Scissors size={10} />
+                      Select
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => trimTrack(track.id, true)}
+                      className="gap-1 h-6 text-xs"
+                    >
+                      Trim Start
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => trimTrack(track.id, false)}
+                      className="gap-1 h-6 text-xs"
+                    >
+                      Trim End
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => saveEditedTrack(track.id, 'library')}
+                      className="gap-1 h-6 text-xs"
+                      title="Save to your library"
+                    >
+                      <Save size={10} />
+                      Library
+                    </Button>
+
+                    {dropboxConnected && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openDropboxSaveDialog(track.id)}
+                        className="gap-1 h-6 text-xs"
+                        title="Save to Dropbox"
+                      >
+                        <Cloud size={10} />
+                        Dropbox
+                      </Button>
+                    )}
+
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      <Volume2 size={10} />
+                      <Slider
+                        value={[track.volume * 100]}
+                        onValueChange={(v) => updateVolume(track.id, v[0] / 100)}
+                        max={100}
+                        step={1}
+                        className="w-20 h-1"
+                      />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* Empty Session Placeholder */}
+            {tracks.length === 0 && (
+              <Card className="bg-background border-border">
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-foreground">Empty Session</h3>
+                  </div>
+
+                  {/* Empty Waveform Timeline */}
+                  <div className="w-full h-20 bg-secondary/50 rounded-md relative overflow-hidden border border-border">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-full h-0.5 bg-primary/30" />
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-[10px] text-muted-foreground/50 bg-background/80 px-2 py-0.5 rounded-full">
+                        Load audio to begin editing
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Track Controls */}
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      title="Play/Pause"
+                      className="h-6"
+                    >
+                      <Play size={12} />
+                    </Button>
+                    
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      title="Stop and Reset"
+                      className="h-6"
+                    >
+                      <Square size={12} />
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      className="gap-1 h-6 text-xs"
+                    >
+                      <Scissors size={10} />
+                      Select
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      className="gap-1 h-6 text-xs"
+                    >
+                      Trim Start
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      className="gap-1 h-6 text-xs"
+                    >
+                      Trim End
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      className="gap-1 h-6 text-xs"
+                      title="Save to your library"
+                    >
+                      <Save size={10} />
+                      Library
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      className="gap-1 h-6 text-xs"
+                      title="Save to Cloud"
+                    >
+                      <Cloud size={10} />
+                      Cloud
+                    </Button>
+
+                    <div className="flex items-center gap-1.5 ml-auto opacity-50">
+                      <Volume2 size={10} />
+                      <Slider
+                        value={[50]}
+                        disabled
+                        max={100}
+                        step={1}
+                        className="w-20 h-1"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
-
-        {/* Empty Session Placeholder - Always visible when no tracks */}
-        {tracks.length === 0 && (
-          <Card className="bg-background border-border">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-2 flex-1">
-                <h3 className="text-xl font-semibold text-foreground">Studio Session</h3>
-              </div>
-
-              {/* Empty Waveform Timeline */}
-              <div className="w-full h-24 bg-secondary/50 rounded-md relative overflow-hidden border border-border">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-full h-0.5 bg-primary/30" />
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs text-muted-foreground/50 bg-background/80 px-3 py-1 rounded-full">
-                    Load audio to begin editing
-                  </span>
-                </div>
-              </div>
-
-              {/* Track Controls */}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled
-                  title="Play/Pause"
-                >
-                  <Play size={14} />
-                </Button>
-                
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled
-                  title="Stop and Reset"
-                >
-                  <Square size={14} />
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled
-                  className="gap-1"
-                >
-                  <Scissors size={14} />
-                  Select Region
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled
-                  className="gap-1"
-                >
-                  Trim Start
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled
-                  className="gap-1"
-                >
-                  Trim End
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled
-                  className="gap-1"
-                  title="Save to your library"
-                >
-                  <Save size={14} />
-                  Save to Library
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled
-                  className="gap-1"
-                  title="Save to Dropbox"
-                >
-                  <Cloud size={14} />
-                  Save to Cloud
-                </Button>
-
-                <div className="flex items-center gap-2 ml-auto opacity-50">
-                  <Volume2 size={14} />
-                  <Slider
-                    value={[50]}
-                    disabled
-                    max={100}
-                    step={1}
-                    className="w-24"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Dropbox Save Dialog */}
         <Dialog open={showDropboxSaveDialog} onOpenChange={setShowDropboxSaveDialog}>
