@@ -33,7 +33,10 @@ import {
   Mic,
   Volume,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  X,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,6 +65,7 @@ interface AudioTrack {
   isPlaying: boolean;
   volume: number;
   selected: boolean;
+  visible: boolean;
   type: 'audio' | 'midi';
 }
 
@@ -205,6 +209,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       isPlaying: false,
       volume: 1,
       selected: true,
+      visible: true,
       type: 'audio'
     }]);
 
@@ -300,6 +305,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       isPlaying: false,
       volume: 1,
       selected: true,
+      visible: true,
       type: isMidi ? 'midi' : 'audio'
     }]);
 
@@ -339,6 +345,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
         isPlaying: false,
         volume: 1,
         selected: true,
+        visible: true,
         type: isMidi ? 'midi' : 'audio'
       }]);
 
@@ -904,6 +911,12 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
     ));
   };
 
+  const toggleTrackVisibility = (trackId: string) => {
+    setTracks(prev => prev.map(t => 
+      t.id === trackId ? { ...t, visible: !t.visible } : t
+    ));
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -963,6 +976,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
             isPlaying: false,
             volume: 1,
             selected: true,
+            visible: true,
             type: 'audio'
           }]);
           
@@ -1520,13 +1534,30 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                   ) : (
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-lg">{track.name}</h4>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => startRenameTrack(track.id, track.name)}
-                      >
-                        <Edit2 size={12} />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => startRenameTrack(track.id, track.name)}
+                          title="Edit track name"
+                        >
+                          <Edit2 size={12} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            removeTrack(track.id);
+                            toast({
+                              title: "Removed from Session",
+                              description: "Track removed from session (still in library)",
+                            });
+                          }}
+                          title="Remove from session (keeps in library)"
+                        >
+                          <X size={14} />
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1538,6 +1569,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                       checked={track.selected}
                       onCheckedChange={() => toggleTrackSelection(track.id)}
                       className="h-5 w-5"
+                      title="Select for playback"
                     />
                     <Badge variant={track.type === 'midi' ? 'secondary' : 'outline'}>
                       {track.type.toUpperCase()}
@@ -1546,17 +1578,25 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => removeTrack(track.id)}
+                    onClick={() => toggleTrackVisibility(track.id)}
+                    title={track.visible ? "Hide from timeline" : "Show in timeline"}
                   >
-                    <Trash2 size={14} />
+                    {track.visible ? <Eye size={14} /> : <EyeOff size={14} />}
                   </Button>
                 </div>
 
                 {/* Waveform */}
-                <div 
-                  ref={el => trackRefs.current[track.id] = el}
-                  className="w-full bg-secondary/50 rounded-md"
-                />
+                {track.visible && (
+                  <div 
+                    ref={el => trackRefs.current[track.id] = el}
+                    className="w-full bg-secondary/50 rounded-md"
+                  />
+                )}
+                {!track.visible && (
+                  <div className="w-full bg-secondary/50 rounded-md p-4 text-center text-muted-foreground text-sm">
+                    Timeline hidden (click eye icon to show)
+                  </div>
+                )}
 
                 {/* Track Controls */}
                 <div className="flex flex-wrap gap-2">
