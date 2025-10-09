@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Play,
   Pause,
@@ -26,7 +27,9 @@ import {
   Check,
   SkipBack,
   RotateCcw,
-  RotateCw
+  RotateCw,
+  Circle,
+  Mic
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,6 +57,8 @@ interface AudioTrack {
   audioBuffer: AudioBuffer | null;
   isPlaying: boolean;
   volume: number;
+  selected: boolean;
+  type: 'audio' | 'midi';
 }
 
 interface AudioEditorProps {
@@ -82,8 +87,14 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [editingTrackName, setEditingTrackName] = useState('');
   const [masterVolume, setMasterVolume] = useState(80);
   const [allPlaying, setAllPlaying] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const loopEnabledRef = useRef(loopEnabled);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   const { uploadFile, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
   const { isConnected: dropboxConnected, uploadFile: uploadToDropbox } = useDropbox();
@@ -136,7 +147,8 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const { getRootProps, getInputProps, open: openFilePicker } = useDropzone({
     onDrop,
     accept: {
-      'audio/*': ['.mp3', '.wav', '.m4a', '.aac', '.flac']
+      'audio/*': ['.mp3', '.wav', '.m4a', '.aac', '.flac'],
+      'audio/midi': ['.mid', '.midi']
     },
     multiple: true,
     noClick: true,
@@ -177,7 +189,9 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       regions: null,
       audioBuffer: null,
       isPlaying: false,
-      volume: 1
+      volume: 1,
+      selected: true,
+      type: 'audio'
     }]);
 
     // Load the audio after track is added
@@ -245,12 +259,13 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       return;
     }
 
-    const file = userFiles.find(f => f.id === selectedFileId);
-    if (!file) return;
+    const selectedFile = userFiles.find(f => f.id === selectedFileId);
+    if (!selectedFile) return;
 
     const trackId = `track-${Date.now()}`;
-    const trackName = newTrackName || file.originalName;
-
+    const trackName = newTrackName || selectedFile.originalName;
+    const isMidi = selectedFile?.mimeType?.includes('midi') || selectedFile?.fileName?.match(/\.(mid|midi)$/i);
+    
     setTracks(prev => [...prev, {
       id: trackId,
       name: trackName,
@@ -259,14 +274,16 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       regions: null,
       audioBuffer: null,
       isPlaying: false,
-      volume: 1
+      volume: 1,
+      selected: true,
+      type: isMidi ? 'midi' : 'audio'
     }]);
 
     setNewTrackName('');
     setSelectedFileId('');
 
     // Load the audio after track is added
-    setTimeout(() => loadAudioForTrack(trackId, file), 100);
+    setTimeout(() => loadAudioForTrack(trackId, selectedFile), 100);
   };
 
   const loadSelectedLibraryFiles = async () => {
@@ -286,6 +303,8 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       const trackId = `track-${Date.now()}-${fileId}`;
       const trackName = file.originalName;
 
+      const isMidi = file?.mimeType?.includes('midi') || file?.fileName?.match(/\.(mid|midi)$/i);
+      
       setTracks(prev => [...prev, {
         id: trackId,
         name: trackName,
@@ -294,7 +313,9 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
         regions: null,
         audioBuffer: null,
         isPlaying: false,
-        volume: 1
+        volume: 1,
+        selected: true,
+        type: isMidi ? 'midi' : 'audio'
       }]);
 
       // Load the audio after track is added
@@ -755,37 +776,43 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
   const playAllTracks = () => {
     tracks.forEach(track => {
-      if (track.waveform && !track.isPlaying) {
+      if (track.selected && track.waveform && !track.isPlaying) {
         track.waveform.play();
       }
     });
-    setTracks(prev => prev.map(t => ({ ...t, isPlaying: true })));
+    setTracks(prev => prev.map(t => 
+      t.selected ? { ...t, isPlaying: true } : t
+    ));
     setAllPlaying(true);
   };
 
   const pauseAllTracks = () => {
     tracks.forEach(track => {
-      if (track.waveform && track.isPlaying) {
+      if (track.selected && track.waveform && track.isPlaying) {
         track.waveform.pause();
       }
     });
-    setTracks(prev => prev.map(t => ({ ...t, isPlaying: false })));
+    setTracks(prev => prev.map(t => 
+      t.selected ? { ...t, isPlaying: false } : t
+    ));
     setAllPlaying(false);
   };
 
   const stopAllTracks = () => {
     tracks.forEach(track => {
-      if (track.waveform) {
+      if (track.selected && track.waveform) {
         track.waveform.stop();
       }
     });
-    setTracks(prev => prev.map(t => ({ ...t, isPlaying: false })));
+    setTracks(prev => prev.map(t => 
+      t.selected ? { ...t, isPlaying: false } : t
+    ));
     setAllPlaying(false);
   };
 
   const rewindAllTracks = () => {
     tracks.forEach(track => {
-      if (track.waveform) {
+      if (track.selected && track.waveform) {
         track.waveform.seekTo(0);
       }
     });
@@ -793,7 +820,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
   const skipAllBackward = () => {
     tracks.forEach(track => {
-      if (track.waveform) {
+      if (track.selected && track.waveform) {
         const currentTime = track.waveform.getCurrentTime();
         track.waveform.seekTo(Math.max(0, currentTime - 30) / track.waveform.getDuration());
       }
@@ -802,7 +829,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
   const skipAllForward = () => {
     tracks.forEach(track => {
-      if (track.waveform) {
+      if (track.selected && track.waveform) {
         const currentTime = track.waveform.getCurrentTime();
         const duration = track.waveform.getDuration();
         // If track is less than 30s or skip would go past end, go to end
@@ -818,11 +845,104 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const updateMasterVolume = (volume: number) => {
     setMasterVolume(volume);
     tracks.forEach(track => {
-      if (track.waveform) {
+      if (track.selected && track.waveform) {
         track.waveform.setVolume(volume / 100);
       }
     });
-    setTracks(prev => prev.map(t => ({ ...t, volume: volume / 100 })));
+    setTracks(prev => prev.map(t => 
+      t.selected ? { ...t, volume: volume / 100 } : t
+    ));
+  };
+
+  const toggleTrackSelection = (trackId: string) => {
+    setTracks(prev => prev.map(t => 
+      t.id === trackId ? { ...t, selected: !t.selected } : t
+    ));
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const trackId = `track-${Date.now()}`;
+        const trackName = `Recording ${new Date().toLocaleTimeString()}`;
+        
+        // Convert to File and upload
+        const file = new File([audioBlob], `${trackName}.webm`, { type: 'audio/webm' });
+        await uploadFile(file, 'recording');
+        await loadUserFiles();
+        
+        setRecordingTime(0);
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+        
+        toast({
+          title: "Recording Complete",
+          description: "Recording saved to library",
+        });
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      timerRef.current = window.setInterval(() => {
+        setRecordingTime(prev => {
+          const newTime = prev + 1;
+          if (newTime >= 180) { // 3 minute max
+            stopRecording();
+          }
+          return newTime;
+        });
+      }, 1000);
+      
+      toast({
+        title: "Recording Started",
+        description: "Recording audio...",
+      });
+    } catch (error) {
+      toast({
+        title: "Recording Error",
+        description: "Microphone access denied or unavailable",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+    
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    
+    setIsRecording(false);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   useEffect(() => {
@@ -987,7 +1107,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
         {/* Global Controls - Always Visible */}
         <div className="space-y-4 p-4 bg-secondary rounded-lg border border-border">
-          <h3 className="text-sm font-semibold text-foreground">Master Playback Controls</h3>
+          <h3 className="text-sm font-semibold text-foreground">Master Audio Controls</h3>
           
           {/* Transport Controls */}
           <div className="grid grid-cols-3 gap-2">
@@ -1005,12 +1125,19 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
             
             <Button
               size="sm"
-              variant="outline"
-              onClick={stopAllTracks}
-              disabled={tracks.length === 0}
-              title="Stop All"
+              variant={isRecording ? "destructive" : "outline"}
+              onClick={isRecording ? stopRecording : startRecording}
+              title={isRecording ? `Stop Recording (${formatTime(recordingTime)})` : "Start Recording"}
+              className="gap-1"
             >
-              <Square size={14} />
+              {isRecording ? (
+                <>
+                  <Square size={14} />
+                  <span className="text-xs">{formatTime(recordingTime)}</span>
+                </>
+              ) : (
+                <Circle size={14} />
+              )}
             </Button>
             
             <Button
@@ -1114,6 +1241,16 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
             <Card key={track.id} className="bg-background border-border">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={track.selected}
+                      onCheckedChange={() => toggleTrackSelection(track.id)}
+                      className="h-5 w-5"
+                    />
+                    <Badge variant={track.type === 'midi' ? 'secondary' : 'outline'}>
+                      {track.type.toUpperCase()}
+                    </Badge>
+                  </div>
                   {editingTrackId === track.id ? (
                     <div className="flex items-center gap-2 flex-1">
                       <Input
@@ -1254,7 +1391,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           <Card className="bg-background border-border">
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center gap-2 flex-1">
-                <h3 className="text-xl font-semibold text-foreground">Session</h3>
+                <h3 className="text-xl font-semibold text-foreground">Studio Session</h3>
               </div>
 
               {/* Empty Waveform Timeline */}
