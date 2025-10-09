@@ -93,24 +93,31 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [recordingVolume, setRecordingVolume] = useState(80);
   const [allPlaying, setAllPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingPaused, setRecordingPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showRecordingStudio, setShowRecordingStudio] = useState(false);
   const [showLibraryFiles, setShowLibraryFiles] = useState(true);
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const loopEnabledRef = useRef(loopEnabled);
+  const allPlayingRef = useRef(allPlaying);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const timerRef = useRef<number | null>(null);
 
   const { uploadFile, uploadFiles, validateFile, loadUserFiles } = useSecureAudioUpload();
   const { isConnected: dropboxConnected, uploadFile: uploadToDropbox } = useDropbox();
   const { isConnected: driveConnected, connectGoogleDrive, uploadFile: uploadToDrive } = useGoogleDrive();
 
-  // Keep loop ref in sync with state
+  // Keep refs in sync with state
   useEffect(() => {
     loopEnabledRef.current = loopEnabled;
   }, [loopEnabled]);
+
+  useEffect(() => {
+    allPlayingRef.current = allPlaying;
+  }, [allPlaying]);
 
   // Local file upload via dropzone
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -239,6 +246,16 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           setTracks(prev => prev.map(t => 
             t.id === trackId ? { ...t, isPlaying: false } : t
           ));
+          // Check if all tracks finished, update master play state
+          setTimeout(() => {
+            setTracks(current => {
+              const anyPlaying = current.some(t => t.selected && t.isPlaying);
+              if (!anyPlaying) {
+                setAllPlaying(false);
+              }
+              return current;
+            });
+          }, 50);
         }
       });
 
@@ -399,6 +416,16 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           setTracks(prev => prev.map(t => 
             t.id === trackId ? { ...t, isPlaying: false } : t
           ));
+          // Check if all tracks finished, update master play state
+          setTimeout(() => {
+            setTracks(current => {
+              const anyPlaying = current.some(t => t.selected && t.isPlaying);
+              if (!anyPlaying) {
+                setAllPlaying(false);
+              }
+              return current;
+            });
+          }, 50);
         }
       });
 
@@ -555,15 +582,25 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           });
         });
 
-        wavesurfer.on('finish', () => {
-          if (loopEnabledRef.current) {
-            setTimeout(() => wavesurfer.play(), 0);
-          } else {
-            setTracks(prev => prev.map(t => 
-              t.id === trackId ? { ...t, isPlaying: false } : t
-            ));
-          }
-        });
+      wavesurfer.on('finish', () => {
+        if (loopEnabledRef.current) {
+          setTimeout(() => wavesurfer.play(), 0);
+        } else {
+          setTracks(prev => prev.map(t => 
+            t.id === trackId ? { ...t, isPlaying: false } : t
+          ));
+          // Check if all tracks finished, update master play state
+          setTimeout(() => {
+            setTracks(current => {
+              const anyPlaying = current.some(t => t.selected && t.isPlaying);
+              if (!anyPlaying) {
+                setAllPlaying(false);
+              }
+              return current;
+            });
+          }, 50);
+        }
+      });
       }, 100);
     } catch (error) {
       console.error('Error trimming audio:', error);
@@ -880,6 +917,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       
       // Apply recording volume to the stream
       const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
       const source = audioContext.createMediaStreamSource(stream);
       const gainNode = audioContext.createGain();
       gainNode.gain.value = recordingVolume / 100;
@@ -940,6 +978,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
       
       mediaRecorder.start();
       setIsRecording(true);
+      setRecordingPaused(false);
       setRecordingTime(0);
       
       timerRef.current = window.setInterval(() => {
@@ -965,6 +1004,45 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
     }
   };
 
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.pause();
+      setRecordingPaused(true);
+      
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      toast({
+        title: "Recording Paused",
+        description: "Click resume to continue recording",
+      });
+    }
+  };
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      setRecordingPaused(false);
+      
+      timerRef.current = window.setInterval(() => {
+        setRecordingTime(prev => {
+          const newTime = prev + 1;
+          if (newTime >= 180) { // 3 minute max
+            stopRecording();
+          }
+          return newTime;
+        });
+      }, 1000);
+      
+      toast({
+        title: "Recording Resumed",
+        description: "Recording audio...",
+      });
+    }
+  };
+
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
@@ -973,12 +1051,19 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
     }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
     
     if (timerRef.current) {
       clearInterval(timerRef.current);
+      timerRef.current = null;
     }
     
     setIsRecording(false);
+    setRecordingPaused(false);
   };
 
   const formatTime = (seconds: number) => {
@@ -1021,6 +1106,16 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           setTracks(prev => prev.map(t => 
             t.id === trackId ? { ...t, isPlaying: false } : t
           ));
+          // Check if all tracks finished, update master play state
+          setTimeout(() => {
+            setTracks(current => {
+              const anyPlaying = current.some(t => t.selected && t.isPlaying);
+              if (!anyPlaying) {
+                setAllPlaying(false);
+              }
+              return current;
+            });
+          }, 50);
         }
       });
 
@@ -1251,22 +1346,39 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
               <span className="text-xs">{allPlaying ? "Pause" : "Play"}</span>
             </Button>
             
-            <Button
-              size="sm"
-              variant={isRecording ? "destructive" : "outline"}
-              onClick={isRecording ? stopRecording : startRecording}
-              title={isRecording ? `Stop Recording (${formatTime(recordingTime)})` : "Start Recording"}
-              className="gap-1"
-            >
-              {isRecording ? (
-                <>
-                  <Square size={14} />
-                  <span className="text-xs">{formatTime(recordingTime)}</span>
-                </>
-              ) : (
+            {!isRecording ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={startRecording}
+                title="Start Recording"
+                className="gap-1"
+              >
                 <Circle size={14} />
-              )}
-            </Button>
+                <span className="text-xs">Record</span>
+              </Button>
+            ) : (
+              <div className="grid grid-cols-2 gap-1">
+                <Button
+                  size="sm"
+                  variant={recordingPaused ? "default" : "secondary"}
+                  onClick={recordingPaused ? resumeRecording : pauseRecording}
+                  title={recordingPaused ? "Resume Recording" : "Pause Recording"}
+                  className="gap-1"
+                >
+                  {recordingPaused ? <Play size={14} /> : <Pause size={14} />}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={stopRecording}
+                  title={`Stop Recording (${formatTime(recordingTime)})`}
+                  className="gap-1"
+                >
+                  <Square size={14} />
+                </Button>
+              </div>
+            )}
             
             <Button
               size="sm"
@@ -1383,19 +1495,10 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           {tracks.map(track => (
             <Card key={track.id} className="bg-background border-border">
               <CardContent className="p-4 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={track.selected}
-                      onCheckedChange={() => toggleTrackSelection(track.id)}
-                      className="h-5 w-5"
-                    />
-                    <Badge variant={track.type === 'midi' ? 'secondary' : 'outline'}>
-                      {track.type.toUpperCase()}
-                    </Badge>
-                  </div>
+                {/* Track Title - Persistent at top */}
+                <div className="pb-2 border-b border-border">
                   {editingTrackId === track.id ? (
-                    <div className="flex items-center gap-2 flex-1">
+                    <div className="flex items-center gap-2">
                       <Input
                         value={editingTrackName}
                         onChange={(e) => setEditingTrackName(e.target.value)}
@@ -1415,8 +1518,8 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 flex-1">
-                      <h4 className="font-medium">{track.name}</h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-lg">{track.name}</h4>
                       <Button
                         size="sm"
                         variant="ghost"
@@ -1426,6 +1529,20 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                       </Button>
                     </div>
                   )}
+                </div>
+
+                {/* Track Controls */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={track.selected}
+                      onCheckedChange={() => toggleTrackSelection(track.id)}
+                      className="h-5 w-5"
+                    />
+                    <Badge variant={track.type === 'midi' ? 'secondary' : 'outline'}>
+                      {track.type.toUpperCase()}
+                    </Badge>
+                  </div>
                   <Button
                     size="sm"
                     variant="ghost"
