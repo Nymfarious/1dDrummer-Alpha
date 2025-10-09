@@ -29,7 +29,8 @@ import {
   RotateCcw,
   RotateCw,
   Circle,
-  Mic
+  Mic,
+  Volume
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -86,6 +87,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [editingTrackName, setEditingTrackName] = useState('');
   const [masterVolume, setMasterVolume] = useState(80);
+  const [recordingVolume, setRecordingVolume] = useState(80);
   const [allPlaying, setAllPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -862,10 +864,25 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
       streamRef.current = stream;
       
-      const mediaRecorder = new MediaRecorder(stream);
+      // Apply recording volume to the stream
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(stream);
+      const gainNode = audioContext.createGain();
+      gainNode.gain.value = recordingVolume / 100;
+      source.connect(gainNode);
+      const destination = audioContext.createMediaStreamDestination();
+      gainNode.connect(destination);
+      
+      const mediaRecorder = new MediaRecorder(destination.stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       
@@ -1178,11 +1195,25 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
             </Button>
           </div>
 
+          {/* Loop Control */}
+          <div className="flex items-center justify-center pt-2 border-t border-border">
+            <Button
+              size="sm"
+              variant={loopEnabled ? "default" : "outline"}
+              onClick={() => setLoopEnabled(!loopEnabled)}
+              className="gap-2"
+              disabled={tracks.length === 0}
+            >
+              <Repeat size={14} />
+              Loop
+            </Button>
+          </div>
+
           {/* Master Volume */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Master Volume: {masterVolume}%</span>
-              <Volume2 size={14} />
+            <div className="flex items-center gap-2">
+              <Volume className="text-primary" size={18} />
+              <span className="text-sm font-medium flex-1">Master Volume: {masterVolume}%</span>
             </div>
             <Slider
               value={[masterVolume]}
@@ -1193,38 +1224,39 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
             />
           </div>
 
-          {/* Zoom and Loop */}
-          <div className="flex items-center gap-4 pt-2 border-t border-border">
+          {/* Recording Volume */}
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Zoom:</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setZoom(Math.max(1, zoom - 10))}
-                disabled={tracks.length === 0}
-              >
-                <ZoomOut size={14} />
-              </Button>
-              <span className="text-sm min-w-[3rem] text-center">{zoom}x</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setZoom(zoom + 10)}
-                disabled={tracks.length === 0}
-              >
-                <ZoomIn size={14} />
-              </Button>
+              <Mic className="text-destructive" size={18} />
+              <span className="text-sm font-medium flex-1">Recording Volume: {recordingVolume}%</span>
             </div>
+            <Slider
+              value={[recordingVolume]}
+              onValueChange={(v) => setRecordingVolume(v[0])}
+              max={100}
+              step={1}
+            />
+          </div>
 
+          {/* Zoom Controls */}
+          <div className="flex items-center justify-center gap-2 pt-2 border-t border-border">
+            <span className="text-sm font-medium">Zoom:</span>
             <Button
               size="sm"
-              variant={loopEnabled ? "default" : "outline"}
-              onClick={() => setLoopEnabled(!loopEnabled)}
-              className="gap-2"
+              variant="outline"
+              onClick={() => setZoom(Math.max(1, zoom - 10))}
               disabled={tracks.length === 0}
             >
-              <Repeat size={14} />
-              Loop
+              <ZoomOut size={14} />
+            </Button>
+            <span className="text-sm min-w-[3rem] text-center">{zoom}x</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setZoom(zoom + 10)}
+              disabled={tracks.length === 0}
+            >
+              <ZoomIn size={14} />
             </Button>
           </div>
 
