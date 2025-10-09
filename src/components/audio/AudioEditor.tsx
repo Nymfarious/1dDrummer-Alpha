@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Play,
   Pause,
@@ -30,7 +31,9 @@ import {
   RotateCw,
   Circle,
   Mic,
-  Volume
+  Volume,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -91,6 +94,8 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
   const [allPlaying, setAllPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [showRecordingStudio, setShowRecordingStudio] = useState(false);
+  const [showLibraryFiles, setShowLibraryFiles] = useState(true);
   const trackRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const loopEnabledRef = useRef(loopEnabled);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -899,7 +904,7 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
         
         // Convert to File and upload
         const file = new File([audioBlob], `${trackName}.webm`, { type: 'audio/webm' });
-        await uploadFile(file, 'recording');
+        const uploadedFile = await uploadFile(file, 'recording');
         await loadUserFiles();
         
         setRecordingTime(0);
@@ -907,9 +912,29 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           clearInterval(timerRef.current);
         }
         
+        // Automatically add the recording as a track
+        if (uploadedFile) {
+          const url = URL.createObjectURL(audioBlob);
+          setTracks(prev => [...prev, {
+            id: trackId,
+            name: trackName,
+            fileId: uploadedFile.id,
+            waveform: null,
+            regions: null,
+            audioBuffer: null,
+            isPlaying: false,
+            volume: 1,
+            selected: true,
+            type: 'audio'
+          }]);
+          
+          // Load the audio after track is added
+          setTimeout(() => loadAudioFromBlob(trackId, url, trackName), 100);
+        }
+        
         toast({
           title: "Recording Complete",
-          description: "Recording saved to library",
+          description: "Recording added to session and saved to library",
         });
       };
       
@@ -960,6 +985,57 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const loadAudioFromBlob = async (trackId: string, url: string, fileName: string) => {
+    const container = trackRefs.current[trackId];
+    if (!container) return;
+
+    try {
+      const wavesurfer = WaveSurfer.create({
+        container,
+        waveColor: '#4a9eff',
+        progressColor: '#1e40af',
+        cursorColor: '#ff6b35',
+        barWidth: 2,
+        barGap: 1,
+        height: 80,
+        normalize: true,
+        backend: 'WebAudio'
+      });
+
+      const regions = wavesurfer.registerPlugin(RegionsPlugin.create());
+
+      await wavesurfer.load(url);
+
+      setTracks(prev => prev.map(t => 
+        t.id === trackId 
+          ? { ...t, waveform: wavesurfer, regions, audioBuffer: wavesurfer.getDecodedData() }
+          : t
+      ));
+
+      wavesurfer.on('finish', () => {
+        if (loopEnabledRef.current) {
+          setTimeout(() => wavesurfer.play(), 0);
+        } else {
+          setTracks(prev => prev.map(t => 
+            t.id === trackId ? { ...t, isPlaying: false } : t
+          ));
+        }
+      });
+
+      toast({
+        title: "Track loaded",
+        description: `${fileName} ready for playback`
+      });
+    } catch (error) {
+      console.error('Error loading audio:', error);
+      toast({
+        title: "Load failed",
+        description: "Could not load audio file",
+        variant: "destructive"
+      });
+    }
   };
 
   useEffect(() => {
@@ -1122,9 +1198,44 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           onFileSelect={handleDropboxFileSelect}
         />
 
-        {/* Global Controls - Always Visible */}
+        {/* Master Audio Controls */}
         <div className="space-y-4 p-4 bg-secondary rounded-lg border border-border">
           <h3 className="text-sm font-semibold text-foreground">Master Audio Controls</h3>
+          
+          {/* Recording Studio - Nested Collapsible Section */}
+          <Collapsible open={showRecordingStudio} onOpenChange={setShowRecordingStudio}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full justify-between">
+                <div className="flex items-center gap-2">
+                  <Mic size={14} />
+                  <span>Recording Studio</span>
+                </div>
+                {showRecordingStudio ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3 space-y-3">
+              <div className="p-3 bg-background/50 rounded-md border border-border space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Record audio directly into your session. Recordings are automatically added as tracks and saved to your library.
+                </p>
+                {isRecording && (
+                  <div className="p-2 bg-destructive/10 rounded border border-destructive/20">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Circle size={10} className="text-destructive animate-pulse" fill="currentColor" />
+                      <span className="text-xs font-medium">Recording: {formatTime(recordingTime)} / 3:00</span>
+                    </div>
+                    <Slider
+                      value={[recordingTime]}
+                      max={180}
+                      step={1}
+                      disabled
+                      className="w-full"
+                    />
+                  </div>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
           
           {/* Transport Controls */}
           <div className="grid grid-cols-3 gap-2">
@@ -1577,15 +1688,24 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-3 py-4 max-h-[50vh] overflow-y-auto">
-              {userFiles.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileAudio size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>No files in your library</p>
-                  <p className="text-sm">Upload or record audio files first</p>
-                </div>
-              ) : (
-                userFiles.map((file) => {
+            {/* Collapsible File List */}
+            <Collapsible open={showLibraryFiles} onOpenChange={setShowLibraryFiles}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-full justify-between mb-2">
+                  <span className="text-sm font-medium">Your Audio Files ({userFiles.length})</span>
+                  {showLibraryFiles ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="space-y-3 py-4 max-h-[50vh] overflow-y-auto">
+                  {userFiles.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileAudio size={48} className="mx-auto mb-4 opacity-50" />
+                      <p>No files in your library</p>
+                      <p className="text-sm">Upload or record audio files first</p>
+                    </div>
+                  ) : (
+                    userFiles.map((file) => {
                   const fileName = file.originalName || file.name || 'Unknown file';
                   const fileSize = file.fileSize || file.size || 0;
                   const fileDuration = file.durationSeconds || file.duration;
@@ -1626,9 +1746,11 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                       </div>
                     </div>
                   );
-                })
-              )}
-            </div>
+                    })
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             <DialogFooter>
               <div className="flex items-center justify-between w-full">
