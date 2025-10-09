@@ -1308,29 +1308,29 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
         />
 
         {/* Master Audio Controls */}
-        <div className="space-y-4 p-4 bg-secondary rounded-lg border border-border">
+        <div className="space-y-3 p-3 bg-secondary rounded-lg border border-border">
           <h3 className="text-sm font-semibold text-foreground">Master Audio Controls</h3>
           
           {/* Recording Studio - Nested Collapsible Section */}
           <Collapsible open={showRecordingStudio} onOpenChange={setShowRecordingStudio}>
             <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full justify-between">
+              <Button variant="outline" size="sm" className="w-full justify-between h-8">
                 <div className="flex items-center gap-2">
-                  <Mic size={14} />
-                  <span>Recording Studio</span>
+                  <Mic size={12} />
+                  <span className="text-xs">Recording Studio</span>
                 </div>
-                {showRecordingStudio ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                {showRecordingStudio ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
               </Button>
             </CollapsibleTrigger>
-            <CollapsibleContent className="pt-3 space-y-3">
-              <div className="p-3 bg-background/50 rounded-md border border-border space-y-2">
+            <CollapsibleContent className="pt-2 space-y-2">
+              <div className="p-2 bg-background/50 rounded-md border border-border space-y-2">
                 <p className="text-xs text-muted-foreground">
                   Record audio directly into your session. Recordings are automatically added as tracks and saved to your library.
                 </p>
                 {isRecording && (
                   <div className="p-2 bg-destructive/10 rounded border border-destructive/20">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <Circle size={10} className="text-destructive animate-pulse" fill="currentColor" />
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <Circle size={8} className="text-destructive animate-pulse" fill="currentColor" />
                       <span className="text-xs font-medium">Recording: {formatTime(recordingTime)} / 3:00</span>
                     </div>
                     <Slider
@@ -1347,17 +1347,17 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           </Collapsible>
           
           {/* Transport Controls */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-1.5">
             <Button
               size="sm"
               variant={allPlaying ? "default" : "outline"}
               onClick={() => allPlaying ? pauseAllTracks() : playAllTracks()}
               disabled={tracks.length === 0}
-              title={allPlaying ? "Pause All" : "Play All"}
-              className="gap-1"
+              title="Play/Pause all selected tracks"
+              className="gap-1 h-8"
             >
-              {allPlaying ? <Pause size={14} /> : <Play size={14} />}
-              <span className="text-xs">{allPlaying ? "Pause" : "Play"}</span>
+              {allPlaying ? <Pause size={12} /> : <Play size={12} />}
+              <span className="text-xs">All</span>
             </Button>
             
             {!isRecording ? (
@@ -1366,56 +1366,70 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
                 variant="outline"
                 onClick={startRecording}
                 title="Start Recording"
-                className="gap-1"
+                className="gap-1 h-8"
               >
-                <Circle size={14} />
-                <span className="text-xs">Record</span>
+                <Circle size={12} />
+                <span className="text-xs">Rec</span>
               </Button>
             ) : (
-              <div className="grid grid-cols-2 gap-1">
+              <div className="col-span-2 grid grid-cols-2 gap-1">
                 <Button
                   size="sm"
                   variant={recordingPaused ? "default" : "secondary"}
                   onClick={recordingPaused ? resumeRecording : pauseRecording}
                   title={recordingPaused ? "Resume Recording" : "Pause Recording"}
-                  className="gap-1"
+                  className="h-8"
                 >
-                  {recordingPaused ? <Play size={14} /> : <Pause size={14} />}
+                  {recordingPaused ? <Play size={12} /> : <Pause size={12} />}
                 </Button>
                 <Button
                   size="sm"
                   variant="destructive"
                   onClick={stopRecording}
                   title={`Stop Recording (${formatTime(recordingTime)})`}
-                  className="gap-1"
+                  className="h-8"
                 >
-                  <Square size={14} />
+                  <Square size={12} />
                 </Button>
               </div>
             )}
             
+            {!isRecording && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={rewindAllTracks}
+                disabled={tracks.length === 0}
+                title="Rewind All to Start"
+                className="h-8"
+              >
+                <SkipBack size={12} />
+              </Button>
+            )}
+            
             <Button
               size="sm"
-              variant="outline"
-              onClick={rewindAllTracks}
+              variant={loopEnabled ? "default" : "outline"}
+              onClick={() => setLoopEnabled(!loopEnabled)}
               disabled={tracks.length === 0}
-              title="Rewind All to Start"
+              title="Toggle Loop"
+              className="h-8"
             >
-              <SkipBack size={14} />
+              <Repeat size={12} />
             </Button>
           </div>
 
           {/* Skip Controls */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-1.5">
             <Button
               size="sm"
               variant="outline"
               onClick={skipAllBackward}
               disabled={tracks.length === 0}
-              className="gap-1"
+              className="gap-1 h-8"
               title="Skip Backward 30s"
             >
-              <RotateCcw size={14} />
+              <RotateCcw size={12} />
               <span className="text-xs">-30s</span>
             </Button>
             
@@ -1424,33 +1438,19 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
               variant="outline"
               onClick={skipAllForward}
               disabled={tracks.length === 0}
-              className="gap-1"
+              className="gap-1 h-8"
               title="Skip Forward 30s"
             >
-              <RotateCw size={14} />
+              <RotateCw size={12} />
               <span className="text-xs">+30s</span>
             </Button>
           </div>
 
-          {/* Loop Control */}
-          <div className="flex items-center justify-center pt-2 border-t border-border">
-            <Button
-              size="sm"
-              variant={loopEnabled ? "default" : "outline"}
-              onClick={() => setLoopEnabled(!loopEnabled)}
-              className="gap-2"
-              disabled={tracks.length === 0}
-            >
-              <Repeat size={14} />
-              Loop
-            </Button>
-          </div>
-
           {/* Master Volume */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Volume className="text-primary" size={18} />
-              <span className="text-sm font-medium flex-1">Master Volume: {masterVolume}%</span>
+              <Volume className="text-primary" size={14} />
+              <span className="text-xs font-medium flex-1">Master: {masterVolume}%</span>
             </div>
             <Slider
               value={[masterVolume]}
@@ -1462,10 +1462,10 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           </div>
 
           {/* Recording Volume */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Mic className="text-destructive" size={18} />
-              <span className="text-sm font-medium flex-1">Recording Volume: {recordingVolume}%</span>
+              <Mic className="text-destructive" size={14} />
+              <span className="text-xs font-medium flex-1">Recording: {recordingVolume}%</span>
             </div>
             <Slider
               value={[recordingVolume]}
@@ -1476,24 +1476,26 @@ export const AudioEditor = ({ userFiles, getFileUrl }: AudioEditorProps) => {
           </div>
 
           {/* Zoom Controls */}
-          <div className="flex items-center justify-center gap-2 pt-2 border-t border-border">
-            <span className="text-sm font-medium">Zoom:</span>
+          <div className="flex items-center justify-center gap-2 pt-1 border-t border-border">
+            <span className="text-xs font-medium">Zoom:</span>
             <Button
               size="sm"
               variant="outline"
               onClick={() => setZoom(Math.max(1, zoom - 10))}
               disabled={tracks.length === 0}
+              className="h-7 w-7 p-0"
             >
-              <ZoomOut size={14} />
+              <ZoomOut size={12} />
             </Button>
-            <span className="text-sm min-w-[3rem] text-center">{zoom}x</span>
+            <span className="text-xs min-w-[2.5rem] text-center">{zoom}x</span>
             <Button
               size="sm"
               variant="outline"
               onClick={() => setZoom(zoom + 10)}
               disabled={tracks.length === 0}
+              className="h-7 w-7 p-0"
             >
-              <ZoomIn size={14} />
+              <ZoomIn size={12} />
             </Button>
           </div>
 
