@@ -286,16 +286,19 @@ const Auth = () => {
               {(mode === 'signIn' || mode === 'signUp') && (
                 <>
                   <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => setMode(mode === 'signIn' ? 'signUp' : 'signIn')}
-                      className="text-primary hover:text-primary-glow smooth-transition"
-                    >
-                      {mode === 'signUp'
-                        ? 'Already have an account? Sign in'
-                        : "Don't have an account? Sign up"
-                      }
-                    </button>
+                    {mode === 'signUp' ? (
+                      <button
+                        type="button"
+                        onClick={() => setMode('signIn')}
+                        className="text-primary hover:text-primary-glow smooth-transition"
+                      >
+                        Already have an account? Sign in
+                      </button>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        New account registration is currently closed
+                      </p>
+                    )}
                   </div>
                   
                   {/* Forgot password link - only on sign in */}
