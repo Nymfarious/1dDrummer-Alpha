@@ -94,9 +94,11 @@ export type Database = {
       }
       device_sessions: {
         Row: {
+          browser_info: string | null
           created_at: string
           device_fingerprint: string
-          device_info: Json | null
+          device_name: string | null
+          device_type: string | null
           expires_at: string | null
           id: string
           ip_address: string | null
@@ -107,9 +109,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          browser_info?: string | null
           created_at?: string
           device_fingerprint: string
-          device_info?: Json | null
+          device_name?: string | null
+          device_type?: string | null
           expires_at?: string | null
           id?: string
           ip_address?: string | null
@@ -120,9 +124,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          browser_info?: string | null
           created_at?: string
           device_fingerprint?: string
-          device_info?: Json | null
+          device_name?: string | null
+          device_type?: string | null
           expires_at?: string | null
           id?: string
           ip_address?: string | null
