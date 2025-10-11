@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-
-const GOOGLE_MAPS_API_KEY = 'AIzaSyAXDwZ8kPQdMKdNaGNX3IVUx3GfrShCBdc';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useGoogleMaps = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if already loaded
@@ -13,9 +13,38 @@ export const useGoogleMaps = () => {
       return;
     }
 
-    // Load the script
+    // Fetch API key from Edge Function
+    const fetchApiKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-maps-config');
+        
+        if (error) {
+          console.error('Failed to fetch Maps config:', error);
+          setHasError(true);
+          return;
+        }
+
+        if (data?.apiKey) {
+          setApiKey(data.apiKey);
+        } else {
+          console.error('No API key returned from Maps config');
+          setHasError(true);
+        }
+      } catch (err) {
+        console.error('Error fetching Maps config:', err);
+        setHasError(true);
+      }
+    };
+
+    fetchApiKey();
+  }, []);
+
+  useEffect(() => {
+    if (!apiKey || hasError) return;
+
+    // Load the script with fetched API key
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
     script.async = true;
     script.defer = true;
     script.onload = () => setIsLoaded(true);
@@ -36,7 +65,7 @@ export const useGoogleMaps = () => {
     return () => {
       clearTimeout(timeout);
     };
-  }, [isLoaded]);
+  }, [apiKey, hasError, isLoaded]);
 
   return { isLoaded, hasError };
 };
