@@ -104,7 +104,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-80 bg-sidebar-background border-r border-sidebar-border shadow-2xl z-50 transition-transform duration-700 ease-out" style={{ transform: isOpen ? 'translateX(0)' : 'translateX(-100%)' }}>
+    <div className="fixed left-0 top-0 h-screen w-80 bg-card/95 backdrop-blur-lg border-r border-border shadow-2xl z-50 transition-transform duration-700 ease-out" style={{ transform: isOpen ? 'translateX(0)' : 'translateX(-100%)' }}>
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <Button
@@ -130,7 +130,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('devPrefs')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors text-sidebar-foreground"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.devPrefs)}
@@ -215,7 +215,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('apis')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors text-sidebar-foreground"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.apis)}
@@ -249,7 +249,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('features')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors text-sidebar-foreground"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.features)}
@@ -280,7 +280,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('mcps')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors text-sidebar-foreground"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.mcps)}
@@ -314,7 +314,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('devOverrides')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors text-sidebar-foreground"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.devOverrides)}
@@ -364,7 +364,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('ai')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors text-sidebar-foreground"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.ai)}
