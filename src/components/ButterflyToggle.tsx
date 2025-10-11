@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDevSettings } from '@/contexts/DevSettingsContext';
 
 interface ButterflyToggleProps {
   onToggle: () => void;
@@ -7,6 +8,12 @@ interface ButterflyToggleProps {
 
 export const ButterflyToggle = ({ onToggle, isVisible }: ButterflyToggleProps) => {
   const [variant, setVariant] = useState<'blue' | 'purple'>('blue');
+  const { settings } = useDevSettings();
+
+  // Hide if master visibility is disabled
+  if (!settings.masterVisibility) {
+    return null;
+  }
 
   return (
     <button
