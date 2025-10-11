@@ -85,7 +85,11 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
       return <MoreVertical className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />;
     }
     if (expandIcon === 'dots') {
-      return <MoreVertical className={`h-4 w-4 icon-hollow-glow transition-transform ${isOpen ? 'rotate-90' : ''}`} />;
+      return (
+        <div className="bg-muted/30 rounded p-0.5">
+          <MoreVertical className={`h-4 w-4 text-muted-foreground icon-hollow-glow transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+        </div>
+      );
     }
     return isOpen ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />;
   };
