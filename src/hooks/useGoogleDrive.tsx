@@ -34,21 +34,9 @@ export const useGoogleDrive = () => {
   };
 
   const loadGoogleDriveConfig = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('profiles')
-      .select('google_drive_token')
-      .eq('user_id', user.id)
-      .single();
-
-    if (data?.google_drive_token) {
-      setConfig({
-        accessToken: data.google_drive_token,
-        isConnected: true,
-      });
-    }
+    // TODO: Implement proper OAuth flow with encrypted token storage
+    // For now, tokens are only stored in memory during session
+    console.log('Google Drive config loading - awaiting OAuth implementation');
   };
 
   const connectGoogleDrive = async () => {
@@ -84,31 +72,17 @@ export const useGoogleDrive = () => {
   };
 
   const saveToken = async (token: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase
-      .from('profiles')
-      .update({ google_drive_token: token })
-      .eq('user_id', user.id);
-
+    // TODO: Implement secure token storage via Edge Function with encryption
+    // For now, token is only stored in memory (lost on refresh)
     setConfig({ accessToken: token, isConnected: true });
     
     toast({
       title: "Google Drive Connected",
-      description: "Successfully connected to Google Drive",
+      description: "Successfully connected to Google Drive (session only)",
     });
   };
 
   const disconnect = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase
-      .from('profiles')
-      .update({ google_drive_token: null })
-      .eq('user_id', user.id);
-
     setConfig({ accessToken: null, isConnected: false });
     
     if (isGapiLoaded) {

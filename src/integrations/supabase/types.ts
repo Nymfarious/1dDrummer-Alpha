@@ -146,7 +146,6 @@ export type Database = {
           bio: string | null
           created_at: string
           full_name: string | null
-          google_drive_token: string | null
           id: string
           location: string | null
           updated_at: string
@@ -158,7 +157,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           full_name?: string | null
-          google_drive_token?: string | null
           id?: string
           location?: string | null
           updated_at?: string
@@ -170,7 +168,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           full_name?: string | null
-          google_drive_token?: string | null
           id?: string
           location?: string | null
           updated_at?: string
