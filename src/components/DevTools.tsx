@@ -130,7 +130,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('devPrefs')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-foreground"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.devPrefs)}
@@ -215,7 +215,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('apis')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-foreground"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.apis)}
@@ -249,7 +249,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('features')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-foreground"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.features)}
@@ -280,7 +280,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('mcps')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-foreground"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.mcps)}
@@ -314,7 +314,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('devOverrides')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-foreground"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.devOverrides)}
@@ -364,7 +364,7 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           <div className="space-y-2">
             <button
               onClick={() => toggleSection('ai')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-card/30 hover:bg-card/50 transition-colors"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-foreground"
             >
               <div className="flex items-center gap-2">
                 {renderExpandIcon(openSections.ai)}
