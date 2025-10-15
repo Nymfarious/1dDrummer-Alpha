@@ -17,6 +17,7 @@ interface DevToolsProps {
   onClose: () => void;
   isPinned?: boolean;
   onPinToggle?: () => void;
+  hideCloseButton?: boolean;
 }
 
 type ExpandIcon = 'chevron' | 'plusminus' | 'dots';
@@ -28,7 +29,7 @@ interface APIKeyStatus {
   category: 'api' | 'feature' | 'mcp';
 }
 
-export const DevTools = ({ isOpen, onClose, isPinned = false, onPinToggle }: DevToolsProps) => {
+export const DevTools = ({ isOpen, onClose, isPinned = false, onPinToggle, hideCloseButton = false }: DevToolsProps) => {
   const { toast } = useToast();
   const [expandIcon, setExpandIcon] = useState<ExpandIcon>('dots');
   const [testLabOpen, setTestLabOpen] = useState(false);
@@ -135,9 +136,11 @@ export const DevTools = ({ isOpen, onClose, isPinned = false, onPinToggle }: Dev
             d'DevTools
           </h2>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        {!hideCloseButton && !isPinned && (
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <ScrollArea className="h-[calc(100vh-73px)]">

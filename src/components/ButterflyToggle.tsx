@@ -3,10 +3,10 @@ import { useDevSettings } from '@/contexts/DevSettingsContext';
 
 interface ButterflyToggleProps {
   onToggle: () => void;
-  isVisible: boolean;
+  isVisible?: boolean;
 }
 
-export const ButterflyToggle = ({ onToggle, isVisible }: ButterflyToggleProps) => {
+export const ButterflyToggle = ({ onToggle, isVisible = true }: ButterflyToggleProps) => {
   const [variant, setVariant] = useState<'blue' | 'purple'>('blue');
   const { settings } = useDevSettings();
 

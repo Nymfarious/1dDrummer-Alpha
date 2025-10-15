@@ -227,25 +227,32 @@ const DrummerStudio = () => {
           setDevToolsPinned(false);
         }
       }}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-6 overflow-hidden">
           <DialogHeader>
             <DialogTitle>App Workflow Designer</DialogTitle>
           </DialogHeader>
-          <AIWorkspace onClose={() => setShowWorkflow(false)} />
-          
-          {/* Butterfly Toggle for DevTools in Workflow Modal */}
-          <ButterflyToggle 
-            onToggle={() => setDevToolsOpen(!devToolsOpen)} 
-            isVisible={!devToolsOpen || devToolsPinned}
-          />
-          
-          {/* DevTools Panel in Workflow Modal */}
-          <DevTools 
-            isOpen={devToolsOpen} 
-            onClose={() => !devToolsPinned && setDevToolsOpen(false)}
-            isPinned={devToolsPinned}
-            onPinToggle={() => setDevToolsPinned(!devToolsPinned)}
-          />
+          <div className="relative overflow-hidden">
+            {(!devToolsOpen || devToolsPinned) && (
+              <div className="fixed top-20 left-6 z-50">
+                <ButterflyToggle onToggle={() => setDevToolsOpen(!devToolsOpen)} />
+              </div>
+            )}
+            <AIWorkspace 
+              onClose={() => setShowWorkflow(false)} 
+              devToolsOpen={devToolsOpen}
+            />
+            {devToolsOpen && (
+              <div className="fixed right-0 top-0 h-full z-40">
+                <DevTools 
+                  isOpen={devToolsOpen}
+                  onClose={() => setDevToolsOpen(false)}
+                  isPinned={devToolsPinned}
+                  onPinToggle={() => setDevToolsPinned(!devToolsPinned)}
+                  hideCloseButton={devToolsPinned}
+                />
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -31,15 +31,17 @@ import {
   Save,
   Library,
   Cloud,
-  HardDrive
+  HardDrive,
+  Scan
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AIWorkspaceProps {
   onClose?: () => void;
+  devToolsOpen?: boolean;
 }
 
-export function AIWorkspace({ onClose }: AIWorkspaceProps) {
+export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -48,6 +50,7 @@ export function AIWorkspace({ onClose }: AIWorkspaceProps) {
   const [showLibrary, setShowLibrary] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -242,12 +245,86 @@ export function AIWorkspace({ onClose }: AIWorkspaceProps) {
     setShowLibrary(false);
   };
 
+  const analyzeAppHealth = async () => {
+    setIsAnalyzing(true);
+    try {
+      // Gather code snapshot - simplified for now
+      const codeSnapshot = {
+        components: [
+          "AIWorkspace", "DevTools", "DrummerStudio", "AudioPanel", 
+          "MetronomePanel", "BandRoomPanel", "RecordingPanel"
+        ],
+        features: [
+          "Audio Recording", "Metronome", "Band Room", "AI Coach",
+          "File Upload", "User Profiles", "Settings", "Libraries"
+        ],
+        integrations: [
+          "Supabase Auth", "Supabase Storage", "Jitsi Meet", 
+          "Dropbox", "Google Drive", "AI Gateway"
+        ]
+      };
+
+      const { data, error } = await supabase.functions.invoke('app-health-analyzer', {
+        body: { codeSnapshot }
+      });
+
+      if (error) throw error;
+
+      // Convert analysis to RSG color-coded nodes
+      const statusColors = {
+        red: 'hsl(var(--destructive))',
+        yellow: 'hsl(45, 93%, 47%)',
+        green: 'hsl(var(--success))',
+        blue: 'hsl(var(--primary))',
+        gray: 'hsl(var(--muted))'
+      };
+
+      const analysisNodes: Node[] = data.nodes.map((node: any) => ({
+        id: node.id,
+        position: node.position,
+        data: { 
+          label: `${node.label}\n${node.progress}%`,
+          status: node.status,
+          issues: node.issues
+        },
+        style: {
+          background: statusColors[node.status as keyof typeof statusColors],
+          color: node.status === 'gray' ? 'hsl(var(--foreground))' : 'white',
+          padding: '12px',
+          borderRadius: '8px',
+          border: '2px solid',
+          borderColor: statusColors[node.status as keyof typeof statusColors],
+          minWidth: '120px',
+          fontSize: '11px',
+          textAlign: 'center'
+        }
+      }));
+
+      const analysisEdges: Edge[] = data.edges.map((edge: any) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        markerEnd: { type: MarkerType.ArrowClosed }
+      }));
+
+      setNodes(analysisNodes);
+      setEdges(analysisEdges);
+      
+      toast.success(`Analysis complete: ${data.summary.working}/${data.summary.totalComponents} working`);
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast.error("Failed to analyze app health");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   if (showLibrary) {
     return <FlowchartLibrary onLoad={loadFlowchart} onClose={() => setShowLibrary(false)} />;
   }
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 transition-all duration-300 ${devToolsOpen ? 'pr-80' : ''}`}>
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -255,14 +332,25 @@ export function AIWorkspace({ onClose }: AIWorkspaceProps) {
               <Sparkles className="h-5 w-5" />
               AI Workspace - Design Your Flow
             </CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowLibrary(true)}
-            >
-              <Library className="h-4 w-4 mr-2" />
-              Library
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={analyzeAppHealth}
+                disabled={isAnalyzing}
+              >
+                <Scan className="h-4 w-4 mr-2" />
+                {isAnalyzing ? "Analyzing..." : "Analyze App"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowLibrary(true)}
+              >
+                <Library className="h-4 w-4 mr-2" />
+                Library
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -387,10 +475,12 @@ export function AIWorkspace({ onClose }: AIWorkspaceProps) {
 
           <div className="text-xs text-muted-foreground space-y-1">
             <p>💡 <strong>How to use:</strong></p>
+            <p>• Click "Analyze App" to generate RSG color-coded architecture flow</p>
             <p>• Click shapes above to add nodes, then drag to connect them</p>
             <p>• Use voice/type to describe your idea, then click Send</p>
             <p>• Save your flowchart locally or to the cloud</p>
             <p>• Access saved flowcharts from the Library</p>
+            <p className="pt-2"><strong>RSG Status Colors:</strong> 🔴 Broken | 🟡 Needs Work | 🟢 Working | 🔵 Planned | ⚪ Deprecated</p>
           </div>
         </CardContent>
       </Card>
