@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreVertical, Key, Settings, Zap, Brain, Plus, Minus, X, TestTube, Beaker, Eye, EyeOff, Check, Workflow } from 'lucide-react';
+import { MoreVertical, Key, Settings, Zap, Brain, Plus, Minus, X, TestTube, Beaker, Eye, EyeOff, Check, Pin, PinOff } from 'lucide-react';
 import { useDevSettings } from '@/contexts/DevSettingsContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,11 +11,12 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { TestLabDialog } from '@/components/TestLabDialog';
 import { BugTracker } from '@/components/BugTracker';
-import { AIWorkspace } from '@/components/ai-workspace/AIWorkspace';
 
 interface DevToolsProps {
   isOpen: boolean;
   onClose: () => void;
+  isPinned?: boolean;
+  onPinToggle?: () => void;
 }
 
 type ExpandIcon = 'chevron' | 'plusminus' | 'dots';
@@ -27,14 +28,12 @@ interface APIKeyStatus {
   category: 'api' | 'feature' | 'mcp';
 }
 
-export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
+export const DevTools = ({ isOpen, onClose, isPinned = false, onPinToggle }: DevToolsProps) => {
   const { toast } = useToast();
   const [expandIcon, setExpandIcon] = useState<ExpandIcon>('dots');
   const [testLabOpen, setTestLabOpen] = useState(false);
   const [bugTrackerOpen, setBugTrackerOpen] = useState(false);
-  const [showAIWorkspace, setShowAIWorkspace] = useState(false);
   const [openSections, setOpenSections] = useState({
-    flowchart: false,
     devPrefs: false,
     apis: false,
     features: false,
@@ -122,6 +121,16 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
           >
             {settings.masterVisibility ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </Button>
+          {onPinToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onPinToggle}
+              title={isPinned ? "Unpin DevTools" : "Pin DevTools"}
+            >
+              {isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+            </Button>
+          )}
           <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             d'DevTools
           </h2>
@@ -133,42 +142,6 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
 
       <ScrollArea className="h-[calc(100vh-73px)]">
         <div className="p-3 space-y-2">
-          {/* AI Flowchart Workspace */}
-          <div className="space-y-2">
-            <button
-              onClick={() => toggleSection('flowchart')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-foreground"
-            >
-              <div className="flex items-center gap-2">
-                {renderExpandIcon(openSections.flowchart)}
-                <Workflow className="h-4 w-4" />
-                <span className="text-sm font-medium">AI Flowchart Workspace</span>
-              </div>
-            </button>
-            
-            {openSections.flowchart && (
-              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
-                <p className="text-xs text-muted-foreground">
-                  Create flowcharts with voice input or text descriptions. AI-powered generation with save to local/cloud storage.
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowAIWorkspace(true);
-                    onClose();
-                  }}
-                  className="w-full justify-start gap-2"
-                >
-                  <Workflow className="h-4 w-4" />
-                  Open Flowchart Workspace
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <Separator />
-
           {/* Dev Preferences Section */}
           <div className="space-y-2">
             <button
@@ -447,23 +420,6 @@ export const DevTools = ({ isOpen, onClose }: DevToolsProps) => {
       
       {/* Bug Tracker Dialog */}
       <BugTracker open={bugTrackerOpen} onOpenChange={setBugTrackerOpen} />
-
-      {/* AI Workspace Modal */}
-      {showAIWorkspace && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-          <div className="fixed inset-4 z-50 overflow-auto">
-            <div className="mb-4 flex justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setShowAIWorkspace(false)}
-              >
-                Close Workspace
-              </Button>
-            </div>
-            <AIWorkspace onClose={() => setShowAIWorkspace(false)} />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -18,6 +18,8 @@ import { useDevSettings } from '@/contexts/DevSettingsContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AIWorkspace } from '@/components/ai-workspace/AIWorkspace';
+import { ButterflyToggle } from '@/components/ButterflyToggle';
+import { DevTools } from '@/components/DevTools';
 import { Workflow } from 'lucide-react';
 
 const DrummerStudio = () => {
@@ -26,6 +28,8 @@ const DrummerStudio = () => {
   const { settings } = useDevSettings();
   const [activeTab, setActiveTab] = useState('audio');
   const [showWorkflow, setShowWorkflow] = useState(false);
+  const [devToolsOpen, setDevToolsOpen] = useState(false);
+  const [devToolsPinned, setDevToolsPinned] = useState(false);
   
   // Audio state
   const [bpm, setBpm] = useState(92);
@@ -161,12 +165,32 @@ const DrummerStudio = () => {
         )}
 
         {/* Workflow Modal */}
-        <Dialog open={showWorkflow} onOpenChange={setShowWorkflow}>
+        <Dialog open={showWorkflow} onOpenChange={(open) => {
+          setShowWorkflow(open);
+          if (!open) {
+            setDevToolsOpen(false);
+            setDevToolsPinned(false);
+          }
+        }}>
           <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto">
             <DialogHeader>
               <DialogTitle>App Workflow Designer</DialogTitle>
             </DialogHeader>
             <AIWorkspace onClose={() => setShowWorkflow(false)} />
+            
+            {/* Butterfly Toggle for DevTools in Workflow Modal */}
+            <ButterflyToggle 
+              onToggle={() => setDevToolsOpen(!devToolsOpen)} 
+              isVisible={!devToolsOpen || devToolsPinned}
+            />
+            
+            {/* DevTools Panel in Workflow Modal */}
+            <DevTools 
+              isOpen={devToolsOpen} 
+              onClose={() => !devToolsPinned && setDevToolsOpen(false)}
+              isPinned={devToolsPinned}
+              onPinToggle={() => setDevToolsPinned(!devToolsPinned)}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -196,12 +220,32 @@ const DrummerStudio = () => {
       )}
 
       {/* Workflow Modal */}
-      <Dialog open={showWorkflow} onOpenChange={setShowWorkflow}>
+      <Dialog open={showWorkflow} onOpenChange={(open) => {
+        setShowWorkflow(open);
+        if (!open) {
+          setDevToolsOpen(false);
+          setDevToolsPinned(false);
+        }
+      }}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>App Workflow Designer</DialogTitle>
           </DialogHeader>
           <AIWorkspace onClose={() => setShowWorkflow(false)} />
+          
+          {/* Butterfly Toggle for DevTools in Workflow Modal */}
+          <ButterflyToggle 
+            onToggle={() => setDevToolsOpen(!devToolsOpen)} 
+            isVisible={!devToolsOpen || devToolsPinned}
+          />
+          
+          {/* DevTools Panel in Workflow Modal */}
+          <DevTools 
+            isOpen={devToolsOpen} 
+            onClose={() => !devToolsPinned && setDevToolsOpen(false)}
+            isPinned={devToolsPinned}
+            onPinToggle={() => setDevToolsPinned(!devToolsPinned)}
+          />
         </DialogContent>
       </Dialog>
     </div>
