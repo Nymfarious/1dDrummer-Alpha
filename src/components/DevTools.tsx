@@ -45,9 +45,6 @@ export const DevTools = ({ isOpen, onClose, isPinned = false, onPinToggle, hideC
 
   const { settings, updateSettings } = useDevSettings();
 
-  // AI Helper
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
 
   // API Keys tracking - synced with Supabase secrets
   const apiKeys: APIKeyStatus[] = [
@@ -97,16 +94,6 @@ export const DevTools = ({ isOpen, onClose, isPinned = false, onPinToggle, hideC
     return isOpen ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />;
   };
 
-  const handleAISubmit = async () => {
-    if (!aiPrompt.trim()) return;
-    
-    // Simulated AI response - you can wire this to Lovable AI later
-    setAiResponse('AI Helper is ready to assist with dDrummer development. Wire me up to Lovable AI to get real responses!');
-    toast({
-      title: "AI Helper",
-      description: "Response generated (demo mode)",
-    });
-  };
 
   if (!isOpen) return null;
 
@@ -377,44 +364,6 @@ export const DevTools = ({ isOpen, onClose, isPinned = false, onPinToggle, hideC
             )}
           </div>
 
-          <Separator />
-
-          {/* AI Helper Section */}
-          <div className="space-y-2">
-            <button
-              onClick={() => toggleSection('ai')}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-foreground"
-            >
-              <div className="flex items-center gap-2">
-                {renderExpandIcon(openSections.ai)}
-                <Brain className="h-4 w-4" />
-                <span className="text-sm font-medium">AI Helper</span>
-              </div>
-            </button>
-            
-            {openSections.ai && (
-              <div className="ml-6 space-y-2 p-2 border-l-2 border-primary/20">
-                <p className="text-xs text-muted-foreground">
-                  Ask questions about dDrummer development
-                </p>
-                <Input
-                  placeholder="Ask me anything..."
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  className="text-xs"
-                  onKeyDown={(e) => e.key === 'Enter' && handleAISubmit()}
-                />
-                <Button size="sm" onClick={handleAISubmit} className="w-full">
-                  Get Answer
-                </Button>
-                {aiResponse && (
-                  <div className="p-2 rounded bg-muted/50 text-xs">
-                    {aiResponse}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </ScrollArea>
 

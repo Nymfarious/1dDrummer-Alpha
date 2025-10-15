@@ -11,6 +11,7 @@ import ReactFlow, {
   Connection,
   BackgroundVariant,
   MarkerType,
+  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,8 +33,20 @@ import {
   Library,
   Cloud,
   HardDrive,
-  Scan
+  Scan,
+  ChevronDown,
+  ChevronUp,
+  ZoomIn,
+  ZoomOut,
+  Maximize,
+  Brain,
+  Grid3x3,
+  FileCode,
+  MousePointer2,
+  LayoutDashboard
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AIWorkspaceProps {
@@ -51,6 +64,10 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
   const [saveName, setSaveName] = useState("");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const [aiHelperPrompt, setAiHelperPrompt] = useState("");
+  const [aiHelperResponse, setAiHelperResponse] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -245,6 +262,70 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
     setShowLibrary(false);
   };
 
+  const handleZoomIn = () => {
+    const reactFlowInstance = document.querySelector('.react-flow');
+    if (reactFlowInstance) {
+      const currentZoom = parseFloat(reactFlowInstance.getAttribute('data-zoom') || '1');
+      const newZoom = Math.min(currentZoom * 1.2, 2);
+      reactFlowInstance.setAttribute('data-zoom', newZoom.toString());
+      const zoomInButton = document.querySelector('[data-testid="rf__controls-zoomin"]') as HTMLButtonElement;
+      zoomInButton?.click();
+    }
+  };
+
+  const handleZoomOut = () => {
+    const reactFlowInstance = document.querySelector('.react-flow');
+    if (reactFlowInstance) {
+      const currentZoom = parseFloat(reactFlowInstance.getAttribute('data-zoom') || '1');
+      const newZoom = Math.max(currentZoom * 0.8, 0.5);
+      reactFlowInstance.setAttribute('data-zoom', newZoom.toString());
+      const zoomOutButton = document.querySelector('[data-testid="rf__controls-zoomout"]') as HTMLButtonElement;
+      zoomOutButton?.click();
+    }
+  };
+
+  const handleFitView = () => {
+    const fitViewButton = document.querySelector('[data-testid="rf__controls-fitview"]') as HTMLButtonElement;
+    fitViewButton?.click();
+  };
+
+  const handleAIHelperSubmit = async () => {
+    if (!aiHelperPrompt.trim()) {
+      toast.error("Please enter a question");
+      return;
+    }
+    
+    setIsProcessing(true);
+    try {
+      // Wire to Lovable AI or practice-coach
+      const { data, error } = await supabase.functions.invoke('practice-coach', {
+        body: { 
+          message: aiHelperPrompt,
+          context: 'workflow-helper'
+        }
+      });
+
+      if (error) throw error;
+      
+      setAiHelperResponse(data.response || "AI Helper is ready to assist!");
+      toast.success("Response received");
+    } catch (error) {
+      console.error('AI Helper error:', error);
+      setAiHelperResponse('AI Helper is ready to assist with dDrummer development. Wire me up to get real responses!');
+      toast.success("Response generated (demo mode)");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const filteredNodes = filterType === "all" ? nodes : nodes.filter(node => {
+    const label = node.data.label?.toLowerCase() || '';
+    if (filterType === "components") return label.includes('component') || label.includes('panel');
+    if (filterType === "pages") return label.includes('page') || label.includes('route');
+    if (filterType === "buttons") return label.includes('button') || label.includes('control');
+    return true;
+  });
+
   const analyzeAppHealth = async () => {
     setIsAnalyzing(true);
     try {
@@ -324,13 +405,13 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
   }
 
   return (
-    <div className={`space-y-4 transition-all duration-300 ${devToolsOpen ? 'pl-80' : ''}`}>
-      <Card>
+    <div className={`flex flex-col h-full transition-all duration-300 ${devToolsOpen ? 'pl-80' : ''}`}>
+      <Card className="flex-none">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
-              AI Workspace - Design Your Flow
+              App Workflow
             </CardTitle>
             <div className="flex gap-2">
               <Button
@@ -353,7 +434,42 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 pb-3">
+          <Tabs defaultValue="all" value={filterType} onValueChange={setFilterType}>
+            <div className="flex items-center justify-between gap-2">
+              <TabsList className="grid grid-cols-4 h-8 w-full max-w-md">
+                <TabsTrigger value="all" className="text-xs">
+                  <Grid3x3 className="h-3 w-3 mr-1" />
+                  All
+                </TabsTrigger>
+                <TabsTrigger value="components" className="text-xs">
+                  <FileCode className="h-3 w-3 mr-1" />
+                  Components
+                </TabsTrigger>
+                <TabsTrigger value="pages" className="text-xs">
+                  <LayoutDashboard className="h-3 w-3 mr-1" />
+                  Pages
+                </TabsTrigger>
+                <TabsTrigger value="buttons" className="text-xs">
+                  <MousePointer2 className="h-3 w-3 mr-1" />
+                  Controls
+                </TabsTrigger>
+              </TabsList>
+              
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" onClick={handleZoomOut} title="Zoom Out">
+                  <ZoomOut className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleZoomIn} title="Zoom In">
+                  <ZoomIn className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleFitView} title="Fit View">
+                  <Maximize className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          </Tabs>
+
           <div className="flex flex-wrap gap-2">
             <Button 
               size="sm" 
@@ -473,31 +589,80 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
             />
           </div>
 
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>💡 <strong>How to use:</strong></p>
-            <p>• Click "Analyze App" to generate RSG color-coded architecture flow</p>
-            <p>• Click shapes above to add nodes, then drag to connect them</p>
-            <p>• Use voice/type to describe your idea, then click Send</p>
-            <p>• Save your flowchart locally or to the cloud</p>
-            <p>• Access saved flowcharts from the Library</p>
-            <p className="pt-2"><strong>RSG Status Colors:</strong> 🔴 Broken | 🟡 Needs Work | 🟢 Working | 🔵 Planned | ⚪ Deprecated</p>
+          {/* AI Helper Section */}
+          <Card className="bg-muted/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Brain className="h-4 w-4" />
+                AI Helper
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Ask questions about your workflow or app development
+              </p>
+              <Input
+                placeholder="Ask me anything..."
+                value={aiHelperPrompt}
+                onChange={(e) => setAiHelperPrompt(e.target.value)}
+                className="text-xs"
+                onKeyDown={(e) => e.key === 'Enter' && handleAIHelperSubmit()}
+              />
+              <Button 
+                size="sm" 
+                onClick={handleAIHelperSubmit} 
+                className="w-full"
+                disabled={isProcessing || !aiHelperPrompt.trim()}
+              >
+                Get Answer
+              </Button>
+              {aiHelperResponse && (
+                <div className="p-2 rounded bg-muted text-xs">
+                  {aiHelperResponse}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Collapsible open={instructionsOpen} onOpenChange={setInstructionsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full justify-between text-xs">
+                <span>How to use</span>
+                {instructionsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <div className="text-xs text-muted-foreground space-y-1 p-2 rounded bg-muted/30">
+                <p>• Click "Analyze App" to generate RSG color-coded architecture flow</p>
+                <p>• Click shapes above to add nodes, then drag to connect them</p>
+                <p>• Use voice/type to describe your idea, then click Send</p>
+                <p>• Save your flowchart locally or to the cloud</p>
+                <p>• Access saved flowcharts from the Library</p>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          <div className="text-xs font-medium p-2 rounded bg-gradient-to-r from-destructive/10 via-warning/10 to-success/10">
+            <strong>RSG Status Colors:</strong> 🔴 Broken | 🟡 Needs Work | 🟢 Working | 🔵 Planned | ⚪ Deprecated
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-0">
-          <div style={{ height: '600px', width: '100%' }}>
+      <Card className="flex-1 min-h-0">
+        <CardContent className="p-0 h-full">
+          <div className="h-full w-full">
             <ReactFlow
-              nodes={nodes}
+              nodes={filteredNodes}
               edges={edges}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               fitView
               attributionPosition="bottom-right"
+              minZoom={0.5}
+              maxZoom={2}
             >
-              <Controls />
+              <Controls showInteractive={false} />
               <MiniMap />
               <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
             </ReactFlow>
