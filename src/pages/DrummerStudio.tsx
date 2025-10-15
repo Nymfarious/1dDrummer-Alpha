@@ -14,11 +14,18 @@ import UserProfile from '@/pages/UserProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+import { useDevSettings } from '@/contexts/DevSettingsContext';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AIWorkspace } from '@/components/ai-workspace/AIWorkspace';
+import { Workflow } from 'lucide-react';
 
 const DrummerStudio = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { settings } = useDevSettings();
   const [activeTab, setActiveTab] = useState('audio');
+  const [showWorkflow, setShowWorkflow] = useState(false);
   
   // Audio state
   const [bpm, setBpm] = useState(92);
@@ -140,6 +147,28 @@ const DrummerStudio = () => {
             {renderContent()}
           </div>
         </main>
+
+        {/* Dev-Only Workflow Button */}
+        {settings.masterVisibility && (
+          <Button
+            onClick={() => setShowWorkflow(true)}
+            className="fixed bottom-24 right-4 z-50 shadow-lg"
+            size="lg"
+          >
+            <Workflow className="h-5 w-5 mr-2" />
+            App Workflow
+          </Button>
+        )}
+
+        {/* Workflow Modal */}
+        <Dialog open={showWorkflow} onOpenChange={setShowWorkflow}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>App Workflow Designer</DialogTitle>
+            </DialogHeader>
+            <AIWorkspace onClose={() => setShowWorkflow(false)} />
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -153,6 +182,28 @@ const DrummerStudio = () => {
           {renderContent()}
         </div>
       </main>
+
+      {/* Dev-Only Workflow Button */}
+      {settings.masterVisibility && (
+        <Button
+          onClick={() => setShowWorkflow(true)}
+          className="fixed bottom-8 right-8 z-50 shadow-lg"
+          size="lg"
+        >
+          <Workflow className="h-5 w-5 mr-2" />
+          App Workflow
+        </Button>
+      )}
+
+      {/* Workflow Modal */}
+      <Dialog open={showWorkflow} onOpenChange={setShowWorkflow}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>App Workflow Designer</DialogTitle>
+          </DialogHeader>
+          <AIWorkspace onClose={() => setShowWorkflow(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
