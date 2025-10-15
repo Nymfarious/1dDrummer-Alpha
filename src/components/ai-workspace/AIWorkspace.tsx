@@ -324,7 +324,7 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
   }
 
   return (
-    <div className={`space-y-4 transition-all duration-300 ${devToolsOpen ? 'pr-80' : ''}`}>
+    <div className={`space-y-4 transition-all duration-300 ${devToolsOpen ? 'pl-80' : ''}`}>
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">

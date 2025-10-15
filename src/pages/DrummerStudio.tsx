@@ -242,8 +242,8 @@ const DrummerStudio = () => {
               devToolsOpen={devToolsOpen}
             />
             {devToolsOpen && (
-              <div className="fixed right-0 top-0 h-full z-40">
-                <DevTools 
+              <div className="fixed left-0 top-0 h-full z-40">
+                <DevTools
                   isOpen={devToolsOpen}
                   onClose={() => setDevToolsOpen(false)}
                   isPinned={devToolsPinned}
