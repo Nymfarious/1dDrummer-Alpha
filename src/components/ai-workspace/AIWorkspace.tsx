@@ -43,7 +43,10 @@ import {
   Grid3x3,
   FileCode,
   MousePointer2,
-  LayoutDashboard
+  LayoutDashboard,
+  Settings,
+  Minus,
+  MoreHorizontal
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,12 +71,21 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
   const [aiHelperPrompt, setAiHelperPrompt] = useState("");
   const [aiHelperResponse, setAiHelperResponse] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [edgeColor, setEdgeColor] = useState("hsl(var(--primary))");
+  const [edgeStyle, setEdgeStyle] = useState<'default' | 'step' | 'smoothstep' | 'straight'>('default');
+  const [edgeType, setEdgeType] = useState<'solid' | 'dashed' | 'dotted'>('solid');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
+    (params: Connection) => setEdges((eds) => addEdge({
+      ...params,
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { stroke: edgeColor, strokeDasharray: edgeType === 'dashed' ? '5,5' : edgeType === 'dotted' ? '2,2' : '0' },
+      type: edgeStyle
+    }, eds)),
+    [setEdges, edgeColor, edgeType, edgeStyle]
   );
 
   const addNode = (shape: 'rectangle' | 'circle' | 'diamond' | 'hexagon') => {
@@ -148,6 +160,7 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
   };
 
   const transcribeAudio = async (audioBlob: Blob) => {
+    setIsTranscribing(true);
     setIsProcessing(true);
     try {
       const reader = new FileReader();
@@ -169,6 +182,7 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
       toast.error("Failed to transcribe audio");
     } finally {
       setIsProcessing(false);
+      setIsTranscribing(false);
     }
   };
 
@@ -211,8 +225,22 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
       ];
 
       const newEdges: Edge[] = [
-        { id: 'e1-2', source: 'start', target: 'process', markerEnd: { type: MarkerType.ArrowClosed } },
-        { id: 'e2-3', source: 'process', target: 'end', markerEnd: { type: MarkerType.ArrowClosed } }
+        { 
+          id: 'e1-2', 
+          source: 'start', 
+          target: 'process', 
+          markerEnd: { type: MarkerType.ArrowClosed },
+          style: { stroke: edgeColor, strokeDasharray: edgeType === 'dashed' ? '5,5' : edgeType === 'dotted' ? '2,2' : '0' },
+          type: edgeStyle
+        },
+        { 
+          id: 'e2-3', 
+          source: 'process', 
+          target: 'end', 
+          markerEnd: { type: MarkerType.ArrowClosed },
+          style: { stroke: edgeColor, strokeDasharray: edgeType === 'dashed' ? '5,5' : edgeType === 'dotted' ? '2,2' : '0' },
+          type: edgeStyle
+        }
       ];
 
       setNodes(newNodes);
@@ -226,7 +254,7 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
     }
   };
 
-  const saveFlowchart = (storageType: 'local' | 'cloud') => {
+  const saveFlowchart = (storageType: 'local' | 'cloud' | 'dev-prefs') => {
     if (!saveName.trim()) {
       toast.error("Please enter a name");
       return;
@@ -246,12 +274,14 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
       storage_type: storageType
     };
 
-    const stored = localStorage.getItem('flowcharts');
+    const storageKey = storageType === 'dev-prefs' ? 'dev-flowcharts' : 'flowcharts';
+    const stored = localStorage.getItem(storageKey);
     const flowcharts = stored ? JSON.parse(stored) : [];
     flowcharts.push(flowchart);
-    localStorage.setItem('flowcharts', JSON.stringify(flowcharts));
+    localStorage.setItem(storageKey, JSON.stringify(flowcharts));
 
-    toast.success(`Saved to ${storageType === 'cloud' ? 'Cloud' : 'Local Storage'}`);
+    const label = storageType === 'cloud' ? 'Cloud' : storageType === 'dev-prefs' ? 'Dev Preferences' : 'Local Storage';
+    toast.success(`Saved to ${label}`);
     setShowSaveDialog(false);
     setSaveName("");
   };
@@ -491,6 +521,79 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
               </Button>
             </div>
 
+            <div className="flex flex-wrap gap-1 items-center pt-1 border-t">
+              <span className="text-xs text-muted-foreground">Lines:</span>
+              <Button 
+                size="sm" 
+                variant={edgeStyle === 'default' ? 'default' : 'outline'} 
+                onClick={() => setEdgeStyle('default')}
+                className="h-7 px-2 text-xs"
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant={edgeStyle === 'step' ? 'default' : 'outline'} 
+                onClick={() => setEdgeStyle('step')}
+                className="h-7 px-2 text-xs"
+              >
+                Step
+              </Button>
+              <Button 
+                size="sm" 
+                variant={edgeStyle === 'smoothstep' ? 'default' : 'outline'} 
+                onClick={() => setEdgeStyle('smoothstep')}
+                className="h-7 px-2 text-xs"
+              >
+                Smooth
+              </Button>
+              <Button 
+                size="sm" 
+                variant={edgeStyle === 'straight' ? 'default' : 'outline'} 
+                onClick={() => setEdgeStyle('straight')}
+                className="h-7 px-2 text-xs"
+              >
+                Straight
+              </Button>
+              
+              <div className="h-4 w-px bg-border mx-1" />
+              
+              <Button 
+                size="sm" 
+                variant={edgeType === 'solid' ? 'default' : 'outline'} 
+                onClick={() => setEdgeType('solid')}
+                className="h-7 px-2 text-xs"
+              >
+                Solid
+              </Button>
+              <Button 
+                size="sm" 
+                variant={edgeType === 'dashed' ? 'default' : 'outline'} 
+                onClick={() => setEdgeType('dashed')}
+                className="h-7 px-2 text-xs"
+              >
+                Dash
+              </Button>
+              <Button 
+                size="sm" 
+                variant={edgeType === 'dotted' ? 'default' : 'outline'} 
+                onClick={() => setEdgeType('dotted')}
+                className="h-7 px-2 text-xs"
+              >
+                Dot
+              </Button>
+              
+              <div className="h-4 w-px bg-border mx-1" />
+              
+              <input 
+                type="color" 
+                value={edgeColor.includes('hsl') ? '#8B5CF6' : edgeColor}
+                onChange={(e) => setEdgeColor(e.target.value)}
+                className="h-7 w-12 rounded border cursor-pointer"
+                title="Line Color"
+              />
+            </div>
+
             <div className="flex gap-2 items-center">
               <Button
                 size="sm"
@@ -545,17 +648,39 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
                       <Cloud className="h-3 w-3 mr-1" />
                       Cloud
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => saveFlowchart('dev-prefs')} className="flex-1 h-7 text-xs">
+                      <Settings className="h-3 w-3 mr-1" />
+                      Dev
+                    </Button>
                   </div>
                 </div>
               </Card>
             )}
 
-            <Textarea
-              placeholder="Describe your flowchart idea..."
-              value={transcript}
-              onChange={(e) => setTranscript(e.target.value)}
-              className="min-h-[60px] text-xs"
-            />
+            <div className="relative overflow-hidden">
+              <div className={`transition-all duration-300 ${isRecording || isTranscribing ? 'opacity-0 -translate-x-full' : 'opacity-100 translate-x-0'}`}>
+                <Textarea
+                  placeholder="Describe your flowchart idea..."
+                  value={transcript}
+                  onChange={(e) => setTranscript(e.target.value)}
+                  className="min-h-[60px] text-xs"
+                  disabled={isRecording || isTranscribing}
+                />
+              </div>
+              {(isRecording || isTranscribing) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-md border animate-in slide-in-from-left">
+                  <div className="text-center">
+                    <div className="flex items-center gap-2 justify-center mb-2">
+                      <div className={`h-3 w-3 rounded-full ${isRecording ? 'bg-destructive animate-pulse' : 'bg-primary'}`} />
+                      <span className="text-xs font-medium">
+                        {isRecording ? 'Recording...' : isTranscribing ? 'Transcribing...' : ''}
+                      </span>
+                    </div>
+                    {transcript && <p className="text-xs text-muted-foreground px-4">{transcript}</p>}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <Collapsible open={instructionsOpen} onOpenChange={setInstructionsOpen}>
               <CollapsibleTrigger asChild>
