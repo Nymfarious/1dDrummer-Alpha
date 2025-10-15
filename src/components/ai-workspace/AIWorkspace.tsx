@@ -405,123 +405,101 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
   }
 
   return (
-    <div className={`flex flex-col h-full transition-all duration-300 ${devToolsOpen ? 'pl-80' : ''}`}>
-      <Card className="flex-none">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5" />
-              App Workflow
-            </CardTitle>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={analyzeAppHealth}
-                disabled={isAnalyzing}
-              >
-                <Scan className="h-4 w-4 mr-2" />
-                {isAnalyzing ? "Analyzing..." : "Analyze App"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowLibrary(true)}
-              >
-                <Library className="h-4 w-4 mr-2" />
-                Library
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3 pb-3">
-          <Tabs defaultValue="all" value={filterType} onValueChange={setFilterType}>
-            <div className="flex items-center justify-between gap-2">
-              <TabsList className="grid grid-cols-4 h-8 w-full max-w-md">
-                <TabsTrigger value="all" className="text-xs">
-                  <Grid3x3 className="h-3 w-3 mr-1" />
-                  All
-                </TabsTrigger>
-                <TabsTrigger value="components" className="text-xs">
-                  <FileCode className="h-3 w-3 mr-1" />
-                  Components
-                </TabsTrigger>
-                <TabsTrigger value="pages" className="text-xs">
-                  <LayoutDashboard className="h-3 w-3 mr-1" />
-                  Pages
-                </TabsTrigger>
-                <TabsTrigger value="buttons" className="text-xs">
-                  <MousePointer2 className="h-3 w-3 mr-1" />
-                  Controls
-                </TabsTrigger>
-              </TabsList>
-              
-              <div className="flex gap-1">
-                <Button size="sm" variant="outline" onClick={handleZoomOut} title="Zoom Out">
-                  <ZoomOut className="h-3 w-3" />
+    <div className={`space-y-3 transition-all duration-300 ${devToolsOpen ? 'pl-80' : ''}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* Main Controls - 2/3 width */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="h-4 w-4" />
+                App Workflow
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={analyzeAppHealth}
+                  disabled={isAnalyzing}
+                >
+                  <Scan className="h-3 w-3 mr-1" />
+                  {isAnalyzing ? "Analyzing..." : "Analyze"}
                 </Button>
-                <Button size="sm" variant="outline" onClick={handleZoomIn} title="Zoom In">
-                  <ZoomIn className="h-3 w-3" />
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleFitView} title="Fit View">
-                  <Maximize className="h-3 w-3" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowLibrary(true)}
+                >
+                  <Library className="h-3 w-3 mr-1" />
+                  Library
                 </Button>
               </div>
             </div>
-          </Tabs>
+          </CardHeader>
+          <CardContent className="space-y-2 pb-2">
+            <Tabs defaultValue="all" value={filterType} onValueChange={setFilterType}>
+              <div className="flex items-center justify-between gap-2">
+                <TabsList className="grid grid-cols-4 h-7 flex-1">
+                  <TabsTrigger value="all" className="text-xs px-2">
+                    <Grid3x3 className="h-3 w-3" />
+                  </TabsTrigger>
+                  <TabsTrigger value="components" className="text-xs px-2">
+                    <FileCode className="h-3 w-3" />
+                  </TabsTrigger>
+                  <TabsTrigger value="pages" className="text-xs px-2">
+                    <LayoutDashboard className="h-3 w-3" />
+                  </TabsTrigger>
+                  <TabsTrigger value="buttons" className="text-xs px-2">
+                    <MousePointer2 className="h-3 w-3" />
+                  </TabsTrigger>
+                </TabsList>
+                
+                <div className="flex gap-1">
+                  <Button size="sm" variant="outline" onClick={handleZoomOut} title="Zoom Out" className="h-7 w-7 p-0">
+                    <ZoomOut className="h-3 w-3" />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleZoomIn} title="Zoom In" className="h-7 w-7 p-0">
+                    <ZoomIn className="h-3 w-3" />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleFitView} title="Fit View" className="h-7 w-7 p-0">
+                    <Maximize className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </Tabs>
 
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => addNode('rectangle')}
-            >
-              <Square className="h-4 w-4 mr-2" />
-              Rectangle
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => addNode('circle')}
-            >
-              <Circle className="h-4 w-4 mr-2" />
-              Circle
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => addNode('diamond')}
-            >
-              <Diamond className="h-4 w-4 mr-2" />
-              Diamond
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => addNode('hexagon')}
-            >
-              <Hexagon className="h-4 w-4 mr-2" />
-              Hexagon
-            </Button>
-            <Button 
-              size="sm" 
-              variant="destructive"
-              onClick={clearWorkspace}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear
-            </Button>
-          </div>
+            <div className="flex flex-wrap gap-1">
+              <Button size="sm" variant="outline" onClick={() => addNode('rectangle')} className="h-7 px-2 text-xs">
+                <Square className="h-3 w-3 mr-1" />
+                Rect
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => addNode('circle')} className="h-7 px-2 text-xs">
+                <Circle className="h-3 w-3 mr-1" />
+                Circle
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => addNode('diamond')} className="h-7 px-2 text-xs">
+                <Diamond className="h-3 w-3 mr-1" />
+                Diamond
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => addNode('hexagon')} className="h-7 px-2 text-xs">
+                <Hexagon className="h-3 w-3 mr-1" />
+                Hex
+              </Button>
+              <Button size="sm" variant="destructive" onClick={clearWorkspace} className="h-7 px-2 text-xs">
+                <Trash2 className="h-3 w-3 mr-1" />
+                Clear
+              </Button>
+            </div>
 
-          <div className="space-y-2">
             <div className="flex gap-2 items-center">
               <Button
                 size="sm"
                 variant={isRecording ? "destructive" : "default"}
                 onClick={isRecording ? stopRecording : startRecording}
                 disabled={isProcessing}
+                className="h-7 px-2"
               >
-                {isRecording ? "Stop" : <Mic className="h-4 w-4" />}
+                {isRecording ? "Stop" : <Mic className="h-3 w-3" />}
               </Button>
 
               <Button
@@ -529,52 +507,43 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
                 variant="secondary"
                 onClick={generateFromAI}
                 disabled={!transcript.trim() || isProcessing}
+                className="h-7 w-7 p-0"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-3 w-3" />
               </Button>
 
-              <div className="h-4 w-px bg-border mx-1" />
+              <div className="h-4 w-px bg-border" />
 
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => setShowSaveDialog(!showSaveDialog)}
                 disabled={nodes.length === 0}
+                className="h-7 px-2 text-xs"
               >
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="h-3 w-3 mr-1" />
                 Save
               </Button>
             </div>
 
             {showSaveDialog && (
-              <Card className="p-3 bg-muted/50">
-                <div className="space-y-2">
+              <Card className="p-2 bg-muted/50">
+                <div className="space-y-1">
                   <Input
-                    placeholder="Enter flowchart name..."
+                    placeholder="Flowchart name..."
                     value={saveName}
                     onChange={(e) => setSaveName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') saveFlowchart('local');
-                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && saveFlowchart('local')}
+                    className="h-7 text-xs"
                   />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => saveFlowchart('local')}
-                      className="flex-1"
-                    >
-                      <HardDrive className="h-4 w-4 mr-2" />
-                      Save Locally
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" onClick={() => saveFlowchart('local')} className="flex-1 h-7 text-xs">
+                      <HardDrive className="h-3 w-3 mr-1" />
+                      Local
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => saveFlowchart('cloud')}
-                      className="flex-1"
-                    >
-                      <Cloud className="h-4 w-4 mr-2" />
-                      Save to Cloud
+                    <Button size="sm" variant="outline" onClick={() => saveFlowchart('cloud')} className="flex-1 h-7 text-xs">
+                      <Cloud className="h-3 w-3 mr-1" />
+                      Cloud
                     </Button>
                   </div>
                 </div>
@@ -582,75 +551,74 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
             )}
 
             <Textarea
-              placeholder="Describe your flowchart idea here... You can type or use voice input above."
+              placeholder="Describe your flowchart idea..."
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
-              className="min-h-[80px]"
+              className="min-h-[60px] text-xs"
             />
-          </div>
 
-          {/* AI Helper Section */}
-          <Card className="bg-muted/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Brain className="h-4 w-4" />
-                AI Helper
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-xs text-muted-foreground">
-                Ask questions about your workflow or app development
-              </p>
-              <Input
-                placeholder="Ask me anything..."
-                value={aiHelperPrompt}
-                onChange={(e) => setAiHelperPrompt(e.target.value)}
-                className="text-xs"
-                onKeyDown={(e) => e.key === 'Enter' && handleAIHelperSubmit()}
-              />
-              <Button 
-                size="sm" 
-                onClick={handleAIHelperSubmit} 
-                className="w-full"
-                disabled={isProcessing || !aiHelperPrompt.trim()}
-              >
-                Get Answer
-              </Button>
-              {aiHelperResponse && (
-                <div className="p-2 rounded bg-muted text-xs">
-                  {aiHelperResponse}
+            <Collapsible open={instructionsOpen} onOpenChange={setInstructionsOpen}>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full justify-between h-7 text-xs">
+                  <span>How to use</span>
+                  {instructionsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-1">
+                <div className="text-xs text-muted-foreground space-y-0.5 p-2 rounded bg-muted/30">
+                  <p>• Click "Analyze" for RSG flow</p>
+                  <p>• Add shapes & connect</p>
+                  <p>• Voice/type & Send</p>
+                  <p>• Save & access Library</p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CollapsibleContent>
+            </Collapsible>
+          </CardContent>
+        </Card>
 
-          <Collapsible open={instructionsOpen} onOpenChange={setInstructionsOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full justify-between text-xs">
-                <span>How to use</span>
-                {instructionsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-2">
-              <div className="text-xs text-muted-foreground space-y-1 p-2 rounded bg-muted/30">
-                <p>• Click "Analyze App" to generate RSG color-coded architecture flow</p>
-                <p>• Click shapes above to add nodes, then drag to connect them</p>
-                <p>• Use voice/type to describe your idea, then click Send</p>
-                <p>• Save your flowchart locally or to the cloud</p>
-                <p>• Access saved flowcharts from the Library</p>
+        {/* AI Helper - 1/3 width */}
+        <Card className="lg:col-span-1">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              AI Helper
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 pb-2">
+            <Input
+              placeholder="Ask anything..."
+              value={aiHelperPrompt}
+              onChange={(e) => setAiHelperPrompt(e.target.value)}
+              className="text-xs h-7"
+              onKeyDown={(e) => e.key === 'Enter' && handleAIHelperSubmit()}
+            />
+            <Button 
+              size="sm" 
+              onClick={handleAIHelperSubmit} 
+              className="w-full h-7 text-xs"
+              disabled={isProcessing || !aiHelperPrompt.trim()}
+            >
+              Get Answer
+            </Button>
+            {aiHelperResponse && (
+              <div className="p-2 rounded bg-muted text-xs max-h-32 overflow-y-auto">
+                {aiHelperResponse}
               </div>
-            </CollapsibleContent>
-          </Collapsible>
+            )}
+          </CardContent>
 
-          <div className="text-xs font-medium p-2 rounded bg-gradient-to-r from-destructive/10 via-warning/10 to-success/10">
-            <strong>RSG Status Colors:</strong> 🔴 Broken | 🟡 Needs Work | 🟢 Working | 🔵 Planned | ⚪ Deprecated
-          </div>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
 
-      <Card className="flex-1 min-h-0">
-        <CardContent className="p-0 h-full">
-          <div className="h-full w-full">
+      {/* RSG Legend */}
+      <div className="text-xs font-medium p-2 rounded bg-gradient-to-r from-destructive/10 via-warning/10 to-success/10">
+        <strong>RSG Status:</strong> 🔴 Broken | 🟡 Needs Work | 🟢 Working | 🔵 Planned | ⚪ Deprecated
+      </div>
+
+      {/* Workflow Visualization */}
+      <Card>
+        <CardContent className="p-0">
+          <div style={{ height: '500px', width: '100%' }}>
             <ReactFlow
               nodes={filteredNodes}
               edges={edges}
