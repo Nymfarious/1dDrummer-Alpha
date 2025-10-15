@@ -11,7 +11,7 @@ import ReactFlow, {
   Connection,
   BackgroundVariant,
   MarkerType,
-  useReactFlow,
+  ReactFlowProvider,
   Handle,
   Position,
 } from 'reactflow';
@@ -86,7 +86,7 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const reactFlowInstanceRef = useRef<any>(null);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge({
@@ -338,15 +338,19 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
         clearWorkspace();
         break;
       case 'fit':
-        fitView();
+        reactFlowInstanceRef.current?.fitView();
         break;
       case 'zoomIn':
-        zoomIn();
+        reactFlowInstanceRef.current?.zoomIn();
         break;
       case 'zoomOut':
-        zoomOut();
+        reactFlowInstanceRef.current?.zoomOut();
         break;
     }
+  };
+
+  const onInit = (instance: any) => {
+    reactFlowInstanceRef.current = instance;
   };
 
   const handleAIHelperSubmit = async () => {
@@ -466,7 +470,8 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
   }
 
   return (
-    <div className={`space-y-3 transition-all duration-300 ${devToolsOpen ? 'pl-80' : ''}`}>
+    <ReactFlowProvider>
+      <div className={`space-y-3 transition-all duration-300 ${devToolsOpen ? 'pl-80' : ''}`}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Main Controls - 2/3 width */}
         <Card className="lg:col-span-2">
@@ -516,13 +521,13 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
                 </TabsList>
                 
                 <div className="flex gap-1">
-                  <Button size="sm" variant="outline" onClick={() => zoomOut()} title="Zoom Out" className="h-7 w-7 p-0">
+                  <Button size="sm" variant="outline" onClick={() => reactFlowInstanceRef.current?.zoomOut()} title="Zoom Out" className="h-7 w-7 p-0">
                     <ZoomOut className="h-3 w-3" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => zoomIn()} title="Zoom In" className="h-7 w-7 p-0">
+                  <Button size="sm" variant="outline" onClick={() => reactFlowInstanceRef.current?.zoomIn()} title="Zoom In" className="h-7 w-7 p-0">
                     <ZoomIn className="h-3 w-3" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => fitView()} title="Fit View" className="h-7 w-7 p-0">
+                  <Button size="sm" variant="outline" onClick={() => reactFlowInstanceRef.current?.fitView()} title="Fit View" className="h-7 w-7 p-0">
                     <Maximize className="h-3 w-3" />
                   </Button>
                 </div>
@@ -787,6 +792,7 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              onInit={onInit}
               nodeTypes={nodeTypes}
               fitView
               attributionPosition="bottom-right"
@@ -896,6 +902,7 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ReactFlowProvider>
   );
 }
