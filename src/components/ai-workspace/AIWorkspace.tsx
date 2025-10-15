@@ -12,6 +12,8 @@ import ReactFlow, {
   BackgroundVariant,
   MarkerType,
   useReactFlow,
+  Handle,
+  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,8 +36,6 @@ import {
   Cloud,
   HardDrive,
   Scan,
-  ChevronDown,
-  ChevronUp,
   ZoomIn,
   ZoomOut,
   Maximize,
@@ -46,10 +46,17 @@ import {
   LayoutDashboard,
   Settings,
   Minus,
-  MoreHorizontal
+  MoreHorizontal,
+  MoreVertical
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AIWorkspaceProps {
@@ -73,10 +80,13 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
   const [filterType, setFilterType] = useState<string>("all");
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [edgeColor, setEdgeColor] = useState("hsl(var(--primary))");
-  const [edgeStyle, setEdgeStyle] = useState<'default' | 'step' | 'smoothstep' | 'straight'>('default');
+  const [edgeStyle, setEdgeStyle] = useState<'default' | 'step' | 'smoothstep' | 'straight'>('straight');
   const [edgeType, setEdgeType] = useState<'solid' | 'dashed' | 'dotted'>('solid');
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge({
@@ -88,10 +98,25 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
     [setEdges, edgeColor, edgeType, edgeStyle]
   );
 
-  const addNode = (shape: 'rectangle' | 'circle' | 'diamond' | 'hexagon') => {
+  const CustomNode = ({ data }: { data: any }) => {
+    return (
+      <div className="relative">
+        <Handle type="target" position={Position.Top} className="!bg-primary" />
+        <div>{data.label}</div>
+        <Handle type="source" position={Position.Bottom} className="!bg-primary" />
+      </div>
+    );
+  };
+
+  const nodeTypes = {
+    custom: CustomNode,
+  };
+
+  const addNode = (shape: 'rectangle' | 'circle' | 'diamond' | 'hexagon', position?: { x: number; y: number }) => {
     const newNode: Node = {
       id: `node-${Date.now()}`,
-      position: { 
+      type: 'custom',
+      position: position || { 
         x: Math.random() * 400 + 100, 
         y: Math.random() * 300 + 100 
       },
@@ -206,18 +231,21 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
       const newNodes: Node[] = [
         {
           id: 'start',
+          type: 'custom',
           position: { x: 250, y: 50 },
           data: { label: 'Start' },
           style: { background: 'hsl(var(--success))', color: 'hsl(var(--success-foreground))', padding: '12px', borderRadius: '8px' }
         },
         {
           id: 'process',
+          type: 'custom',
           position: { x: 250, y: 150 },
           data: { label: 'Process' },
           style: { background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', padding: '12px', borderRadius: '8px' }
         },
         {
           id: 'end',
+          type: 'custom',
           position: { x: 250, y: 250 },
           data: { label: 'End' },
           style: { background: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))', padding: '12px', borderRadius: '8px' }
@@ -292,31 +320,33 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
     setShowLibrary(false);
   };
 
-  const handleZoomIn = () => {
-    const reactFlowInstance = document.querySelector('.react-flow');
-    if (reactFlowInstance) {
-      const currentZoom = parseFloat(reactFlowInstance.getAttribute('data-zoom') || '1');
-      const newZoom = Math.min(currentZoom * 1.2, 2);
-      reactFlowInstance.setAttribute('data-zoom', newZoom.toString());
-      const zoomInButton = document.querySelector('[data-testid="rf__controls-zoomin"]') as HTMLButtonElement;
-      zoomInButton?.click();
-    }
-  };
+  const handlePaneContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    setContextMenuPosition({ x: event.clientX, y: event.clientY });
+  }, []);
 
-  const handleZoomOut = () => {
-    const reactFlowInstance = document.querySelector('.react-flow');
-    if (reactFlowInstance) {
-      const currentZoom = parseFloat(reactFlowInstance.getAttribute('data-zoom') || '1');
-      const newZoom = Math.max(currentZoom * 0.8, 0.5);
-      reactFlowInstance.setAttribute('data-zoom', newZoom.toString());
-      const zoomOutButton = document.querySelector('[data-testid="rf__controls-zoomout"]') as HTMLButtonElement;
-      zoomOutButton?.click();
+  const handleContextMenuAction = (action: string) => {
+    setContextMenuPosition(null);
+    switch(action) {
+      case 'rectangle':
+      case 'circle':
+      case 'diamond':
+      case 'hexagon':
+        addNode(action);
+        break;
+      case 'clear':
+        clearWorkspace();
+        break;
+      case 'fit':
+        fitView();
+        break;
+      case 'zoomIn':
+        zoomIn();
+        break;
+      case 'zoomOut':
+        zoomOut();
+        break;
     }
-  };
-
-  const handleFitView = () => {
-    const fitViewButton = document.querySelector('[data-testid="rf__controls-fitview"]') as HTMLButtonElement;
-    fitViewButton?.click();
   };
 
   const handleAIHelperSubmit = async () => {
@@ -392,6 +422,7 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
 
       const analysisNodes: Node[] = data.nodes.map((node: any) => ({
         id: node.id,
+        type: 'custom',
         position: node.position,
         data: { 
           label: `${node.label}\n${node.progress}%`,
@@ -485,13 +516,13 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
                 </TabsList>
                 
                 <div className="flex gap-1">
-                  <Button size="sm" variant="outline" onClick={handleZoomOut} title="Zoom Out" className="h-7 w-7 p-0">
+                  <Button size="sm" variant="outline" onClick={() => zoomOut()} title="Zoom Out" className="h-7 w-7 p-0">
                     <ZoomOut className="h-3 w-3" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={handleZoomIn} title="Zoom In" className="h-7 w-7 p-0">
+                  <Button size="sm" variant="outline" onClick={() => zoomIn()} title="Zoom In" className="h-7 w-7 p-0">
                     <ZoomIn className="h-3 w-3" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={handleFitView} title="Fit View" className="h-7 w-7 p-0">
+                  <Button size="sm" variant="outline" onClick={() => fitView()} title="Fit View" className="h-7 w-7 p-0">
                     <Maximize className="h-3 w-3" />
                   </Button>
                 </div>
@@ -682,22 +713,6 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
               )}
             </div>
 
-            <Collapsible open={instructionsOpen} onOpenChange={setInstructionsOpen}>
-              <CollapsibleTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full justify-between h-7 text-xs">
-                  <span>How to use</span>
-                  {instructionsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-1">
-                <div className="text-xs text-muted-foreground space-y-0.5 p-2 rounded bg-muted/30">
-                  <p>• Click "Analyze" for RSG flow</p>
-                  <p>• Add shapes & connect</p>
-                  <p>• Voice/type & Send</p>
-                  <p>• Save & access Library</p>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
           </CardContent>
         </Card>
 
@@ -710,6 +725,25 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 pb-2">
+            <Collapsible open={instructionsOpen} onOpenChange={setInstructionsOpen}>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full justify-start h-7 text-xs gap-2">
+                  <MoreVertical className="h-3 w-3" />
+                  <span>How to use</span>
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-1">
+                <div className="text-xs text-muted-foreground space-y-0.5 p-2 rounded bg-muted/30">
+                  <p>• Click "Analyze" for RSG flow</p>
+                  <p>• Add shapes & connect with handles</p>
+                  <p>• Right-click canvas for options</p>
+                  <p>• Drag canvas to pan</p>
+                  <p>• Voice/type & Send for AI</p>
+                  <p>• Save & access Library</p>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
             <Input
               placeholder="Ask anything..."
               value={aiHelperPrompt}
@@ -731,7 +765,6 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
               </div>
             )}
           </CardContent>
-
         </Card>
       </div>
 
@@ -743,17 +776,27 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
       {/* Workflow Visualization */}
       <Card>
         <CardContent className="p-0">
-          <div style={{ height: '500px', width: '100%' }}>
+          <div 
+            ref={reactFlowWrapper} 
+            style={{ height: '500px', width: '100%' }}
+            onContextMenu={handlePaneContextMenu}
+          >
             <ReactFlow
               nodes={filteredNodes}
               edges={edges}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              nodeTypes={nodeTypes}
               fitView
               attributionPosition="bottom-right"
               minZoom={0.5}
               maxZoom={2}
+              panOnDrag={true}
+              panOnScroll={false}
+              zoomOnScroll={true}
+              zoomOnPinch={true}
+              zoomOnDoubleClick={false}
             >
               <Controls showInteractive={false} />
               <MiniMap />
@@ -762,6 +805,97 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
           </div>
         </CardContent>
       </Card>
+
+      {/* Context Menu */}
+      {contextMenuPosition && (
+        <div 
+          className="fixed z-50 min-w-[200px] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+          style={{ 
+            left: `${contextMenuPosition.x}px`, 
+            top: `${contextMenuPosition.y}px` 
+          }}
+          onMouseLeave={() => setContextMenuPosition(null)}
+        >
+          <div className="space-y-1">
+            <div className="px-2 py-1.5 text-xs font-semibold">Add Shape</div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start h-7 text-xs"
+              onClick={() => handleContextMenuAction('rectangle')}
+            >
+              <Square className="h-3 w-3 mr-2" />
+              Rectangle
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start h-7 text-xs"
+              onClick={() => handleContextMenuAction('circle')}
+            >
+              <Circle className="h-3 w-3 mr-2" />
+              Circle
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start h-7 text-xs"
+              onClick={() => handleContextMenuAction('diamond')}
+            >
+              <Diamond className="h-3 w-3 mr-2" />
+              Diamond
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start h-7 text-xs"
+              onClick={() => handleContextMenuAction('hexagon')}
+            >
+              <Hexagon className="h-3 w-3 mr-2" />
+              Hexagon
+            </Button>
+            <div className="h-px bg-border my-1" />
+            <div className="px-2 py-1.5 text-xs font-semibold">View</div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start h-7 text-xs"
+              onClick={() => handleContextMenuAction('zoomIn')}
+            >
+              <ZoomIn className="h-3 w-3 mr-2" />
+              Zoom In
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start h-7 text-xs"
+              onClick={() => handleContextMenuAction('zoomOut')}
+            >
+              <ZoomOut className="h-3 w-3 mr-2" />
+              Zoom Out
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start h-7 text-xs"
+              onClick={() => handleContextMenuAction('fit')}
+            >
+              <Maximize className="h-3 w-3 mr-2" />
+              Fit View
+            </Button>
+            <div className="h-px bg-border my-1" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start h-7 text-xs text-destructive"
+              onClick={() => handleContextMenuAction('clear')}
+            >
+              <Trash2 className="h-3 w-3 mr-2" />
+              Clear All
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
