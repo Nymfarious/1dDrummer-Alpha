@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -98,7 +98,7 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
     [setEdges, edgeColor, edgeType, edgeStyle]
   );
 
-  const CustomNode = ({ data }: { data: any }) => {
+  const CustomNode = useCallback(({ data }: { data: any }) => {
     return (
       <div className="relative">
         <Handle type="target" position={Position.Top} className="!bg-primary" />
@@ -106,11 +106,11 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
         <Handle type="source" position={Position.Bottom} className="!bg-primary" />
       </div>
     );
-  };
+  }, []);
 
-  const nodeTypes = {
+  const nodeTypes = useMemo(() => ({
     custom: CustomNode,
-  };
+  }), [CustomNode]);
 
   const addNode = (shape: 'rectangle' | 'circle' | 'diamond' | 'hexagon', position?: { x: number; y: number }) => {
     const newNode: Node = {
@@ -340,14 +340,33 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
       case 'fit':
         reactFlowInstanceRef.current?.fitView();
         break;
-      case 'zoomIn':
-        reactFlowInstanceRef.current?.zoomIn();
-        break;
-      case 'zoomOut':
-        reactFlowInstanceRef.current?.zoomOut();
-        break;
     }
   };
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (contextMenuPosition) {
+        setContextMenuPosition(null);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && contextMenuPosition) {
+        setContextMenuPosition(null);
+      }
+    };
+
+    if (contextMenuPosition) {
+      document.addEventListener('click', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [contextMenuPosition]);
 
   const onInit = (instance: any) => {
     reactFlowInstanceRef.current = instance;
@@ -815,12 +834,12 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
       {/* Context Menu */}
       {contextMenuPosition && (
         <div 
-          className="fixed z-50 min-w-[200px] rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+          className="fixed z-50 min-w-[200px] max-h-[400px] overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
           style={{ 
             left: `${contextMenuPosition.x}px`, 
             top: `${contextMenuPosition.y}px` 
           }}
-          onMouseLeave={() => setContextMenuPosition(null)}
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="space-y-1">
             <div className="px-2 py-1.5 text-xs font-semibold">Add Shape</div>
@@ -861,25 +880,6 @@ export function AIWorkspace({ onClose, devToolsOpen = false }: AIWorkspaceProps)
               Hexagon
             </Button>
             <div className="h-px bg-border my-1" />
-            <div className="px-2 py-1.5 text-xs font-semibold">View</div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full justify-start h-7 text-xs"
-              onClick={() => handleContextMenuAction('zoomIn')}
-            >
-              <ZoomIn className="h-3 w-3 mr-2" />
-              Zoom In
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full justify-start h-7 text-xs"
-              onClick={() => handleContextMenuAction('zoomOut')}
-            >
-              <ZoomOut className="h-3 w-3 mr-2" />
-              Zoom Out
-            </Button>
             <Button 
               variant="ghost" 
               size="sm" 
