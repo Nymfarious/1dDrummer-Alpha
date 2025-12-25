@@ -60,7 +60,7 @@ const AppContent = () => {
       <Toaster />
       <Sonner />
       <GlobalAIAvatar />
-      <BrowserRouter>
+      <BrowserRouter basename="/1dDrummer-Alpha">
         <Routes>
           <Route 
             path="/" 
